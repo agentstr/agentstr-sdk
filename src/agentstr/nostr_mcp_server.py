@@ -60,6 +60,7 @@ class NostrMCPServer:
             relays: List of Nostr relay URLs (if no client provided).
             private_key: Nostr private key (if no client provided).
             nwc_str: Nostr Wallet Connect string for payments (optional).
+            tools: List of tools to register (optional).
         """
         self.client = nostr_client or NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str)
         self.display_name = display_name
