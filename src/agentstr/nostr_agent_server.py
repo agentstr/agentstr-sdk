@@ -1,11 +1,13 @@
 import asyncio
 from collections.abc import Callable
+from imaplib import Commands
 from typing import Any
 
 from pydantic import BaseModel
 from pynostr.event import Event
 
 from agentstr.a2a import AgentCard, ChatInput, PriceHandlerResponse, PriceHandler
+from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
 from agentstr.nostr_mcp_client import NostrMCPClient
@@ -34,7 +36,8 @@ class NostrAgentServer:
                  agent_info: AgentCard | None = None,
                  agent_callable: Callable[[ChatInput], str] | None = None,
                  note_filters: NoteFilters | None = None,
-                 price_handler: PriceHandler | None = None):
+                 price_handler: PriceHandler | None = None,
+                 commands: Commands | None = None):
         """Initialize the agent server.
 
         Args:
@@ -53,6 +56,7 @@ class NostrAgentServer:
         self.agent_callable = agent_callable
         self.note_filters = note_filters
         self.price_handler = price_handler
+        self.commands = commands or DefaultCommands()
 
     async def chat(self, message: str, thread_id: str | None = None) -> Any:
         """Send a message to the agent and retrieve the response.
@@ -117,6 +121,9 @@ Only use the following tools: [{skills_used}]
             return
         elif message.strip().startswith("lnbc") and " " not in message.strip():
             logger.debug("Ignoring lightning invoices")
+            return
+        elif message.strip().startswith("!"):
+            await self.commands.run_command(message.strip(), event.pubkey)
             return
         message = message.strip()
         invoice = None

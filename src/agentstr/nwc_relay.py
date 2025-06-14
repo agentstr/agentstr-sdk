@@ -140,7 +140,7 @@ class NWCRelay:
             await asyncio.sleep(0)
         return None
 
-    async def make_invoice(self, amount: int, description: str) -> Event | None:
+    async def make_invoice(self, amount: int, description: str, expires_in: int = 900) -> Event | None:
         """Generate a new payment request.
 
         Returns:
@@ -154,6 +154,7 @@ class NWCRelay:
             } if amount else {
                 "description": description,
             },
+            "expires_at": math.floor(time.time()) + expires_in,
         })
         emsg = encrypt(self.nwc_info["app_privkey"], self.nwc_info["wallet_pubkey"], msg)
         obj = {

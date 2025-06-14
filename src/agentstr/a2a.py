@@ -3,6 +3,7 @@ import json
 from typing import Any, Callable
 
 from pydantic import BaseModel
+import dspy
 
 from agentstr.logger import get_logger
 
@@ -96,6 +97,29 @@ class PriceHandlerResponse(BaseModel):
 
 
 CHAT_HISTORY = {}  # Thread id -> [str]
+
+
+class PriceHandlerPrompt(dspy.Signature):
+    """Analyze if the agent can handle this request based on their skills and description and chat history.
+Consider both the agent's capabilities and whether the request matches their purpose.
+
+The agent may need to use multiple skills to handle the request. If so, include all relevant skills.
+
+The user_message should be a friendly, conversational message that:
+- Confirms the action to be taken
+- Explains what will be done in simple terms
+- Asks for confirmation to proceed
+- Is concise (1-2 sentences max)"""
+
+    user_request: str = dspy.InputField(desc="The user's request")
+    history: dspy.History = dspy.InputField(desc="The conversation history")
+    user_response: PriceHandlerResponse = dspy.OutputField(
+        desc=(
+                "Message that summarizes the process result, and the information users need, e.g., the "
+                "confirmation_number if a new flight is booked."
+            )
+        )
+
 
 
 class PriceHandler:
