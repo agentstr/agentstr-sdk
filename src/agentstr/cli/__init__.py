@@ -14,7 +14,9 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+import yaml
 
 import click
 
@@ -37,6 +39,12 @@ def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optiona
 
 @click.group()
 @click.option(
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to YAML config file.",
+    is_eager=True,
+)
+@click.option(
     "--provider",
     type=click.Choice(PROVIDER_CHOICES, case_sensitive=False),
     callback=_resolve_provider,
@@ -45,9 +53,24 @@ def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optiona
     is_eager=True,
 )
 @click.pass_context
-def cli(ctx: click.Context, provider: str):  # noqa: D401
+def cli(ctx: click.Context, config: Path | None, provider: str):  # noqa: D401
     """agentstr – lightweight IaC helper for Nostr MCP infrastructure."""
-    ctx.obj = {"provider_name": provider.lower(), "provider": get_provider(provider.lower())}
+    config_data: Dict[str, Any] = {}
+    if config is not None:
+        try:
+            config_data = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:  # pragma: no cover
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+
+    # If provider not explicitly set, take from config file
+    if provider == _resolve_provider(None, None, None) and config_data.get("provider"):
+        provider = str(config_data["provider"]).lower()
+
+    ctx.obj = {
+        "provider_name": provider.lower(),
+        "provider": get_provider(provider.lower()),
+        "config": config_data,
+    }
 
 
 @cli.command()
@@ -75,8 +98,9 @@ def cli(ctx: click.Context, provider: str):  # noqa: D401
 def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int):  # noqa: D401
     """Deploy an application file (server or agent) to the chosen provider."""
     provider: Provider = ctx.obj["provider"]
-    secrets_dict: dict[str, str] = {}
-    env_dict: dict[str, str] = {}
+    cfg = ctx.obj.get("config", {})
+    secrets_dict: dict[str, str] = dict(cfg.get("secrets", {}))
+    env_dict: dict[str, str] = dict(cfg.get("env", {}))
 
     def _parse_kv(entries: tuple[str, ...], label: str, target: dict[str, str]):
         for ent in entries:
@@ -89,20 +113,26 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
     _parse_kv(secret, "--secret", secrets_dict)
     _parse_kv(env, "--env", env_dict)
 
-    deps = list(dependency) if dependency else []
+    deps = list(cfg.get("image", {}).get("extra_pip_deps", []))
+    if dependency:
+        deps.extend(dependency)
 
+    if cpu is None:
+        cpu = cfg.get(provider.name, {}).get("cpu") or cfg.get("cpu")
     if cpu is None:
         if provider.name == "aws":
             cpu = 256
-        elif provider.name == "gcp":
+        else:
             cpu = 0.25
-        elif provider.name == "azure":
-            cpu = 0.25
-    elif provider.name == "gcp" or provider.name == "azure":
+    # For gcp/azure convert millicore if user provided int >=100
+    if provider.name in {"gcp", "azure"} and isinstance(cpu, int) and cpu > 4:
         cpu = cpu / 1000
 
 
-    deployment_name = name or file_path.stem
+    if memory == 512:  # default flag value, check config override
+        memory = cfg.get(provider.name, {}).get("memory") or cfg.get("memory", memory)
+
+    deployment_name = name or cfg.get("name") or file_path.stem
     provider.deploy(
         file_path,
         deployment_name,
@@ -130,6 +160,52 @@ def logs(ctx: click.Context, name: str):  # noqa: D401
     """Fetch logs for a deployment."""
     provider: Provider = ctx.obj["provider"]
     provider.logs(name)
+
+
+@cli.command("put-secret")
+@click.argument("key")
+@click.argument("value", required=False)
+@click.option("--value-file", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Read secret value from file (overrides VALUE argument).")
+@click.pass_context
+def put_secret(ctx: click.Context, key: str, value: str | None, value_file: Path | None):  # noqa: D401
+    """Create or update a cloud-provider secret and return its reference string.
+
+    VALUE may be provided directly or via --value-file.
+    """
+    if value_file is not None:
+        value = Path(value_file).read_text()
+    if value is None:
+        click.echo("Either VALUE argument or --value-file must be supplied.", err=True)
+        sys.exit(1)
+    provider: Provider = ctx.obj["provider"]
+    ref = provider.put_secret(key, value)
+    click.echo(ref)
+
+
+@cli.command("put-secrets")
+@click.argument("env_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.pass_context
+def put_secrets(ctx: click.Context, env_file: Path):  # noqa: D401
+    """Create or update multiple secrets from a .env file.
+
+    ENV_FILE should contain KEY=VALUE lines (comments with # allowed). Each
+    secret is stored via the provider's secret manager and the resulting
+    reference printed.
+    """
+    provider: Provider = ctx.obj["provider"]
+    count = 0
+    for raw_line in Path(env_file).read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            click.echo(f"Skipping invalid line: {raw_line}", err=True)
+            continue
+        key, val = line.split("=", 1)
+        ref = provider.put_secret(key, val)
+        click.echo(f"{key} -> {ref}")
+        count += 1
+    click.echo(f"Stored {count} secrets.")
 
 
 @cli.command()

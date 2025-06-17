@@ -68,6 +68,12 @@ class Provider(abc.ABC):  # noqa: D401
     def destroy(self, deployment_name: str):  # noqa: D401
         """Destroy/tear down a deployment."""
 
+    # Secrets -------------------------------------------------------------
+    @abc.abstractmethod
+    @_catch_exceptions
+    def put_secret(self, name: str, value: str) -> str:  # noqa: D401
+        """Create/update a secret and return its reference (ARN/URI/path)."""
+
     # Helper utilities ----------------------------------------------------
     def _serialize_secrets(self, secrets: Dict[str, str]) -> str:  # noqa: D401
         """Serialize secrets for passing to container env vars."""

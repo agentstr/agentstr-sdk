@@ -48,6 +48,8 @@ Commands
      - Purpose
    * - ``deploy <app.py>``
      - Build Docker image, push and deploy *app.py* as a container service.
+   * - ``put-secrets <env_file>``
+     - Create or update multiple secrets from a .env file.
    * - ``list``
      - List existing deployments.
    * - ``logs <name>``
@@ -69,7 +71,7 @@ Commands
      - ``<app>``
    * - ``--cpu`` *INT*
      - CPU units (AWS) / cores (GCP).
-     - ``256`` (AWS) / ``1`` (GCP)
+     - ``256`` (AWS) / ``0.25`` (GCP)
    * - ``--memory`` *INT*
      - Memory in MiB.
      - ``512``
@@ -93,6 +95,9 @@ Examples
        --env OPENAI_API_KEY=$OPENAI_API_KEY \
        --pip openai langchain
 
+   # Upsert secrets from .env file
+   agentstr put-secrets path/to/.env
+ 
    # Change provider per command
    agentstr deploy bot.py --provider gcp --cpu 2 --memory 1024
 

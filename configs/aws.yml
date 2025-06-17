@@ -1,0 +1,27 @@
+# Sample AWS configuration for agentstr CLI (ECS Fargate)
+provider: aws
+
+aws:
+  region: us-east-2                # AWS_REGION override
+  profile: agentstr               # AWS profile to use (optional)
+  cluster_name: agentstr-cluster  # will be created if missing
+  task_cpu: 256                   # 0.25 vCPU (AWS uses task-level CPU units)
+  task_memory: 512                # MiB
+  subnets: []                     # leave empty to auto-discover public subnets
+  security_groups: []             # leave empty for default
+  assign_public_ip: true
+
+image:
+  repository: agentstr/mcp-server # ECR repo (will be created)
+  build_context: .                # path sent to docker build
+  dockerfile: Dockerfile          # override if needed
+  extra_pip_deps:                 # additional Python deps installed in image
+    - agentstr-plugin-extra
+
+env:
+  NOSTR_RELAYS: >
+    wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+secrets:                          # ARNs of AWS Secrets Manager entries
+  EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-east-2:123456789012:secret:mcp_nsec
+  MCP_SERVER_NWC_CONN_STR: arn:aws:secretsmanager:us-east-2:123456789012:secret:nwc

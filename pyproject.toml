@@ -121,6 +121,7 @@ cli = [
     "google-cloud-run>=0.10.18",
     "azure-mgmt-containerinstance>=10.1.0",
     "azure-identity>=1.23.0",
+    "PyYAML>=6.0",
 ]
 all = [
     "langchain>=0.3.25",
@@ -139,6 +140,7 @@ all = [
     "google-cloud-run>=0.10.18",
     "azure-mgmt-containerinstance>=10.1.0",
     "azure-identity>=1.23.0",
+    "PyYAML>=6.0",
 ]
 
 

@@ -304,6 +304,52 @@ CMD [\"python\", \"/app/app.py\"]
         self._run_cmd(["kubectl", "logs", f"deployment/{deployment_name}", "--tail", "100"])
 
     @_catch_exceptions
+    def put_secret(self, name: str, value: str) -> str:  # noqa: D401
+        import tempfile, textwrap as tw
+
+        project, region, _zone = self._check_prereqs()
+        # Ensure secret exists
+        describe_cmd = [
+            "gcloud",
+            "secrets",
+            "describe",
+            name,
+            "--project",
+            project,
+            "--format",
+            "value(name)",
+        ]
+        result = subprocess.run(describe_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            self._run_cmd([
+                "gcloud",
+                "secrets",
+                "create",
+                name,
+                "--replication-policy=automatic",
+                "--project",
+                project,
+            ])
+        # Add new version with value via temp file
+        with tempfile.NamedTemporaryFile("w", delete=False) as tf:
+            tf.write(value)
+            temp_path = tf.name
+        self._run_cmd([
+            "gcloud",
+            "secrets",
+            "versions",
+            "add",
+            name,
+            "--data-file",
+            temp_path,
+            "--project",
+            project,
+        ])
+        ref = f"projects/{project}/secrets/{name}/versions/latest"
+        click.echo(f"Secret '{name}' stored in Secret Manager.")
+        return ref
+
+    @_catch_exceptions
     def destroy(self, deployment_name: str):  # noqa: D401
         deployment_name = deployment_name.replace("_", "-")
         # Delete service and deployment

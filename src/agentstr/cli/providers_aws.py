@@ -372,6 +372,19 @@ CMD [\"python\", \"/app/app.py\"]
         click.echo("No logs available yet; the service may still be starting or not producing output.")
 
     @_catch_exceptions
+    def put_secret(self, name: str, value: str) -> str:  # noqa: D401
+        sm = self.boto3.client("secretsmanager")
+        try:
+            resp = sm.create_secret(Name=name, SecretString=value)
+            arn = resp["ARN"]
+            click.echo(f"Secret '{name}' created in Secrets Manager.")
+        except sm.exceptions.ResourceExistsException:
+            resp = sm.put_secret_value(SecretId=name, SecretString=value)
+            arn = resp["ARN"]
+            click.echo(f"Secret '{name}' updated in Secrets Manager.")
+        return arn
+
+    @_catch_exceptions
     def destroy(self, deployment_name: str):  # noqa: D401
         click.echo(f"[AWS] Destroying {deployment_name} ...")
         try:

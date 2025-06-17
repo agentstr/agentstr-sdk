@@ -1,0 +1,24 @@
+# Sample GCP configuration for agentstr CLI (GKE)
+provider: gcp
+
+gcp:
+  project: agentstr-prod          # GOOGLE_CLOUD_PROJECT
+  zone: us-central1-a
+  cluster_name: agentstr-gke
+  node_type: e2-medium            # 2 vCPU / 4 GB
+  min_nodes: 1
+  max_nodes: 3
+  artifact_repo: us-central1-docker.pkg.dev/agentstr-prod/agentstr
+
+image:
+  repository: mcp-server          # image name within Artifact Registry
+  build_context: .
+  extra_pip_deps: []
+
+env:
+  NOSTR_RELAYS: >
+    wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+secrets:                          # Secret Manager paths (latest version)
+  EXAMPLE_MCP_SERVER_NSEC: projects/agentstr-prod/secrets/mcp_nsec/versions/latest
+  MCP_SERVER_NWC_CONN_STR: projects/agentstr-prod/secrets/nwc/versions/latest

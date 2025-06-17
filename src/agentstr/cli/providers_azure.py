@@ -276,6 +276,60 @@ CMD [\"python\", \"/app/app.py\"]
         )
 
     @_catch_exceptions
+    def put_secret(self, name: str, value: str) -> str:  # noqa: D401
+        import json, subprocess as sp
+        subscription_id, region, resource_group = self._check_prereqs()
+        vault_name = os.getenv("AZURE_KEY_VAULT", "agentstr-kv")
+        # Ensure vault exists
+        show_cmd = [
+            "az",
+            "keyvault",
+            "show",
+            "--name",
+            vault_name,
+            "--resource-group",
+            resource_group,
+            "--query",
+            "name",
+            "-o",
+            "tsv",
+        ]
+        result = subprocess.run(show_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            click.echo(f"Creating Key Vault '{vault_name}' ...")
+            self._run_cmd([
+                "az",
+                "keyvault",
+                "create",
+                "--name",
+                vault_name,
+                "--resource-group",
+                resource_group,
+                "--location",
+                region,
+            ])
+        name = name.replace("_", "-")
+        # Set secret
+        set_cmd = [
+            "az",
+            "keyvault",
+            "secret",
+            "set",
+            "--vault-name",
+            vault_name,
+            "--name",
+            name,
+            "--value",
+            value,
+            "-o",
+            "json",
+        ]
+        out = sp.check_output(set_cmd, text=True)
+        uri = json.loads(out)["id"]
+        click.echo(f"Secret '{name}' stored in Key Vault '{vault_name}'.")
+        return uri
+
+    @_catch_exceptions
     def destroy(self, deployment_name: str):  # noqa: D401
         deployment_name = deployment_name.replace("_", "-")
         _, _, resource_group = self._check_prereqs()
