@@ -19,7 +19,6 @@ dependencies = [
     "pydantic>=2.11.3",
     "pynostr>=0.6.2",
     "websockets>=15.0.1",
-    "click>=8.1.7",
 ]
 readme = "README.md"
 [build-system]
@@ -116,6 +115,13 @@ aws = [
 gcp = [
     "google-cloud-run>=0.10.18",
 ]
+cli = [
+    "click>=8.1.7",
+    "boto3>=1.38.36",
+    "google-cloud-run>=0.10.18",
+    "azure-mgmt-containerinstance>=10.1.0",
+    "azure-identity>=1.23.0",
+]
 all = [
     "langchain>=0.3.25",
     "langchain-community>=0.3.24",
@@ -128,6 +134,11 @@ all = [
     "pydantic-ai-slim[openai]>=0.2.9",
     "openai-agents>=0.0.14",
     "google-adk>=1.1.1",
+    "click>=8.1.7",
+    "boto3>=1.38.36",
+    "google-cloud-run>=0.10.18",
+    "azure-mgmt-containerinstance>=10.1.0",
+    "azure-identity>=1.23.0",
 ]
 
 

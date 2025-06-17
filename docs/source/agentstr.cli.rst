@@ -7,12 +7,12 @@ infrastructure code**.
 
 Installation
 ------------
-The CLI is installed automatically when you install the SDK with the *all*
+The CLI is installed automatically when you install the SDK with the *cli*
 extra:
 
 .. code-block:: bash
 
-   uv add agentstr-sdk[all]   # or: pip install "agentstr-sdk[all]"
+   uv add agentstr-sdk[cli]   # or: pip install "agentstr-sdk[cli]"
 
 This places an ``agentstr`` executable on your ``$PATH``.
 

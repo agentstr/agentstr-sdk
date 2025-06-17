@@ -108,9 +108,9 @@ uv run examples/nostr_dspy_agent.py
 `agentstr` is a lightweight command-line tool for deploying your Python agent to cloud providers with zero configuration.
 
 ### Installation
-The CLI is installed automatically with the **`agentstr-sdk[all]`** extra:
+The CLI is installed automatically with the **`agentstr-sdk[cli]`** extra:
 ```bash
-uv add agentstr-sdk[all]  # or: pip install "agentstr-sdk[all]"
+uv add agentstr-sdk[cli]  # or: pip install "agentstr-sdk[cli]"
 ```
 This places an `agentstr` executable on your `$PATH`.
 
