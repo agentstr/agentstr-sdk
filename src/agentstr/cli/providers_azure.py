@@ -126,6 +126,21 @@ class AzureProvider(Provider):  # noqa: D401
             raise click.ClickException("Failed to retrieve ACR login server after creation.")
         return result.stdout.strip()
 
+    def _docker_login_acr(self, login_server: str):  # noqa: D401
+        """Login to ACR using admin credentials or env-vars, avoiding interactive prompt."""
+        env_user = os.getenv("AZURE_ACR_USERNAME")
+        env_pass = os.getenv("AZURE_ACR_PASSWORD")
+        if env_user and env_pass:
+            self._run_cmd(["docker", "login", "-u", env_user, "-p", env_pass, login_server])
+            return
+        import json, shlex, subprocess as sp
+
+        cred_json = sp.check_output(["az", "acr", "credential", "show", "--name", self.REGISTRY_NAME, "-o", "json"], text=True)
+        cred = json.loads(cred_json)
+        username = cred["username"]
+        password = cred["passwords"][0]["value"]
+        self._run_cmd(["docker", "login", "-u", username, "-p", password, login_server])
+
     def _build_and_push_image(
         self,
         file_path: Path,
@@ -151,7 +166,8 @@ CMD [\"python\", \"/app/app.py\"]
             )
             temp_app = Path(tmp_dir) / "app.py"
             temp_app.write_text(file_path.read_text())
-            self._run_cmd(["az", "acr", "login", "--name", self.REGISTRY_NAME])
+            # Ensure Docker is authenticated with ACR (non-interactive)
+            self._docker_login_acr(login_server)
             self._run_cmd(["docker", "build", "-t", image_uri, tmp_dir])
             self._run_cmd(["docker", "push", image_uri])
         return image_uri
@@ -164,19 +180,49 @@ CMD [\"python\", \"/app/app.py\"]
         deployment_name = deployment_name.replace("_", "-")
         env_vars = kwargs.get("env", {})
         dependencies = kwargs.get("dependencies", [])
-        cpu = kwargs.get("cpu", 0.25)
-        memory = int(kwargs.get("memory", 512))
+        import math
+        cpu_raw = kwargs.get("cpu", 0.25)
+        # Azure ACI requires integer CPU cores (1-4). Round up if fractional.
+        cpu_val = max(1, math.ceil(float(cpu_raw)))
+        memory_mib = int(kwargs.get("memory", 512))
+        # Azure CLI expects memory in GB (float). Convert if value looks like MiB.
+        if memory_mib > 16:  # heuristic: values greater than 16 are likely MiB
+            memory_gb = round(memory_mib / 1024, 2)
+        else:
+            memory_gb = memory_mib  # already GB
+
         click.echo(
-            f"[Azure/ACI] Deploying {file_path} as '{deployment_name}' (cpu={cpu}, memory={memory}, deps={dependencies}) ..."
+            f"[Azure/ACI] Deploying {file_path} as '{deployment_name}' (cpu={cpu_val}, memory={memory_gb}GB, deps={dependencies}) ..."
         )
         _, region, resource_group = self._check_prereqs()
         self._ensure_resource_group(resource_group, region)
         login_server = self._ensure_acr(resource_group, region)
         image_uri = self._build_and_push_image(file_path, deployment_name, dependencies, login_server)
 
+        # Prepare environment variables args
+        combined_env = {**env_vars, **secrets}
         env_cli_args: List[str] = []
-        for k, v in {**env_vars, **secrets}.items():
-            env_cli_args.extend(["--environment-variables", f"{k}={v}"])
+        if combined_env:
+            env_cli_args = ["--environment-variables"] + [f"{k}={v}" for k, v in combined_env.items()]
+
+        # Retrieve registry credentials (reuse docker login helper)
+        env_user = os.getenv("AZURE_ACR_USERNAME")
+        env_pass = os.getenv("AZURE_ACR_PASSWORD")
+        if not (env_user and env_pass):
+            import json, subprocess as sp
+            cred_json = sp.check_output([
+                "az",
+                "acr",
+                "credential",
+                "show",
+                "--name",
+                self.REGISTRY_NAME,
+                "-o",
+                "json",
+            ], text=True)
+            cred_data = json.loads(cred_json)
+            env_user = cred_data["username"]
+            env_pass = cred_data["passwords"][0]["value"]
 
         create_cmd = [
             "az",
@@ -189,13 +235,21 @@ CMD [\"python\", \"/app/app.py\"]
             "--image",
             image_uri,
             "--cpu",
-            str(cpu),
+            str(cpu_val),
             "--memory",
-            str(memory),
+            str(memory_gb),
             "--restart-policy",
             "OnFailure",
+            "--os-type",
+            "Linux",
             "--ports",
             "80",
+            "--registry-login-server",
+            login_server,
+            "--registry-username",
+            env_user,
+            "--registry-password",
+            env_pass,
         ] + env_cli_args
         self._run_cmd(create_cmd)
         click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
@@ -218,8 +272,6 @@ CMD [\"python\", \"/app/app.py\"]
                 resource_group,
                 "--name",
                 deployment_name,
-                "--tail",
-                "100",
             ]
         )
 
