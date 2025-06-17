@@ -144,10 +144,10 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
     )
 
 
-@cli.command()
+@cli.command(name="list")
 @click.option("--name", help="Filter by deployment name", required=False)
 @click.pass_context
-def list(ctx: click.Context, name: Optional[str]):  # noqa: D401
+def list_cmd(ctx: click.Context, name: Optional[str]):  # noqa: D401
     """List active deployments on the chosen provider."""
     provider: Provider = ctx.obj["provider"]
     provider.list(name_filter=name)

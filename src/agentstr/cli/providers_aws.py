@@ -89,7 +89,7 @@ class AWSProvider(Provider):  # noqa: D401
                 pass
         return role["Arn"]
 
-    def _ensure_task_roles(self):  # noqa: D401
+    def _ensure_task_roles(self, *, secret_arns: list[str] | None = None):  # noqa: D401
         assume_policy_dict = {
             "Version": "2012-10-17",
             "Statement": [
@@ -105,7 +105,30 @@ class AWSProvider(Provider):  # noqa: D401
             assume_policy=json.dumps(assume_policy_dict),
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
-        task_role_arn = exec_role_arn  # for now reuse; could create separate
+
+        # Ensure the same role (or separate task role) has permission to GetSecretValue
+        if secret_arns:
+            policy_name = "AgentstrSecretsAccess"
+            stmt = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": ["secretsmanager:GetSecretValue"],
+                        "Resource": secret_arns,
+                    }
+                ],
+            }
+            try:
+                self.iam.put_role_policy(
+                    RoleName=self.TASK_EXEC_ROLE_NAME,
+                    PolicyName=policy_name,
+                    PolicyDocument=json.dumps(stmt),
+                )
+            except self.iam.exceptions.MalformedPolicyDocumentException as exc:  # pragma: no cover
+                click.echo(f"Failed attaching secret policy: {exc}", err=True)
+
+        task_role_arn = exec_role_arn
         return task_role_arn, exec_role_arn
 
     # ECS network --------------------------------------------------------
@@ -178,10 +201,12 @@ CMD [\"python\", \"/app/app.py\"]
         exec_role_arn: str,
         task_role_arn: str,
         env_vars: Dict[str, str],
+        secrets: Dict[str, str],
         cpu: int,
         memory: int,
     ) -> str:  # noqa: D401
         env_list = [{"name": k, "value": v} for k, v in env_vars.items()]
+        secret_list = [{"name": k, "valueFrom": v} for k, v in secrets.items()]
         container_def = {
             "name": deployment_name,
             "image": image_uri,
@@ -189,6 +214,7 @@ CMD [\"python\", \"/app/app.py\"]
             "memory": memory,
             "cpu": cpu,
             "environment": env_list,
+            "secrets": secret_list,
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -242,7 +268,6 @@ CMD [\"python\", \"/app/app.py\"]
                     "awsvpcConfiguration": {
                         "subnets": subnet_ids,
                         "securityGroups": sg_ids,
-                        "assignPublicIp": "ENABLED",
                     }
                 },
             )
@@ -295,7 +320,6 @@ CMD [\"python\", \"/app/app.py\"]
         click.echo(
             f"[AWS] Deploying {file_path} as '{deployment_name}' (cpu={cpu}, memory={memory}, deps={dependencies}) ..."
         )
-        combined_env = {**env, **secrets}
         image_uri = self._build_and_push_image(file_path, deployment_name, dependencies)
         cluster_arn = self._ensure_cluster()
         task_role_arn, exec_role_arn = self._ensure_task_roles()
@@ -304,7 +328,8 @@ CMD [\"python\", \"/app/app.py\"]
             image_uri,
             exec_role_arn,
             task_role_arn,
-            combined_env,
+            env,
+            secrets,
             cpu,
             memory,
         )

@@ -19,6 +19,6 @@ env:
   NOSTR_RELAYS: >
     wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
-secrets:                          # plaintext here or reference a Key Vault secret URI
-  EXAMPLE_MCP_SERVER_NSEC: nsec1rcskcnejy8k65jhxkpva9lcqln9eyw2r50auwd7a0kydy47azpwss25v24
-  MCP_SERVER_NWC_CONN_STR: nostr+walletconnect://aa179666fd6aa18def568acf6f9fa7d39195
+secrets:                          # Key Vault secret URIs
+  EXAMPLE_MCP_SERVER_NSEC: https://agentstr-kv.vault.azure.net/secrets/EXAMPLE-MCP-SERVER-NSEC
+  MCP_SERVER_NWC_CONN_STR: https://agentstr-kv.vault.azure.net/secrets/MCP-SERVER-NWC-CONN-STR
