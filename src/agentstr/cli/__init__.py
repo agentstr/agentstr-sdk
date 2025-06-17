@@ -113,12 +113,12 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
     _parse_kv(secret, "--secret", secrets_dict)
     _parse_kv(env, "--env", env_dict)
 
-    deps = list(cfg.get("image", {}).get("extra_pip_deps", []))
+    deps = list(cfg.get("extra_pip_deps", []))
     if dependency:
         deps.extend(dependency)
 
     if cpu is None:
-        cpu = cfg.get(provider.name, {}).get("cpu") or cfg.get("cpu")
+        cpu = cfg.get("cpu")
     if cpu is None:
         if provider.name == "aws":
             cpu = 256
@@ -130,7 +130,7 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
 
 
     if memory == 512:  # default flag value, check config override
-        memory = cfg.get(provider.name, {}).get("memory") or cfg.get("memory", memory)
+        memory = cfg.get("memory", memory)
 
     deployment_name = name or cfg.get("name") or file_path.stem
     provider.deploy(

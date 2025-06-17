@@ -89,7 +89,9 @@ class AWSProvider(Provider):  # noqa: D401
                 pass
         return role["Arn"]
 
-    def _ensure_task_roles(self, *, secret_arns: list[str] | None = None):  # noqa: D401
+    def _ensure_task_roles(self, *, deployment_name: str, secret_arns: list[str] | None = None):  # noqa: D401
+        # Create a unique task role per deployment for least-privilege secrets access
+        role_name = f"agentstrEcsTaskRole-{deployment_name}"
         assume_policy_dict = {
             "Version": "2012-10-17",
             "Statement": [
@@ -100,13 +102,19 @@ class AWSProvider(Provider):  # noqa: D401
                 }
             ],
         }
+        # Always attach the basic ECS execution role to the execution role
         exec_role_arn = self._ensure_role(
             self.TASK_EXEC_ROLE_NAME,
             assume_policy=json.dumps(assume_policy_dict),
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
 
-        # Ensure the same role (or separate task role) has permission to GetSecretValue
+        # Task role: unique per deployment, only gets secrets for this service
+        task_role_arn = self._ensure_role(
+            role_name,
+            assume_policy=json.dumps(assume_policy_dict),
+            policies=[],  # Attach inline below
+        )
         if secret_arns:
             policy_name = "AgentstrSecretsAccess"
             stmt = {
@@ -115,20 +123,18 @@ class AWSProvider(Provider):  # noqa: D401
                     {
                         "Effect": "Allow",
                         "Action": ["secretsmanager:GetSecretValue"],
-                        "Resource": secret_arns,
+                        "Resource": [f"{secret}-??????" for secret in secret_arns],
                     }
                 ],
             }
             try:
                 self.iam.put_role_policy(
-                    RoleName=self.TASK_EXEC_ROLE_NAME,
+                    RoleName=role_name,
                     PolicyName=policy_name,
                     PolicyDocument=json.dumps(stmt),
                 )
             except self.iam.exceptions.MalformedPolicyDocumentException as exc:  # pragma: no cover
                 click.echo(f"Failed attaching secret policy: {exc}", err=True)
-
-        task_role_arn = exec_role_arn
         return task_role_arn, exec_role_arn
 
     # ECS network --------------------------------------------------------
@@ -301,8 +307,20 @@ CMD [\"python\", \"/app/app.py\"]
                 # Service not found – create new
                 _create()
             else:
-                click.echo("Service already exists; deleting and recreating ...")
-                _recreate()
+                svc = services[0]
+                status = svc.get("status")
+                if status != "ACTIVE":
+                    click.echo(f"Service exists but is not ACTIVE (status={status}); deleting and recreating ...")
+                    _recreate()
+                else:
+                    # Update service in-place to use new task definition
+                    click.echo("Service already exists and is ACTIVE; updating in place ...")
+                    self.ecs.update_service(
+                        cluster=self.CLUSTER_NAME,
+                        service=deployment_name,
+                        taskDefinition=task_def_arn,
+                        desiredCount=1,
+                    )
         except self.ecs.exceptions.ServiceNotFoundException:
             _create()
         return
@@ -322,7 +340,9 @@ CMD [\"python\", \"/app/app.py\"]
         )
         image_uri = self._build_and_push_image(file_path, deployment_name, dependencies)
         cluster_arn = self._ensure_cluster()
-        task_role_arn, exec_role_arn = self._ensure_task_roles()
+        # Only pass ARNs that look like SecretsManager ARNs
+        secret_arns = [v for v in secrets.values() if v.startswith("arn:aws:secretsmanager:")]
+        task_role_arn, exec_role_arn = self._ensure_task_roles(deployment_name=deployment_name, secret_arns=secret_arns)
         task_def_arn = self._register_task_definition(
             deployment_name,
             image_uri,

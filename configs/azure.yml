@@ -1,23 +1,11 @@
 # Sample Azure configuration for agentstr CLI (Azure Container Instances)
 provider: azure
 
-azure:
-  subscription_id: c74e33bd-a84b-42e0-8993-ebc4cfbb76a3  # replace with your subscription ID
-  region: eastus
-  resource_group: agentstr-rg
-  acr_name: agentstr              # Azure Container Registry (must exist or will be created)
-  cpu: 1                          # integer cores (ACI requirement)
-  memory_gb: 0.5                  # GB
-  restart_policy: OnFailure
+extra_pip_deps:  # additional Python deps installed in image
+  - agentstr-sdk
 
-image:
-  repository: mcp-server
-  build_context: .
-  extra_pip_deps: []
-
-env:
-  NOSTR_RELAYS: >
-    wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+env:  # environment variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
 secrets:                          # Key Vault secret URIs
   EXAMPLE_MCP_SERVER_NSEC: https://agentstr-kv.vault.azure.net/secrets/EXAMPLE-MCP-SERVER-NSEC
