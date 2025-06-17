@@ -10,6 +10,7 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Examples](#examples)
+- [Agentstr CLI](#agentstr-cli)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -101,6 +102,65 @@ uv run examples/nostr_dspy_agent.py
 - Never commit your private keys or sensitive information to version control
 - Use environment variables or a secure secret management system
 - The `.env.sample` file shows the required configuration structure
+
+## Agentstr CLI
+
+`agentstr` is a lightweight command-line tool for deploying your Python agent to cloud providers with zero configuration.
+
+### Installation
+The CLI is installed automatically with the **`agentstr-sdk[all]`** extra:
+```bash
+uv add agentstr-sdk[all]  # or: pip install "agentstr-sdk[all]"
+```
+This places an `agentstr` executable on your `$PATH`.
+
+### Global options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--provider` [aws\|gcp\|azure] | Target cloud provider. | value of `AGENTSTR_PROVIDER` env var, or `aws` |
+| `-h, --help` | Show help for any command. | – |
+
+You can avoid passing `--provider` every time by exporting:
+```bash
+export AGENTSTR_PROVIDER=aws  # or gcp / azure
+```
+
+### Commands
+| Command | Purpose |
+|---------|---------|
+| `deploy <app.py>` | Build Docker image, push and deploy your `app.py` as a container task/service. |
+| `list` | List existing deployments for the selected provider. |
+| `logs <name>` | Stream recent logs from the deployment. |
+| `destroy <name>` | Tear down the deployment/service. |
+
+#### `deploy` options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--name <string>`          | Override deployment name (defaults to filename without extension). | `<app>` |
+| `--cpu <int>`              | CPU units (AWS) / cores (GCP). | `256` (AWS) / `1` (GCP) |
+| `--memory <int>`           | MiB (AWS) / MiB (GCP). | `512` |
+| `--env KEY=VAL` (repeat)   | Add environment variables passed to container. | – |
+| `--pip <package>` (repeat) | Extra Python dependencies installed into the image. | – |
+| `--secret KEY=VAL` (repeat)| Secrets, merged with `--env` but shown separately in logs. | – |
+
+#### Examples
+```bash
+# Deploy an agent with extra deps and environment variables to AWS (default)
+agentstr deploy my_agent.py \
+    --env OPENAI_API_KEY=$OPENAI_API_KEY \
+    --pip openai langchain
+
+# Change provider per-command
+agentstr deploy bot.py --provider gcp --cpu 2 --memory 1024
+
+# View logs
+agentstr logs bot
+
+# Destroy
+agentstr destroy bot
+```
+
+---
 
 ## Contributing
 

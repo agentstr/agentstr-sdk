@@ -32,9 +32,28 @@ class Author(BaseModel):
 
 class NostrRAG:
     """Retrieval-Augmented Generation (RAG) system for Nostr events.
-    
+
     This class fetches Nostr events, builds a vector store knowledge base, and enables
     semantic search and question answering over the indexed content.
+
+    Examples
+    --------
+    Simple question answering over recent posts::
+
+        import asyncio
+        from langchain_openai import ChatOpenAI
+        from agentstr import NostrRAG
+
+        relays = ["wss://relay.damus.io"]
+        rag = NostrRAG(relays=relays, llm=ChatOpenAI(model_name="gpt-3.5-turbo"))
+
+        async def main():
+            answer = await rag.query(question="What's new with Bitcoin?", limit=8)
+            print(answer)
+
+        asyncio.run(main())
+
+    Full runnable script: `rag.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/rag.py>`_
     """
     def __init__(self, nostr_client: NostrClient | None = None, vector_store=None, relays: list[str] | None = None,
                  private_key: str | None = None, nwc_str: str | None = None, embeddings=None, llm=None, llm_model_name=None, llm_base_url=None, llm_api_key=None,

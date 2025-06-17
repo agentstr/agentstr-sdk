@@ -20,6 +20,7 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
    :caption: Contents:
 
    agentstr
+   agentstr.cli
 
 Indices and tables
 ==================

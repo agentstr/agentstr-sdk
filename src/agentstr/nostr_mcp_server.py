@@ -48,6 +48,28 @@ class NostrMCPServer:
 
     Registers and manages tools that can be called by clients via direct messages,
     with optional payment requirements handled through NWC.
+
+    Examples
+    --------
+    Minimal MCP server exposing a single ``add`` tool::
+
+        import asyncio
+        from agentstr import NostrMCPServer
+
+        relays = ["wss://relay.damus.io"]
+
+        async def add(a: int, b: int) -> int:
+            return a + b
+
+        server = NostrMCPServer(
+            display_name="Demo MCP",
+            relays=relays,
+            tools=[add],
+        )
+
+        asyncio.run(server.start())
+
+    Full runnable script: `mcp_server.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/mcp_server.py>`_
     """
     def __init__(self, display_name: str, nostr_client: NostrClient | None = None,
                  relays: list[str] | None = None, private_key: str | None = None, nwc_str: str | None = None,

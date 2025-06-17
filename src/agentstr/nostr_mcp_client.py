@@ -14,6 +14,30 @@ class NostrMCPClient:
     """Client for interacting with Model Context Protocol (MCP) servers on Nostr.
 
     Discovers and calls tools from MCP servers, handling payments via NWC when needed.
+
+    Examples
+    --------
+    Basic usage demonstrating listing tools and calling one::
+
+        import asyncio
+        from agentstr import NostrMCPClient
+
+        relays = ["wss://relay.damus.io"]
+        mcp_client = NostrMCPClient(
+            mcp_pubkey="npub1example...",  # MCP server pubkey
+            relays=relays,
+            private_key="nsec1example...",  # your private key
+        )
+
+        async def main():
+            tools = await mcp_client.list_tools()
+            print("Available tools:", tools)
+            result = await mcp_client.call_tool("add", {"a": 1, "b": 2})
+            print("1 + 2 =", result)
+
+        asyncio.run(main())
+
+    Full runnable script: `mcp_client.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/mcp_client.py>`_
     """
     def __init__(self, mcp_pubkey: str, nostr_client: NostrClient | None = None,
                  relays: list[str] | None = None, private_key: str | None = None, nwc_str: str | None = None):

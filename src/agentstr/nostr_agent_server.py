@@ -26,6 +26,38 @@ class NostrAgentServer:
     """Server that integrates an external agent with the Nostr network.
 
     Handles direct messages and optional payments, routing them to an external agent.
+
+    Examples
+    --------
+    Minimal server wiring an LLM agent (see full script)::
+
+        import asyncio
+        from langchain_openai import ChatOpenAI
+        from agentstr import NostrAgentServer, NostrMCPClient, ChatInput
+
+        relays = ["wss://relay.damus.io"]
+        mcp_client = NostrMCPClient(
+            mcp_pubkey="npub1example...",
+            relays=relays,
+            private_key="nsec1example...",
+        )
+
+        llm = ChatOpenAI(model_name="gpt-3.5-turbo")
+
+        async def agent_callable(input: ChatInput) -> str:
+            result = await llm.ainvoke(
+                {"messages": [{"role": "user", "content": input.messages[-1]}]},
+            )
+            return result["messages"][-1].content
+
+        server = NostrAgentServer(
+            nostr_mcp_client=mcp_client,
+            agent_callable=agent_callable,
+        )
+
+        asyncio.run(server.start())
+
+    Full runnable example: `nostr_langgraph_agent.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/nostr_langgraph_agent.py>`_
     """
     def __init__(self,
                  nostr_client: NostrClient | None = None,
