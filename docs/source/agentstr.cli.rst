@@ -126,9 +126,11 @@ Examples
 
 .. code-block:: bash
   
-   # Deploy an agent with extra deps and environment variables to AWS (default)
+   # Deploy an agent with extra deps and environment variables to AWS
    agentstr deploy my_agent.py \
-       --env OPENAI_API_KEY=$OPENAI_API_KEY \
+       --provider aws \
+       --env RELAYS=$RELAYS \
+       --secret MY_AGENT_NOSTR_NSEC=$MY_AGENT_NOSTR_NSEC \
        --pip openai langchain
 
    # Upsert secrets from .env file

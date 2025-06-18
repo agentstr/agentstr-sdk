@@ -151,7 +151,9 @@ agentstr deploy my_app.py --config configs/azure.yml
 AGENTSTR_CONFIG=configs/azure.yml agentstr deploy my_app.py
 ```
 
-#### Sample configs
+#### Sample configs  
+Sample YAML files live in the [`configs/`](configs) folder: [aws.yml](configs/aws.yml), [gcp.yml](configs/gcp.yml) and [azure.yml](configs/azure.yml).
+
 ```yaml
 # configs/aws.yml
 provider: aws
@@ -204,12 +206,17 @@ secrets:
 
 #### Examples (with config files)
 ```bash
-# Deploy an agent with extra deps and environment variables to AWS (default)
+# Deploy an agent with extra deps and environment variables to AWS
 agentstr deploy my_agent.py \
-    --env OPENAI_API_KEY=$OPENAI_API_KEY \
+    --provider aws \
+    --env RELAYS=$RELAYS \
+    --secret MY_AGENT_NOSTR_NSEC=$MY_AGENT_NOSTR_NSEC \
     --pip openai langchain
 
-# Change provider per-command
+# Upsert secrets from .env file
+agentstr put-secrets path/to/.env
+
+# Change provider per command
 agentstr deploy bot.py --provider gcp --cpu 2 --memory 1024
 
 # View logs
