@@ -155,9 +155,9 @@ secrets:
 provider: gcp
 file_path: examples/mcp_server.py
 env:
-  PROJECT_ID: my-gcp-project
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io
 secrets:
-  OPENAI_KEY: projects/123/secrets/OPENAI_KEY/versions/latest
+  EXAMPLE_MCP_SERVER_NSEC: projects/123/secrets/EXAMPLE_MCP_SERVER_NSEC/versions/latest
 ```
 
 ```yaml
@@ -165,9 +165,9 @@ secrets:
 provider: azure
 file_path: examples/mcp_server.py
 env:
-  AZURE_REGION: eastus
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io
 secrets:
-  MCP_SERVER_NSEC: https://myvault.vault.azure.net/secrets/MCP_SERVER_NSEC
+  EXAMPLE_MCP_SERVER_NSEC: https://myvault.vault.azure.net/secrets/EXAMPLE_MCP_SERVER_NSEC
 ```
 
 ### Commands
