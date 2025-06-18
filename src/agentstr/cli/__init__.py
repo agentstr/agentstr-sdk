@@ -22,19 +22,36 @@ import click
 
 from .providers import get_provider, Provider
 
+
+def _get_provider(ctx: click.Context, cfg: Dict[str, Any] | None = None) -> Provider:  # noqa: D401
+    """Return Provider instance from ctx or config, else error."""
+    prov: Provider | None = ctx.obj.get("provider")
+    if prov is not None:
+        return prov
+    prov_name: str | None = None
+    if cfg:
+        prov_name = cfg.get("provider")
+    if not prov_name:
+        raise click.ClickException(
+            "Provider not specified. Use --provider flag, $AGENTSTR_PROVIDER env, or set 'provider' in the config file."
+        )
+    prov = get_provider(str(prov_name).lower())
+    ctx.obj["provider"] = prov
+    return prov
+
 DEFAULT_PROVIDER_ENV = "AGENTSTR_PROVIDER"
 PROVIDER_CHOICES = ["aws", "gcp", "azure"]
 
 
 def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optional[str]):  # noqa: D401
-    """Callback to resolve provider from flag or env var."""
+    """Resolve provider from flag or env; may return None to allow config fallback."""
     if value:
         return value
     env_val = os.getenv(DEFAULT_PROVIDER_ENV)
     if env_val:
         return env_val
-    # Fallback default
-    return "aws"
+    # Defer error until after config is loaded
+    return None
 
 
 def _load_config(ctx: click.Context, config_path: Path | None) -> Dict[str, Any]:
@@ -58,11 +75,12 @@ def _load_config(ctx: click.Context, config_path: Path | None) -> Dict[str, Any]
     is_eager=True,
 )
 @click.pass_context
-def cli(ctx: click.Context, provider: str):  # noqa: D401
+def cli(ctx: click.Context, provider: Optional[str]):  # noqa: D401
     """agentstr-cli – lightweight cli for deploying agentstr apps to cloud providers."""
     ctx.ensure_object(dict)
-    ctx.obj["provider_name"] = provider.lower()
-    ctx.obj["provider"] = get_provider(provider.lower())
+    if provider is not None:
+        ctx.obj["provider_name"] = provider.lower()
+        ctx.obj["provider"] = get_provider(provider.lower())
 
 
 
@@ -100,7 +118,7 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
             raise click.ClickException(f"Failed to parse config YAML: {exc}")
     else:
         cfg = ctx.obj.get("config", {})
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     secrets_dict: dict[str, str] = dict(cfg.get("secrets", {}))
     env_dict: dict[str, str] = dict(cfg.get("env", {}))
 
@@ -167,7 +185,7 @@ def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # n
             cfg = yaml.safe_load(config.read_text()) or {}
         except Exception as exc:
             raise click.ClickException(f"Failed to parse config YAML: {exc}")
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     provider.list(name_filter=name)
 
 
@@ -183,7 +201,7 @@ def logs(ctx: click.Context, name: str, config: Path | None):  # noqa: D401
             _ = yaml.safe_load(config.read_text()) or {}
         except Exception as exc:
             raise click.ClickException(f"Failed to parse config YAML: {exc}")
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     provider.logs(name)
 
 
@@ -208,7 +226,7 @@ def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | N
     if value is None:
         click.echo("Either VALUE argument or --value-file must be supplied.", err=True)
         sys.exit(1)
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     ref = provider.put_secret(key, value)
     click.echo(ref)
 
@@ -229,7 +247,7 @@ def put_secrets(ctx: click.Context, env_file: Path, config: Path | None):  # noq
             _ = yaml.safe_load(config.read_text()) or {}
         except Exception as exc:
             raise click.ClickException(f"Failed to parse config YAML: {exc}")
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     count = 0
     for raw_line in Path(env_file).read_text().splitlines():
         line = raw_line.strip()
@@ -265,7 +283,7 @@ def destroy(ctx: click.Context, name: str | None, config: Path | None):  # noqa:
                 name = Path(file_path).stem
         if not name:
             raise click.ClickException("You must provide a deployment NAME, set 'name', or set 'file_path' in the config file.")
-    provider: Provider = ctx.obj["provider"]
+    provider = _get_provider(ctx, cfg)
     provider.destroy(name)
 
 

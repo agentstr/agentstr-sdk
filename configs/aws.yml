@@ -10,5 +10,5 @@ env:  # environment variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
 secrets:  # ARNs of AWS Secrets Manager entries
-  EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:529710252048:secret:EXAMPLE_MCP_SERVER_NSEC-gVgFWk
-  MCP_SERVER_NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:529710252048:secret:MCP_SERVER_NWC_CONN_STR-c2kTeK
+  EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:529710252048:secret:EXAMPLE_MCP_SERVER_NSEC
+  MCP_SERVER_NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:529710252048:secret:MCP_SERVER_NWC_CONN_STR

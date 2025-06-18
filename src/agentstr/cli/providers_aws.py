@@ -120,7 +120,7 @@ class AWSProvider(Provider):  # noqa: D401
                     {
                         "Effect": "Allow",
                         "Action": ["secretsmanager:GetSecretValue"],
-                        "Resource": secret_arns,
+                        "Resource": [f"{secret}-??????" for secret in secret_arns],
                     },
                     {
                         "Effect": "Allow",

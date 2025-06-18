@@ -8,7 +8,7 @@ import os
 import uuid
 import tempfile
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set
 
 import click
 
@@ -54,6 +54,41 @@ class AzureProvider(Provider):  # noqa: D401
         proc.wait()
         if proc.returncode != 0:
             raise click.ClickException(f"Command {' '.join(cmd)} failed with code {proc.returncode}")
+
+    def _ensure_identity(self, resource_group: str, region: str, identity_name: str):  # noqa: D401
+        """Ensure a user-assigned managed identity exists and return its resource ID and principalId."""
+        import json as _json, subprocess as _sp
+        show_cmd = [
+            "az",
+            "identity",
+            "show",
+            "--name",
+            identity_name,
+            "--resource-group",
+            resource_group,
+            "-o",
+            "json",
+        ]
+        res = _sp.run(show_cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            data = _json.loads(res.stdout)
+        else:
+            click.echo(f"Creating managed identity '{identity_name}' ...")
+            out = _sp.check_output([
+                "az",
+                "identity",
+                "create",
+                "--name",
+                identity_name,
+                "--resource-group",
+                resource_group,
+                "--location",
+                region,
+                "-o",
+                "json",
+            ], text=True)
+            data = _json.loads(out)
+        return data["id"], data["principalId"]
 
     def _check_prereqs(self):  # noqa: D401
         if not shutil.which("az"):
@@ -199,6 +234,63 @@ CMD [\"python\", \"/app/app.py\"]
         login_server = self._ensure_acr(resource_group, region)
         image_uri = self._build_and_push_image(file_path, deployment_name, dependencies, login_server)
 
+        # ------------------------------------------------------------------
+        # Managed Identity & Key Vault access
+        # ------------------------------------------------------------------
+        identity_name = f"agentstr-{deployment_name}-id".replace("_", "-")
+        identity_id, principal_id = self._ensure_identity(resource_group, region, identity_name)
+
+        # Grant KV access if needed
+        vault_names: Set[str] = set()
+        for val in secrets.values():
+            if val.startswith("https://") and ".vault.azure.net/" in val:
+                host = val.split("/")[2]  # vaultname.vault.azure.net
+                vault_names.add(host.split(".")[0])
+        for vault in vault_names:
+            import subprocess as _sp, json as _json
+            click.echo(f"Granting secret access on Key Vault '{vault}' to managed identity ...")
+            # First try traditional access policy (works when RBAC not enabled)
+            res = _sp.run([
+                "az",
+                "keyvault",
+                "set-policy",
+                "--name",
+                vault,
+                "--object-id",
+                principal_id,
+                "--secret-permissions",
+                "get",
+                "list",
+            ], capture_output=True, text=True)
+            if res.returncode != 0 and "--enable-rbac-authorization" in res.stderr:
+                # Vault uses RBAC – assign Key Vault Secrets User role
+                vault_id = _json.loads(_sp.check_output([
+                    "az",
+                    "keyvault",
+                    "show",
+                    "--name",
+                    vault,
+                    "-o",
+                    "json",
+                ], text=True))["id"]
+                click.echo("Vault uses RBAC; assigning 'Key Vault Secrets User' role ...")
+                self._run_cmd([
+                    "az",
+                    "role",
+                    "assignment",
+                    "create",
+                    "--assignee-object-id",
+                    principal_id,
+                    "--role",
+                    "Key Vault Secrets User",
+                    "--scope",
+                    vault_id,
+                ])
+            elif res.returncode != 0:
+                # Other error
+                click.echo(res.stderr, err=True)
+                raise click.ClickException("Failed to grant Key Vault access")
+
         # Prepare environment variables args
         combined_env = {**env_vars, **secrets}
         env_cli_args: List[str] = []
@@ -250,7 +342,10 @@ CMD [\"python\", \"/app/app.py\"]
             env_user,
             "--registry-password",
             env_pass,
+            "--assign-identity",
+            identity_id,
         ] + env_cli_args
+
         self._run_cmd(create_cmd)
         click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
 
