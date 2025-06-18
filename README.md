@@ -117,7 +117,7 @@ This places an `agentstr` executable on your `$PATH`.
 ### Global options
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--provider` [aws\|gcp\|azure] | Target cloud provider. | value of `AGENTSTR_PROVIDER` env var, or `aws` |
+| `--provider` [aws\|gcp\|azure] | Target cloud provider. | value of `AGENTSTR_PROVIDER` env var, or the provider specified in the config file |
 | `-f, --config <path>` | YAML config file. Can also set `AGENTSTR_CONFIG`. | – |
 | `-h, --help` | Show help for any command. | – |
 

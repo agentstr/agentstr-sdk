@@ -27,16 +27,22 @@ Global options
      - Default
    * - ``--provider`` ``aws|gcp|azure``
      - Target cloud provider.
-     - ``AGENTSTR_PROVIDER`` env-var, otherwise ``aws``
+     - ``AGENTSTR_PROVIDER`` env-var, otherwise inferred from config or ``aws``
+   * - ``-f``, ``--config`` *PATH*
+     - YAML config file (can also use ``AGENTSTR_CONFIG``).
+     - –
    * - ``-h``, ``--help``
      - Show contextual help.
      - –
 
-To avoid passing ``--provider`` every time:
+If your YAML config contains a top-level ``provider:`` key, the CLI will automatically infer the cloud, so you normally only need to reference the config file.
+
+To avoid passing flags every time, you can export environment variables:
 
 .. code-block:: bash
 
-   export AGENTSTR_PROVIDER=gcp
+   export AGENTSTR_PROVIDER=gcp  # optional when provider in config
+export AGENTSTR_CONFIG=configs/gcp.yml
 
 Commands
 --------
@@ -48,6 +54,8 @@ Commands
      - Purpose
    * - ``deploy <app.py>``
      - Build Docker image, push and deploy *app.py* as a container service.
+   * - ``put-secret <key> <value>``
+     - Create or update a single secret and print its reference.
    * - ``put-secrets <env_file>``
      - Create or update multiple secrets from a .env file.
    * - ``list``
@@ -70,8 +78,8 @@ Commands
      - Override deployment name (defaults to filename stem).
      - ``<app>``
    * - ``--cpu`` *INT*
-     - CPU units (AWS) / cores (GCP).
-     - ``256`` (AWS) / ``0.25`` (GCP)
+     - CPU units (AWS) / cores (GCP/Azure).
+     - ``256`` (AWS) / ``0.25`` (GCP/Azure)
    * - ``--memory`` *INT*
      - Memory in MiB.
      - ``512``
@@ -84,6 +92,16 @@ Commands
    * - ``--secret`` *KEY=VAL* (repeat)
      - Secrets (merged with ``--env`` but hidden from logs).
      - –
+
+Config files
+~~~~~~~~~~~~
+A YAML file lets you declare most options once and reuse them across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
+
+.. code-block:: bash
+
+   agentstr -f configs/azure.yml deploy my_app.py
+   agentstr deploy my_app.py --config configs/azure.yml
+   AGENTSTR_CONFIG=configs/azure.yml agentstr deploy my_app.py
 
 Examples
 ~~~~~~~~
