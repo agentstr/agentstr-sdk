@@ -396,6 +396,9 @@ CMD [\"python\", \"/app/app.py\"]
                 },
             },
         }
+        # Delete previous deployment if it exists
+        delete_cmd = ["kubectl", "delete", "deployment", deployment_name]
+        self._run_cmd(delete_cmd)
         # Apply manifests via kubectl – include secrets first
         manifest = yaml.safe_dump_all(secret_manifests + [deployment_yaml])
         apply_cmd = ["kubectl", "apply", "-f", "-"]
