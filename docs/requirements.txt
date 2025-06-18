@@ -1,0 +1,1 @@
+agentstr-sdk[all] --dev --upgrade
