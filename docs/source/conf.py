@@ -52,6 +52,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "furo"
 html_title = "Agentstr SDK"
 html_static_path = ["_static"]
+# Use the same favicon for all pages
+html_favicon = "_static/favicon.ico"
 html_theme_options = {
     "light_logo": "favicon.ico",
     "dark_logo": "favicon.ico",
