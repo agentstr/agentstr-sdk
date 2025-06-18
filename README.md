@@ -184,8 +184,8 @@ secrets:
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--name <string>`          | Override deployment name (defaults to filename without extension). | `<app>` |
-| `--cpu <int>`              | CPU units (AWS) / cores (GCP). | `256` (AWS) / `1` (GCP) |
-| `--memory <int>`           | MiB (AWS) / MiB (GCP). | `512` |
+| `--cpu <int>`              | CPU units (AWS) / cores (GCP/Azure). | `256` (AWS) / `1` (GCP/Azure) |
+| `--memory <int>`           | MiB (AWS) / MiB (GCP/Azure). | `512` |
 | `--env KEY=VAL` (repeat)   | Add environment variables passed to container. | – |
 | `--pip <package>` (repeat) | Extra Python dependencies installed into the image. | – |
 | `--secret KEY=VAL` (repeat)| Secrets, merged with `--env` but shown separately in logs. | – |
