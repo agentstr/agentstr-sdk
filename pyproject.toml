@@ -1,6 +1,6 @@
 [project]
 name = "agentstr-sdk"
-version = "0.4.2"
+version = "0.4.3"
 description = "Python SDK for building decentralized agentic applications on Nostr."
 requires-python = ">=3.10"
 classifiers = [
