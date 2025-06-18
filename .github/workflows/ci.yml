@@ -27,18 +27,18 @@ jobs:
       - name: Bump patch version
         run: python .github/scripts/bump_patch.py
 
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Build
+        run: uv build
+
       - name: Commit bumped version
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(release): bump patch version [skip ci]"
           token: ${{ secrets.GITHUB_TOKEN }}
           file_pattern: pyproject.toml
-
-      - name: Install the project
-        run: uv sync --all-extras --dev
-
-      - name: Build
-        run: uv build
 
       - name: Publish to PyPI
         run: uv publish
