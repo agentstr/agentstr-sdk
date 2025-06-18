@@ -4,7 +4,7 @@ provider: gcp
 file_path: examples/mcp_server.py
 
 extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk[dspy]
+  - agentstr-sdk==0.4.1
 
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom

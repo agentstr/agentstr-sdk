@@ -107,6 +107,18 @@ uv run examples/nostr_dspy_agent.py
 
 A lightweight command-line tool for deploying Agentstr agents to cloud providers with minimal configuration.
 
+### Prerequisites
+
+You need Docker installed and running for *all* providers.
+
+| Provider | Required CLI tools | Environment variables |
+|----------|-------------------|------------------------|
+| AWS | `aws` | `AWS_PROFILE` (named profile) *or* standard `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars |
+| GCP | `gcloud`, `kubectl` | `GCP_PROJECT` (ID of your GCP project) |
+| Azure | `az` | `AZURE_SUBSCRIPTION_ID` (GUID of target subscription) |
+
+Make sure the CLI tools are authenticated against the target account/subscription/project and that Docker can push images to the registry used by each provider.
+
 ### Installation
 The CLI is installed automatically with the **`agentstr-sdk[cli]`** extra:
 ```bash
