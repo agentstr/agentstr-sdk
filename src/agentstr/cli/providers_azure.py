@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import subprocess
 import shutil
 import os
@@ -55,9 +56,40 @@ class AzureProvider(Provider):  # noqa: D401
         if proc.returncode != 0:
             raise click.ClickException(f"Command {' '.join(cmd)} failed with code {proc.returncode}")
 
+    def _ensure_log_workspace(self, resource_group: str, region: str):  # noqa: D401
+        """Ensure a Log Analytics workspace exists and return (workspace_id, key)."""
+
+        workspace_name = "agentstr-logs"
+        # Check exists
+        try:
+            out = subprocess.check_output([
+                "az", "monitor", "log-analytics", "workspace", "show",
+                "--resource-group", resource_group,
+                "--workspace-name", workspace_name,
+                "-o", "json"], text=True)
+            ws = json.loads(out)
+        except subprocess.CalledProcessError:
+            click.echo(f"Creating Log Analytics workspace '{workspace_name}' ...")
+            out = subprocess.check_output([
+                "az", "monitor", "log-analytics", "workspace", "create",
+                "--resource-group", resource_group,
+                "--workspace-name", workspace_name,
+                "--location", region,
+                "-o", "json"], text=True)
+            ws = json.loads(out)
+        # Azure Container Instances expects the Workspace *ID* (a GUID), not the full
+        # Azure resource ID path. The GUID is returned in the `customerId` field.
+        ws_id = ws["customerId"]
+        key_json = subprocess.check_output([
+            "az", "monitor", "log-analytics", "workspace", "get-shared-keys",
+            "--resource-group", resource_group,
+            "--workspace-name", workspace_name,
+            "-o", "json"], text=True)
+        ws_key = json.loads(key_json)["primarySharedKey"]
+        return ws_id, ws_key
+
     def _ensure_identity(self, resource_group: str, region: str, identity_name: str):  # noqa: D401
         """Ensure a user-assigned managed identity exists and return its resource ID and principalId."""
-        import json as _json, subprocess as _sp
         show_cmd = [
             "az",
             "identity",
@@ -69,12 +101,12 @@ class AzureProvider(Provider):  # noqa: D401
             "-o",
             "json",
         ]
-        res = _sp.run(show_cmd, capture_output=True, text=True)
+        res = subprocess.run(show_cmd, capture_output=True, text=True)
         if res.returncode == 0:
-            data = _json.loads(res.stdout)
+            data = json.loads(res.stdout)
         else:
             click.echo(f"Creating managed identity '{identity_name}' ...")
-            out = _sp.check_output([
+            out = subprocess.check_output([
                 "az",
                 "identity",
                 "create",
@@ -87,7 +119,7 @@ class AzureProvider(Provider):  # noqa: D401
                 "-o",
                 "json",
             ], text=True)
-            data = _json.loads(out)
+            data = json.loads(out)
         return data["id"], data["principalId"]
 
     def _check_prereqs(self):  # noqa: D401
@@ -168,9 +200,8 @@ class AzureProvider(Provider):  # noqa: D401
         if env_user and env_pass:
             self._run_cmd(["docker", "login", "-u", env_user, "-p", env_pass, login_server])
             return
-        import json, shlex, subprocess as sp
 
-        cred_json = sp.check_output(["az", "acr", "credential", "show", "--name", self.REGISTRY_NAME, "-o", "json"], text=True)
+        cred_json = subprocess.check_output(["az", "acr", "credential", "show", "--name", self.REGISTRY_NAME, "-o", "json"], text=True)
         cred = json.loads(cred_json)
         username = cred["username"]
         password = cred["passwords"][0]["value"]
@@ -232,6 +263,8 @@ CMD [\"python\", \"/app/app.py\"]
         _, region, resource_group = self._check_prereqs()
         self._ensure_resource_group(resource_group, region)
         login_server = self._ensure_acr(resource_group, region)
+        # Ensure log workspace
+        workspace_id, workspace_key = self._ensure_log_workspace(resource_group, region)
         image_uri = self._build_and_push_image(file_path, deployment_name, dependencies, login_server)
 
         # ------------------------------------------------------------------
@@ -240,69 +273,59 @@ CMD [\"python\", \"/app/app.py\"]
         identity_name = f"agentstr-{deployment_name}-id".replace("_", "-")
         identity_id, principal_id = self._ensure_identity(resource_group, region, identity_name)
 
-        # Grant KV access if needed
-        vault_names: Set[str] = set()
-        for val in secrets.values():
-            if val.startswith("https://") and ".vault.azure.net/" in val:
-                host = val.split("/")[2]  # vaultname.vault.azure.net
-                vault_names.add(host.split(".")[0])
-        for vault in vault_names:
-            import subprocess as _sp, json as _json
-            click.echo(f"Granting secret access on Key Vault '{vault}' to managed identity ...")
-            # First try traditional access policy (works when RBAC not enabled)
-            res = _sp.run([
-                "az",
-                "keyvault",
-                "set-policy",
-                "--name",
-                vault,
-                "--object-id",
-                principal_id,
-                "--secret-permissions",
-                "get",
-                "list",
-            ], capture_output=True, text=True)
-            if res.returncode != 0 and "--enable-rbac-authorization" in res.stderr:
-                # Vault uses RBAC – assign Key Vault Secrets User role
-                vault_id = _json.loads(_sp.check_output([
-                    "az",
-                    "keyvault",
-                    "show",
-                    "--name",
-                    vault,
-                    "-o",
-                    "json",
-                ], text=True))["id"]
-                click.echo("Vault uses RBAC; assigning 'Key Vault Secrets User' role ...")
-                self._run_cmd([
-                    "az",
-                    "role",
-                    "assignment",
-                    "create",
-                    "--assignee-object-id",
-                    principal_id,
-                    "--role",
-                    "Key Vault Secrets User",
-                    "--scope",
-                    vault_id,
-                ])
-            elif res.returncode != 0:
-                # Other error
-                click.echo(res.stderr, err=True)
-                raise click.ClickException("Failed to grant Key Vault access")
+        # ------------------------------------------------------------------
+        # Grant Key Vault access – restrict to only the referenced secrets.
+        # Requires Key Vault RBAC mode to be enabled; we will error otherwise.
+        # ------------------------------------------------------------------
+        from collections import defaultdict
+        vault_secrets: dict[str, set[str]] = defaultdict(set)
+        for env_key, uri in secrets.items():
+            if uri.startswith("https://") and ".vault.azure.net/" in uri:
+                parts = uri.split("/")
+                if len(parts) >= 5 and parts[3] == "secrets":
+                    host = parts[2]               # vaultname.vault.azure.net
+                    secret_name = parts[4]
+                    vault = host.split(".")[0]
+                    vault_secrets[vault].add(secret_name)
 
-        # Prepare environment variables args
-        combined_env = {**env_vars, **secrets}
-        env_cli_args: List[str] = []
-        if combined_env:
-            env_cli_args = ["--environment-variables"] + [f"{k}={v}" for k, v in combined_env.items()]
+        for vault, secret_names in vault_secrets.items():
+            click.echo(f"Granting access to secrets {', '.join(secret_names)} in vault '{vault}' ...")
+            vault_info = json.loads(subprocess.check_output([
+                "az", "keyvault", "show", "--name", vault, "-o", "json"], text=True))
+            if not vault_info.get("properties", {}).get("enableRbacAuthorization", False):
+                raise click.ClickException(
+                    f"Key Vault '{vault}' does not have RBAC enabled; cannot grant per-secret access. "
+                    "Enable RBAC or grant access manually."
+                )
+            vault_id = vault_info["id"]
+            for secret in secret_names:
+                scope = f"{vault_id}/secrets/{secret}"
+                self._run_cmd([
+                    "az", "role", "assignment", "create",
+                    "--assignee-object-id", principal_id,
+                    "--role", "Key Vault Secrets User",
+                    "--scope", scope,
+                ])
+
+        # Prepare environment + secret args following ACI syntax:
+        #   --secrets "alias=keyvaultref:<URI>,identityref:<ID>"  --environment-variables "ENV=secretref:alias"
+        env_pairs: List[str] = [f"{k}={v}" for k, v in env_vars.items()]
+        secret_pairs: List[str] = []
+        for k, uri in secrets.items():
+            alias = k.lower().replace("_", "-")
+            secret_pairs.append(f"{alias}=keyvaultref:{uri},identityref:{identity_id}")
+            env_pairs.append(f"{k}=secretref:{alias}")
+
+        env_cli_args: List[str] = ["--environment-variables"] + env_pairs if env_pairs else []
+        secret_cli_args: List[str] = ["--secrets"] + secret_pairs if secret_pairs else []
+        mount_args: List[str] = ["--secrets-mount-path", "/mnt/secrets"] if secret_pairs else []
+        log_args: List[str] = ["--log-analytics-workspace", workspace_id, "--log-analytics-workspace-key", workspace_key]
 
         # Retrieve registry credentials (reuse docker login helper)
         env_user = os.getenv("AZURE_ACR_USERNAME")
         env_pass = os.getenv("AZURE_ACR_PASSWORD")
         if not (env_user and env_pass):
-            import json, subprocess as sp
-            cred_json = sp.check_output([
+            cred_json = subprocess.check_output([
                 "az",
                 "acr",
                 "credential",
@@ -344,7 +367,7 @@ CMD [\"python\", \"/app/app.py\"]
             env_pass,
             "--assign-identity",
             identity_id,
-        ] + env_cli_args
+        ] + env_cli_args + secret_cli_args + mount_args + log_args
 
         self._run_cmd(create_cmd)
         click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
@@ -372,7 +395,6 @@ CMD [\"python\", \"/app/app.py\"]
 
     @_catch_exceptions
     def put_secret(self, name: str, value: str) -> str:  # noqa: D401
-        import json, subprocess as sp
         subscription_id, region, resource_group = self._check_prereqs()
         vault_name = os.getenv("AZURE_KEY_VAULT", "agentstr-kv")
         # Ensure vault exists
@@ -419,7 +441,7 @@ CMD [\"python\", \"/app/app.py\"]
             "-o",
             "json",
         ]
-        out = sp.check_output(set_cmd, text=True)
+        out = subprocess.check_output(set_cmd, text=True)
         uri = json.loads(out)["id"]
         click.echo(f"Secret '{name}' stored in Key Vault '{vault_name}'.")
         return uri

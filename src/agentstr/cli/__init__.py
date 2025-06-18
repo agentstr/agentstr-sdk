@@ -196,11 +196,7 @@ def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # n
 def logs(ctx: click.Context, name: str, config: Path | None):  # noqa: D401
     """Fetch logs for a deployment."""
     # Config load for future extensibility
-    if config is not None:
-        try:
-            _ = yaml.safe_load(config.read_text()) or {}
-        except Exception as exc:
-            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+    cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
     provider.logs(name)
 

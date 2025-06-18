@@ -50,6 +50,25 @@ class GCPProvider(Provider):  # noqa: D401
         if proc.returncode != 0:
             raise click.ClickException(f"Command {' '.join(cmd)} failed with code {proc.returncode}")
 
+    # ------------------------------------------------------------------
+    # Kubernetes manifest helper
+    # ------------------------------------------------------------------
+    def _apply_manifest(self, manifest_obj):  # noqa: D401
+        """Apply a Kubernetes YAML manifest (dict or list) via kubectl."""
+        # Accept single dict or list/iterator of docs
+        if isinstance(manifest_obj, list):
+            manifest_yaml = yaml.safe_dump_all(manifest_obj)
+        else:
+            manifest_yaml = yaml.safe_dump(manifest_obj)
+        apply_cmd = ["kubectl", "apply", "-f", "-"]
+        proc = subprocess.Popen(apply_cmd, stdin=subprocess.PIPE, text=True)
+        assert proc.stdin is not None
+        proc.stdin.write(manifest_yaml)
+        proc.stdin.close()
+        proc.wait()
+        if proc.returncode != 0:
+            raise click.ClickException("kubectl apply failed")
+
     def _ensure_ar_repo(self, repo: str, project: str, region: str):  # noqa: D401
         """Ensure Artifact Registry repository exists, create if missing."""
         # First, make sure Artifact Registry API is enabled (idempotent)
@@ -234,12 +253,54 @@ CMD [\"python\", \"/app/app.py\"]
             "--project",
             project,
         ])
-
     @_catch_exceptions
     def deploy(self, file_path: Path, deployment_name: str, *, secrets: Dict[str, str], **kwargs):  # noqa: D401
         deployment_name = deployment_name.replace("_", "-")
         env_vars = kwargs.get("env", {})
         dependencies = kwargs.get("dependencies", [])
+        project, region, zone = self._check_prereqs()
+
+        # ------------------------------------------------------------------
+        # Workload Identity service account for Secret Manager access
+        # ------------------------------------------------------------------
+        gcp_sa_name = f"agentstr-{deployment_name}-sa"
+        gcp_sa_email = f"{gcp_sa_name}@{project}.iam.gserviceaccount.com"
+        # Ensure GCP service account exists
+        sa_desc = subprocess.run([
+            "gcloud", "iam", "service-accounts", "describe", gcp_sa_email, "--project", project, "--format=value(email)"],
+            capture_output=True, text=True)
+        if sa_desc.returncode != 0:
+            click.echo(f"Creating GCP service account '{gcp_sa_email}' ...")
+            self._run_cmd(["gcloud", "iam", "service-accounts", "create", gcp_sa_name, "--project", project])
+
+        # Grant Secret Manager access scoped to each secret
+        for secret_path in secrets.values():
+            # Expect path like projects/{project}/secrets/{name}/versions/latest or similar
+            parts = secret_path.split("/")
+            if len(parts) < 4:
+                click.echo(f"Skipping invalid secret reference '{secret_path}'", err=True)
+                continue
+            secret_name = parts[3]
+            self._run_cmd([
+                "gcloud", "secrets", "add-iam-policy-binding", secret_name,
+                "--member", f"serviceAccount:{gcp_sa_email}",
+                "--role", "roles/secretmanager.secretAccessor",
+                "--project", project])
+
+        # Create/patch Kubernetes service account bound to GCP SA (Workload Identity)
+        ksa_name = f"{deployment_name}-ksa"
+        sa_yaml = {
+            "apiVersion": "v1",
+            "kind": "ServiceAccount",
+            "metadata": {
+                "name": ksa_name,
+                "annotations": {
+                    "iam.gke.io/gcp-service-account": gcp_sa_email
+                }
+            }
+        }
+        self._apply_manifest(sa_yaml)
+
         cpu = kwargs.get("cpu", 0.25)
         memory = int(kwargs.get("memory", 512))  # MiB
         click.echo(
@@ -252,7 +313,8 @@ CMD [\"python\", \"/app/app.py\"]
         self._configure_kubectl(cluster_name, project, zone)
 
         # Construct Kubernetes deployment & service manifests
-        env_list = [{"name": k, "value": v} for k, v in {**env_vars, **secrets}.items()]
+        # Inject env vars – secrets are passed as Secret Manager resource paths, not plaintext
+        env_list = [{"name": k, "value": v} for k, v in env_vars.items()] + [{"name": k, "value": v} for k, v in secrets.items()]
         deployment_yaml = {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
@@ -263,11 +325,11 @@ CMD [\"python\", \"/app/app.py\"]
                 "template": {
                     "metadata": {"labels": {"app": deployment_name}},
                     "spec": {
+                        "serviceAccountName": ksa_name,
                         "containers": [
                             {
                                 "name": deployment_name,
                                 "image": image_uri,
-                                "ports": [{"containerPort": 80}],
                                 "resources": {
                                     "requests": {"cpu": str(cpu), "memory": f"{memory}Mi"},
                                     "limits": {"cpu": str(cpu), "memory": f"{memory}Mi"},
