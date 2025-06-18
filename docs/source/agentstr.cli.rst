@@ -118,7 +118,7 @@ Commands
      - –
 
 Config files (``configs/`` folder)
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A YAML file lets you declare most options once and reuse them across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
 
 .. code-block:: bash
