@@ -10,16 +10,22 @@ Prerequisites
 
 You need Docker running for *all* providers.
 
-+-----------+----------------------+------------------------------+
-| Provider  | CLI tools            | Environment variables        |
-+===========+======================+==============================+
-| AWS       | ``aws``              | ``AWS_PROFILE`` *or* the     |
-|           |                      | standard AWS credential vars |
-+-----------+----------------------+------------------------------+
-| GCP       | ``gcloud``, ``kubectl`` | ``GCP_PROJECT``            |
-+-----------+----------------------+------------------------------+
-| Azure     | ``az``               | ``AZURE_SUBSCRIPTION_ID``    |
-+-----------+----------------------+------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25 35
+
+   * - Provider
+     - CLI tools
+     - Environment variables
+   * - AWS
+     - ``aws``
+     - ``AWS_PROFILE`` *or* standard AWS credential env vars
+   * - GCP
+     - ``gcloud``, ``kubectl``
+     - ``GCP_PROJECT``
+   * - Azure
+     - ``az``
+     - ``AZURE_SUBSCRIPTION_ID``
 
 Ensure each CLI is authenticated and Docker can push to the relevant registry.
 
@@ -111,7 +117,7 @@ Commands
      - Secrets are pulled from cloud provider's secret manager.
      - –
 
-Config files
+Config files (``configs/`` folder)
 ~~~~~~~~~~~~
 A YAML file lets you declare most options once and reuse them across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
 
