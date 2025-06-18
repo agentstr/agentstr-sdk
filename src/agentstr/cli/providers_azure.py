@@ -308,17 +308,11 @@ CMD [\"python\", \"/app/app.py\"]
                 ])
 
         # Prepare environment + secret args following ACI syntax:
-        #   --secrets "alias=keyvaultref:<URI>,identityref:<ID>"  --environment-variables "ENV=secretref:alias"
         env_pairs: List[str] = [f"{k}={v}" for k, v in env_vars.items()]
-        secret_pairs: List[str] = []
         for k, uri in secrets.items():
-            alias = k.lower().replace("_", "-")
-            secret_pairs.append(f"{alias}=keyvaultref:{uri},identityref:{identity_id}")
-            env_pairs.append(f"{k}=secretref:{alias}")
+            env_pairs.append(f"{k}=@{uri}")
 
         env_cli_args: List[str] = ["--environment-variables"] + env_pairs if env_pairs else []
-        secret_cli_args: List[str] = ["--secrets"] + secret_pairs if secret_pairs else []
-        mount_args: List[str] = ["--secrets-mount-path", "/mnt/secrets"] if secret_pairs else []
         log_args: List[str] = ["--log-analytics-workspace", workspace_id, "--log-analytics-workspace-key", workspace_key]
 
         # Retrieve registry credentials (reuse docker login helper)
@@ -367,7 +361,7 @@ CMD [\"python\", \"/app/app.py\"]
             env_pass,
             "--assign-identity",
             identity_id,
-        ] + env_cli_args + secret_cli_args + mount_args + log_args
+        ] + env_cli_args + log_args
 
         self._run_cmd(create_cmd)
         click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
@@ -379,19 +373,35 @@ CMD [\"python\", \"/app/app.py\"]
 
     @_catch_exceptions
     def logs(self, deployment_name: str):  # noqa: D401
+        """Stream logs for each container in the ACI container group; fall back to events if empty."""
         deployment_name = deployment_name.replace("_", "-")
         _, _, resource_group = self._check_prereqs()
-        self._run_cmd(
-            [
+
+        # ------------------------------------------------------------------
+        # Fall back: query Log Analytics workspace
+        # ------------------------------------------------------------------
+        click.echo("Querying Log Analytics workspace ...")
+        _, region, _ = self._check_prereqs()
+        try:
+            ws_id, _ws_key = self._ensure_log_workspace(resource_group, region)
+            kql = (
+                f"ContainerInstanceLog_CL | where ContainerGroup_s == '{deployment_name}' "
+                "| project TimeGenerated, Message | sort by TimeGenerated desc | limit 100"
+            )
+            self._run_cmd([
                 "az",
-                "container",
-                "logs",
-                "--resource-group",
-                resource_group,
-                "--name",
-                deployment_name,
-            ]
-        )
+                "monitor",
+                "log-analytics",
+                "query",
+                "-w",
+                ws_id,
+                "--analytics-query",
+                kql,
+                "-o",
+                "table",
+            ])
+        except Exception as exc:  # pragma: no cover
+            click.echo(f"Failed to query Log Analytics: {exc}")
 
     @_catch_exceptions
     def put_secret(self, name: str, value: str) -> str:  # noqa: D401

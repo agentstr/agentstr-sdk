@@ -313,8 +313,66 @@ CMD [\"python\", \"/app/app.py\"]
         self._configure_kubectl(cluster_name, project, zone)
 
         # Construct Kubernetes deployment & service manifests
-        # Inject env vars – secrets are passed as Secret Manager resource paths, not plaintext
-        env_list = [{"name": k, "value": v} for k, v in env_vars.items()] + [{"name": k, "value": v} for k, v in secrets.items()]
+        import base64, re
+
+        # ------------------------------------------------------------------
+        # Materialize GCP Secret Manager secrets into Kubernetes secrets
+        # ------------------------------------------------------------------
+        secret_manifests: list[dict] = []
+        env_list: list[dict] = [{"name": k, "value": v} for k, v in env_vars.items()]
+
+        for env_name, secret_path in secrets.items():
+            # Extract secret name from Resource path: projects/<proj>/secrets/<name>/versions/...
+            parts = secret_path.split("/")
+            if len(parts) < 4:
+                click.echo(f"Skipping invalid secret reference '{secret_path}'", err=True)
+                continue
+            sm_name = parts[3]
+            # Access secret value via gcloud CLI (latest version)
+            result = subprocess.run([
+                "gcloud",
+                "secrets",
+                "versions",
+                "access",
+                "latest",
+                "--secret",
+                sm_name,
+                "--project",
+                project,
+            ], capture_output=True, text=True)
+            if result.returncode != 0:
+                click.echo(f"Failed to access secret '{sm_name}'", err=True)
+                continue
+            secret_val = result.stdout.strip()
+            b64_val = base64.b64encode(secret_val.encode()).decode()
+            # Kubernetes Secret metadata.name must match RFC1123 (lowercase alphanumerics and '-')
+            def _sanitize(s: str) -> str:
+                s = re.sub(r"[^a-z0-9-]+", "-", s.lower())
+                s = re.sub(r"^-+", "", s)
+                s = re.sub(r"-+$", "", s)
+                return s[:253] or "secret"
+            k8s_secret_name = _sanitize(f"{deployment_name}-{env_name}-secret")
+            secret_manifest = {
+                "apiVersion": "v1",
+                "kind": "Secret",
+                "metadata": {"name": k8s_secret_name},
+                "type": "Opaque",
+                "data": {env_name: b64_val},
+            }
+            secret_manifests.append(secret_manifest)
+            # reference via secretKeyRef
+            env_list.append({
+                "name": env_name,
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": k8s_secret_name,
+                        "key": env_name,
+                    }
+                }
+            })
+        # ------------------------------------------------------------------
+        # Build Deployment manifest
+        # ------------------------------------------------------------------
         deployment_yaml = {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
@@ -341,8 +399,8 @@ CMD [\"python\", \"/app/app.py\"]
                 },
             },
         }
-        # Apply manifests via kubectl
-        manifest = yaml.safe_dump_all([deployment_yaml])
+        # Apply manifests via kubectl – include secrets first
+        manifest = yaml.safe_dump_all(secret_manifests + [deployment_yaml])
         apply_cmd = ["kubectl", "apply", "-f", "-"]
         click.echo("Applying Kubernetes manifests ...")
         proc = subprocess.Popen(apply_cmd, stdin=subprocess.PIPE, text=True)
