@@ -98,6 +98,7 @@ class PriceHandlerResponse(BaseModel):
 
 CHAT_HISTORY = {}  # Thread id -> [str]
 
+
 '''
 class PriceHandlerPrompt(dspy.Signature):
     """Analyze if the agent can handle this request based on their skills and description and chat history.

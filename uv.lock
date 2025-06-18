@@ -11,11 +11,12 @@ resolution-markers = [
 
 [[package]]
 name = "agentstr-sdk"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
     { name = "bolt11" },
+    { name = "dspy" },
     { name = "expiringdict" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
@@ -115,6 +116,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'cli'", specifier = ">=1.38.36" },
     { name = "click", marker = "extra == 'all'", specifier = ">=8.1.7" },
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.1.7" },
+    { name = "dspy", specifier = ">=2.6.24" },
     { name = "dspy", marker = "extra == 'all'", specifier = ">=2.6.24" },
     { name = "dspy", marker = "extra == 'dspy'", specifier = ">=2.6.24" },
     { name = "expiringdict", specifier = ">=1.2.2" },

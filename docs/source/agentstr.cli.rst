@@ -42,7 +42,7 @@ To avoid passing flags every time, you can export environment variables:
 .. code-block:: bash
 
    export AGENTSTR_PROVIDER=gcp  # optional when provider in config
-export AGENTSTR_CONFIG=configs/gcp.yml
+   export AGENTSTR_CONFIG=configs/gcp.yml
 
 Commands
 --------
@@ -90,7 +90,7 @@ Commands
      - Extra Python dependencies installed into the image.
      - –
    * - ``--secret`` *KEY=VAL* (repeat)
-     - Secrets (merged with ``--env`` but hidden from logs).
+     - Secrets are pulled from cloud provider's secret manager.
      - –
 
 Config files
@@ -99,15 +99,15 @@ A YAML file lets you declare most options once and reuse them across commands. P
 
 .. code-block:: bash
 
-   agentstr -f configs/azure.yml deploy my_app.py
-   agentstr deploy my_app.py --config configs/azure.yml
-   AGENTSTR_CONFIG=configs/azure.yml agentstr deploy my_app.py
+   agentstr -f configs/azure.yml deploy
+   agentstr deploy --config configs/azure.yml
+   AGENTSTR_CONFIG=configs/azure.yml agentstr deploy
 
 Examples
 ~~~~~~~~
 
 .. code-block:: bash
-
+  
    # Deploy an agent with extra deps and environment variables to AWS (default)
    agentstr deploy my_agent.py \
        --env OPENAI_API_KEY=$OPENAI_API_KEY \
