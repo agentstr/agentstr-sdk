@@ -108,12 +108,10 @@ class AWSProvider(Provider):  # noqa: D401
             assume_policy=json.dumps(assume_policy_dict),
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
-
-        # Task role: unique per deployment, only gets secrets for this service
         task_role_arn = self._ensure_role(
             role_name,
             assume_policy=json.dumps(assume_policy_dict),
-            policies=[],  # Attach inline below
+            policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
         if secret_arns:
             policy_name = "AgentstrSecretsAccess"
@@ -123,13 +121,18 @@ class AWSProvider(Provider):  # noqa: D401
                     {
                         "Effect": "Allow",
                         "Action": ["secretsmanager:GetSecretValue"],
-                        "Resource": [f"{secret}-??????" for secret in secret_arns],
+                        "Resource": secret_arns,
                     }
                 ],
             }
             try:
                 self.iam.put_role_policy(
                     RoleName=role_name,
+                    PolicyName=policy_name,
+                    PolicyDocument=json.dumps(stmt),
+                )
+                self.iam.put_role_policy(
+                    RoleName=self.TASK_EXEC_ROLE_NAME,
                     PolicyName=policy_name,
                     PolicyDocument=json.dumps(stmt),
                 )

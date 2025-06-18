@@ -37,13 +37,18 @@ def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optiona
     return "aws"
 
 
+def _load_config(ctx: click.Context, config_path: Path | None) -> Dict[str, Any]:
+    """Load config from YAML file."""
+    config_data: Dict[str, Any] = {}
+    if config_path is not None:
+        try:
+            config_data = yaml.safe_load(config_path.read_text()) or {}
+        except Exception as exc:  # pragma: no cover
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+    return config_data
+
+
 @click.group()
-@click.option(
-    "--config",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Path to YAML config file.",
-    is_eager=True,
-)
 @click.option(
     "--provider",
     type=click.Choice(PROVIDER_CHOICES, case_sensitive=False),
@@ -53,28 +58,17 @@ def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optiona
     is_eager=True,
 )
 @click.pass_context
-def cli(ctx: click.Context, config: Path | None, provider: str):  # noqa: D401
-    """agentstr – lightweight IaC helper for Nostr MCP infrastructure."""
-    config_data: Dict[str, Any] = {}
-    if config is not None:
-        try:
-            config_data = yaml.safe_load(config.read_text()) or {}
-        except Exception as exc:  # pragma: no cover
-            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+def cli(ctx: click.Context, provider: str):  # noqa: D401
+    """agentstr-cli – lightweight cli for deploying agentstr apps to cloud providers."""
+    ctx.ensure_object(dict)
+    ctx.obj["provider_name"] = provider.lower()
+    ctx.obj["provider"] = get_provider(provider.lower())
 
-    # If provider not explicitly set, take from config file
-    if provider == _resolve_provider(None, None, None) and config_data.get("provider"):
-        provider = str(config_data["provider"]).lower()
-
-    ctx.obj = {
-        "provider_name": provider.lower(),
-        "provider": get_provider(provider.lower()),
-        "config": config_data,
-    }
 
 
 @cli.command()
-@click.argument("file_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("file_path", required=False, type=click.Path(exists=True, path_type=Path))
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.option("--name", help="Deployment name", required=False)
 @click.option(
     "--secret",
@@ -95,10 +89,18 @@ def cli(ctx: click.Context, config: Path | None, provider: str):  # noqa: D401
 @click.option("--cpu", type=int, default=None, show_default=True, help="Cloud provider vCPU units (e.g. 256=0.25 vCPU).")
 @click.option("--memory", type=int, default=512, show_default=True, help="Cloud provider memory (MiB).")
 @click.pass_context
-def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int):  # noqa: D401
+def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int):  # noqa: D401
     """Deploy an application file (server or agent) to the chosen provider."""
+    # Load config if given
+    cfg = {}
+    if config is not None:
+        try:
+            cfg = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+    else:
+        cfg = ctx.obj.get("config", {})
     provider: Provider = ctx.obj["provider"]
-    cfg = ctx.obj.get("config", {})
     secrets_dict: dict[str, str] = dict(cfg.get("secrets", {}))
     env_dict: dict[str, str] = dict(cfg.get("env", {}))
 
@@ -132,6 +134,15 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
     if memory == 512:  # default flag value, check config override
         memory = cfg.get("memory", memory)
 
+    # file_path argument is optional; fallback to config
+    if file_path is None:
+        file_path = cfg.get("file_path")
+        if not file_path:
+            raise click.ClickException("You must provide a file_path argument or set 'file_path' in the config file.")
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
+
     deployment_name = name or cfg.get("name") or file_path.stem
     provider.deploy(
         file_path,
@@ -145,19 +156,33 @@ def deploy(ctx: click.Context, file_path: Path, name: Optional[str], secret: tup
 
 
 @cli.command(name="list")
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.option("--name", help="Filter by deployment name", required=False)
 @click.pass_context
-def list_cmd(ctx: click.Context, name: Optional[str]):  # noqa: D401
+def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # noqa: D401
     """List active deployments on the chosen provider."""
+    cfg = {}
+    if config is not None:
+        try:
+            cfg = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
     provider: Provider = ctx.obj["provider"]
     provider.list(name_filter=name)
 
 
 @cli.command()
 @click.argument("name")
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.pass_context
-def logs(ctx: click.Context, name: str):  # noqa: D401
+def logs(ctx: click.Context, name: str, config: Path | None):  # noqa: D401
     """Fetch logs for a deployment."""
+    # Config load for future extensibility
+    if config is not None:
+        try:
+            _ = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
     provider: Provider = ctx.obj["provider"]
     provider.logs(name)
 
@@ -165,13 +190,19 @@ def logs(ctx: click.Context, name: str):  # noqa: D401
 @cli.command("put-secret")
 @click.argument("key")
 @click.argument("value", required=False)
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.option("--value-file", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Read secret value from file (overrides VALUE argument).")
 @click.pass_context
-def put_secret(ctx: click.Context, key: str, value: str | None, value_file: Path | None):  # noqa: D401
+def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | None, value_file: Path | None):  # noqa: D401
     """Create or update a cloud-provider secret and return its reference string.
 
     VALUE may be provided directly or via --value-file.
     """
+    if config is not None:
+        try:
+            _ = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
     if value_file is not None:
         value = Path(value_file).read_text()
     if value is None:
@@ -184,14 +215,20 @@ def put_secret(ctx: click.Context, key: str, value: str | None, value_file: Path
 
 @cli.command("put-secrets")
 @click.argument("env_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.pass_context
-def put_secrets(ctx: click.Context, env_file: Path):  # noqa: D401
+def put_secrets(ctx: click.Context, env_file: Path, config: Path | None):  # noqa: D401
     """Create or update multiple secrets from a .env file.
 
     ENV_FILE should contain KEY=VALUE lines (comments with # allowed). Each
     secret is stored via the provider's secret manager and the resulting
     reference printed.
     """
+    if config is not None:
+        try:
+            _ = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
     provider: Provider = ctx.obj["provider"]
     count = 0
     for raw_line in Path(env_file).read_text().splitlines():
@@ -209,10 +246,25 @@ def put_secrets(ctx: click.Context, env_file: Path):  # noqa: D401
 
 
 @cli.command()
-@click.argument("name")
+@click.argument("name", required=False)
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.pass_context
-def destroy(ctx: click.Context, name: str):  # noqa: D401
+def destroy(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D401
     """Destroy a deployment."""
+    cfg = {}
+    if config is not None:
+        try:
+            cfg = yaml.safe_load(config.read_text()) or {}
+        except Exception as exc:
+            raise click.ClickException(f"Failed to parse config YAML: {exc}")
+    if not name:
+        name = cfg.get("name")
+        if not name:
+            file_path = cfg.get("file_path")
+            if file_path:
+                name = Path(file_path).stem
+        if not name:
+            raise click.ClickException("You must provide a deployment NAME, set 'name', or set 'file_path' in the config file.")
     provider: Provider = ctx.obj["provider"]
     provider.destroy(name)
 
