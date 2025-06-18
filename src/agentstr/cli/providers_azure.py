@@ -273,46 +273,31 @@ CMD [\"python\", \"/app/app.py\"]
         identity_name = f"agentstr-{deployment_name}-id".replace("_", "-")
         identity_id, principal_id = self._ensure_identity(resource_group, region, identity_name)
 
-        # ------------------------------------------------------------------
-        # Grant Key Vault access – restrict to only the referenced secrets.
-        # Requires Key Vault RBAC mode to be enabled; we will error otherwise.
-        # ------------------------------------------------------------------
-        from collections import defaultdict
-        vault_secrets: dict[str, set[str]] = defaultdict(set)
-        for env_key, uri in secrets.items():
-            if uri.startswith("https://") and ".vault.azure.net/" in uri:
-                parts = uri.split("/")
-                if len(parts) >= 5 and parts[3] == "secrets":
-                    host = parts[2]               # vaultname.vault.azure.net
-                    secret_name = parts[4]
-                    vault = host.split(".")[0]
-                    vault_secrets[vault].add(secret_name)
-
-        for vault, secret_names in vault_secrets.items():
-            click.echo(f"Granting access to secrets {', '.join(secret_names)} in vault '{vault}' ...")
-            vault_info = json.loads(subprocess.check_output([
-                "az", "keyvault", "show", "--name", vault, "-o", "json"], text=True))
-            if not vault_info.get("properties", {}).get("enableRbacAuthorization", False):
-                raise click.ClickException(
-                    f"Key Vault '{vault}' does not have RBAC enabled; cannot grant per-secret access. "
-                    "Enable RBAC or grant access manually."
-                )
-            vault_id = vault_info["id"]
-            for secret in secret_names:
-                scope = f"{vault_id}/secrets/{secret}"
-                self._run_cmd([
-                    "az", "role", "assignment", "create",
-                    "--assignee-object-id", principal_id,
-                    "--role", "Key Vault Secrets User",
-                    "--scope", scope,
-                ])
-
         # Prepare environment + secret args following ACI syntax:
+        # Build CLI args for plain environment variables
         env_pairs: List[str] = [f"{k}={v}" for k, v in env_vars.items()]
-        for k, uri in secrets.items():
-            env_pairs.append(f"{k}=@{uri}")
-
         env_cli_args: List[str] = ["--environment-variables"] + env_pairs if env_pairs else []
+
+        # Secure environment variables containing actual secret values fetched from Key Vault
+        secure_pairs: List[str] = []
+        for k, uri in secrets.items():
+            try:
+                secret_val = subprocess.check_output([
+                    "az",
+                    "keyvault",
+                    "secret",
+                    "show",
+                    "--id",
+                    uri,
+                    "--query",
+                    "value",
+                    "-o",
+                    "tsv",
+                ], text=True).strip()
+            except subprocess.CalledProcessError as exc:  # pragma: no cover
+                raise click.ClickException(f"Failed to fetch Key Vault secret '{uri}': {exc}") from exc
+            secure_pairs.append(f"{k}={secret_val}")
+        secure_cli_args: List[str] = ["--secure-environment-variables"] + secure_pairs if secure_pairs else []
         log_args: List[str] = ["--log-analytics-workspace", workspace_id, "--log-analytics-workspace-key", workspace_key]
 
         # Retrieve registry credentials (reuse docker login helper)
@@ -351,8 +336,6 @@ CMD [\"python\", \"/app/app.py\"]
             "OnFailure",
             "--os-type",
             "Linux",
-            "--ports",
-            "80",
             "--registry-login-server",
             login_server,
             "--registry-username",
@@ -361,7 +344,7 @@ CMD [\"python\", \"/app/app.py\"]
             env_pass,
             "--assign-identity",
             identity_id,
-        ] + env_cli_args + log_args
+        ] + env_cli_args + secure_cli_args + log_args
 
         self._run_cmd(create_cmd)
         click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
@@ -375,18 +358,32 @@ CMD [\"python\", \"/app/app.py\"]
     def logs(self, deployment_name: str):  # noqa: D401
         """Stream logs for each container in the ACI container group; fall back to events if empty."""
         deployment_name = deployment_name.replace("_", "-")
-        _, _, resource_group = self._check_prereqs()
+        _, region, resource_group = self._check_prereqs()
+
+        # First, try direct container logs command
+        click.echo("Fetching container logs ...")
+        try:
+            self._run_cmd([
+                "az",
+                "container",
+                "logs",
+                "--resource-group",
+                resource_group,
+                "--name",
+                deployment_name,
+            ])
+            return  # success
+        except click.ClickException:
+            click.echo("Container logs command failed, falling back to Log Analytics ...")
 
         # ------------------------------------------------------------------
         # Fall back: query Log Analytics workspace
         # ------------------------------------------------------------------
-        click.echo("Querying Log Analytics workspace ...")
-        _, region, _ = self._check_prereqs()
         try:
             ws_id, _ws_key = self._ensure_log_workspace(resource_group, region)
             kql = (
                 f"ContainerInstanceLog_CL | where ContainerGroup_s == '{deployment_name}' "
-                "| project TimeGenerated, Message | sort by TimeGenerated desc | limit 100"
+                "| project TimeGenerated, Message | sort by TimeGenerated desc | limit 100 | sort by TimeGenerated asc"
             )
             self._run_cmd([
                 "az",

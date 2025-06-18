@@ -9,8 +9,11 @@ from pathlib import Path
 from typing import Dict, Optional, List
 
 import click
-import textwrap
+import base64
+import re
 import yaml  # type: ignore
+import uuid
+import tempfile
 
 from .providers import _catch_exceptions, register_provider, Provider  # type: ignore
 
@@ -136,9 +139,6 @@ class GCPProvider(Provider):  # noqa: D401
     # Image build/push
     # ------------------------------------------------------------------
     def _build_and_push_image(self, file_path: Path, deployment_name: str, dependencies: list[str]) -> str:  # noqa: D401
-        import uuid
-        import tempfile
-
         project, region, zone = self._check_prereqs()
         repo = "agentstr"
         # Ensure Artifact Registry repository exists
@@ -311,9 +311,6 @@ CMD [\"python\", \"/app/app.py\"]
 
         cluster_name = self._ensure_cluster(project, zone)
         self._configure_kubectl(cluster_name, project, zone)
-
-        # Construct Kubernetes deployment & service manifests
-        import base64, re
 
         # ------------------------------------------------------------------
         # Materialize GCP Secret Manager secrets into Kubernetes secrets

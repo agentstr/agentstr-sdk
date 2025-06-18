@@ -190,13 +190,25 @@ def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # n
 
 
 @cli.command()
-@click.argument("name")
+@click.argument("name", required=False)
 @click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.pass_context
-def logs(ctx: click.Context, name: str, config: Path | None):  # noqa: D401
-    """Fetch logs for a deployment."""
-    # Config load for future extensibility
+def logs(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D401
+    """Fetch logs for a deployment.
+
+    If NAME is omitted, it will be resolved from the config file's 'name' field or
+    derived from the 'file_path' stem.
+    """
     cfg = _load_config(ctx, config)
+    if not name:
+        # Try to resolve from config
+        name = cfg.get("name")
+        if not name:
+            file_path = cfg.get("file_path")
+            if file_path:
+                name = Path(file_path).stem
+        if not name:
+            raise click.ClickException("You must provide a deployment NAME, set 'name', or set 'file_path' in the config file.")
     provider = _get_provider(ctx, cfg)
     provider.logs(name)
 
