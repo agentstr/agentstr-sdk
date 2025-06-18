@@ -5,6 +5,7 @@ on:
       - main
 jobs:
   uv-example:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     name: python
     runs-on: ubuntu-latest
 
@@ -18,6 +19,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
+
+      - name: Bump patch version
+        run: python .github/scripts/bump_patch.py
+
+      - name: Commit bumped version
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(release): bump patch version [skip ci]"
+          file_pattern: pyproject.toml
 
       - name: Install the project
         run: uv sync --all-extras --dev
