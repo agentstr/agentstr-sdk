@@ -23,7 +23,6 @@ class AWSProvider(Provider):  # noqa: D401
 
     CLUSTER_NAME = "agentstr-cluster"
     ECR_REPO_NAME = "agentstr"
-    TASK_EXEC_ROLE_NAME = "agentstrEcsTaskExecutionRole"
 
     def __init__(self) -> None:  # noqa: D401
         super().__init__("aws")
@@ -92,6 +91,7 @@ class AWSProvider(Provider):  # noqa: D401
     def _ensure_task_roles(self, *, deployment_name: str, secret_arns: list[str] | None = None):  # noqa: D401
         # Create a unique task role per deployment for least-privilege secrets access
         role_name = f"agentstrEcsTaskRole-{deployment_name}"
+        execution_role_name = f"agentstrEcsTaskExecutionRole-{deployment_name}"
         assume_policy_dict = {
             "Version": "2012-10-17",
             "Statement": [
@@ -104,7 +104,7 @@ class AWSProvider(Provider):  # noqa: D401
         }
         # Always attach the basic ECS execution role to the execution role
         exec_role_arn = self._ensure_role(
-            self.TASK_EXEC_ROLE_NAME,
+            execution_role_name,
             assume_policy=json.dumps(assume_policy_dict),
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
@@ -114,7 +114,6 @@ class AWSProvider(Provider):  # noqa: D401
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
         if secret_arns:
-            policy_name = "AgentstrSecretsAccess"
             stmt = {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -122,18 +121,23 @@ class AWSProvider(Provider):  # noqa: D401
                         "Effect": "Allow",
                         "Action": ["secretsmanager:GetSecretValue"],
                         "Resource": secret_arns,
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": ["kms:Decrypt"],
+                        "Resource": "*"
                     }
                 ],
             }
             try:
                 self.iam.put_role_policy(
                     RoleName=role_name,
-                    PolicyName=policy_name,
+                    PolicyName=f"AgentstrSecretsAccess-{role_name}",
                     PolicyDocument=json.dumps(stmt),
                 )
                 self.iam.put_role_policy(
-                    RoleName=self.TASK_EXEC_ROLE_NAME,
-                    PolicyName=policy_name,
+                    RoleName=execution_role_name,
+                    PolicyName=f"AgentstrSecretsAccess-{execution_role_name}",
                     PolicyDocument=json.dumps(stmt),
                 )
             except self.iam.exceptions.MalformedPolicyDocumentException as exc:  # pragma: no cover
@@ -147,7 +151,12 @@ class AWSProvider(Provider):  # noqa: D401
             raise click.ClickException("No default VPC found; specify network details manually.")
         vpc_id = vpcs[0]["VpcId"]
         subnets = self.ec2.describe_subnets(Filters=[{"Name": "vpc-id", "Values": [vpc_id]}])["Subnets"]
-        subnet_ids = [s["SubnetId"] for s in subnets]
+        # Prefer public subnets (MapPublicIpOnLaunch == True)
+        public_subnets = [s for s in subnets if s.get("MapPublicIpOnLaunch")]
+        if public_subnets:
+            subnet_ids = [s["SubnetId"] for s in public_subnets]
+        else:
+            subnet_ids = [s["SubnetId"] for s in subnets]
         sg_id = self.ec2.describe_security_groups(
             Filters=[{"Name": "group-name", "Values": ["default"]}, {"Name": "vpc-id", "Values": [vpc_id]}]
         )["SecurityGroups"][0]["GroupId"]
@@ -277,6 +286,7 @@ CMD [\"python\", \"/app/app.py\"]
                     "awsvpcConfiguration": {
                         "subnets": subnet_ids,
                         "securityGroups": sg_ids,
+                        "assignPublicIp": "ENABLED",
                     }
                 },
             )
@@ -323,6 +333,13 @@ CMD [\"python\", \"/app/app.py\"]
                         service=deployment_name,
                         taskDefinition=task_def_arn,
                         desiredCount=1,
+                        networkConfiguration={
+                            "awsvpcConfiguration": {
+                                "subnets": subnet_ids,
+                                "securityGroups": sg_ids,
+                                "assignPublicIp": "ENABLED",
+                            }
+                        },
                     )
         except self.ecs.exceptions.ServiceNotFoundException:
             _create()

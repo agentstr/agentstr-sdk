@@ -4,7 +4,7 @@ provider: aws
 file_path: examples/mcp_server.py
 
 extra_pip_deps:  # additional Python deps installed in image
-  - agentstr-sdk
+  - agentstr-sdk[dspy]
 
 env:  # environment variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
