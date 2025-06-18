@@ -105,7 +105,7 @@ uv run examples/nostr_dspy_agent.py
 
 ## Agentstr CLI
 
-`agentstr` is a lightweight command-line tool for deploying your Python agent to cloud providers with zero configuration.
+A lightweight command-line tool for deploying Agentstr agents to cloud providers with minimal configuration.
 
 ### Installation
 The CLI is installed automatically with the **`agentstr-sdk[cli]`** extra:
@@ -118,11 +118,56 @@ This places an `agentstr` executable on your `$PATH`.
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--provider` [aws\|gcp\|azure] | Target cloud provider. | value of `AGENTSTR_PROVIDER` env var, or `aws` |
+| `-f, --config <path>` | YAML config file. Can also set `AGENTSTR_CONFIG`. | – |
 | `-h, --help` | Show help for any command. | – |
 
-You can avoid passing `--provider` every time by exporting:
+If your config YAML contains a `provider:` field the CLI will infer the cloud automatically, so you usually only need the config path.
+
+You can avoid passing `--config` (and optionally `--provider`) every time by exporting:
 ```bash
 export AGENTSTR_PROVIDER=aws  # or gcp / azure
+export AGENTSTR_CONFIG=configs/aws.yml
+```
+
+### Config files
+A YAML file lets you declare most options once and reuse them across commands. Pass it with `-f/--config` **anywhere** on the command line or set `AGENTSTR_CONFIG`.
+
+```bash
+# Equivalent syntaxes
+agentstr -f configs/azure.yml deploy my_app.py
+agentstr deploy my_app.py --config configs/azure.yml
+AGENTSTR_CONFIG=configs/azure.yml agentstr deploy my_app.py
+```
+
+#### Sample configs
+```yaml
+# configs/aws.yml
+provider: aws
+file_path: examples/mcp_server.py
+env:
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io
+secrets:
+  EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:123:secret:EXAMPLE_MCP_SERVER_NSEC
+```
+
+```yaml
+# configs/gcp.yml
+provider: gcp
+file_path: examples/mcp_server.py
+env:
+  PROJECT_ID: my-gcp-project
+secrets:
+  OPENAI_KEY: projects/123/secrets/OPENAI_KEY/versions/latest
+```
+
+```yaml
+# configs/azure.yml
+provider: azure
+file_path: examples/mcp_server.py
+env:
+  AZURE_REGION: eastus
+secrets:
+  MCP_SERVER_NSEC: https://myvault.vault.azure.net/secrets/MCP_SERVER_NSEC
 ```
 
 ### Commands
@@ -132,6 +177,8 @@ export AGENTSTR_PROVIDER=aws  # or gcp / azure
 | `list` | List existing deployments for the selected provider. |
 | `logs <name>` | Stream recent logs from the deployment. |
 | `destroy <name>` | Tear down the deployment/service. |
+| `put-secret <key> <value>` | Create or update a cloud-provider secret and return its reference string. |
+| `put-secrets <env_file>` | Create or update multiple secrets from a .env file. |
 
 #### `deploy` options
 | Option | Description | Default |
@@ -143,7 +190,7 @@ export AGENTSTR_PROVIDER=aws  # or gcp / azure
 | `--pip <package>` (repeat) | Extra Python dependencies installed into the image. | – |
 | `--secret KEY=VAL` (repeat)| Secrets, merged with `--env` but shown separately in logs. | – |
 
-#### Examples
+#### Examples (with config files)
 ```bash
 # Deploy an agent with extra deps and environment variables to AWS (default)
 agentstr deploy my_agent.py \

@@ -3,10 +3,10 @@ provider: gcp
 
 file_path: examples/mcp_server.py
 
-extra_pip_deps:  # additional Python deps installed in image
+extra_pip_deps:  # Additional Python deps installed in image
   - agentstr-sdk[dspy]
 
-env:  # environment variables
+env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
 secrets: # Secret Manager paths (latest version)

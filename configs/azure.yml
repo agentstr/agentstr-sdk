@@ -3,12 +3,12 @@ provider: azure
 
 file_path: examples/mcp_server.py
 
-extra_pip_deps:  # additional Python deps installed in image
+extra_pip_deps:  # Additional Python deps installed in image
   - agentstr-sdk[dspy]
 
-env:  # environment variables
+env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
-secrets:                          # Key Vault secret URIs
+secrets:  # Key Vault secret URIs
   EXAMPLE_MCP_SERVER_NSEC: https://agentstr-kv.vault.azure.net/secrets/EXAMPLE-MCP-SERVER-NSEC
   MCP_SERVER_NWC_CONN_STR: https://agentstr-kv.vault.azure.net/secrets/MCP-SERVER-NWC-CONN-STR
