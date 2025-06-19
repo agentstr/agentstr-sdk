@@ -61,12 +61,6 @@ Using a config file
 
  ``provider:`` key, the CLI will automatically infer the cloud, so you normally only need to reference the config file.
 
-
-
-
-
-
-
 Basic commands
 --------------
 
