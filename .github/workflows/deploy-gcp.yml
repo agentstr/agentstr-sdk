@@ -32,7 +32,7 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}        
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       # Get the GKE credentials so we can deploy to the cluster
       - uses: google-github-actions/get-gke-credentials@db150f2cc60d1716e61922b832eae71d2a45938f
@@ -42,7 +42,7 @@ jobs:
             credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Install gke-gcloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin --quiet
+        run: sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin google-cloud-sdk-kubectl
 
       - name: Deploy to GCP
         env:
