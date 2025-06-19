@@ -6,8 +6,8 @@ name: deploy-aws
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    #branches:
+    #  - main
     paths:
       - "configs/aws.yml"
       - ".github/workflows/deploy-aws.yml"
