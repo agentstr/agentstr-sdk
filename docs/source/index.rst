@@ -16,7 +16,7 @@ For detailed usage examples and tutorials, check out our `Usage Guide <https://a
 Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>`_.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    agentstr

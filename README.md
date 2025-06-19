@@ -103,7 +103,8 @@ uv run examples/nostr_dspy_agent.py
 - Use environment variables or a secure secret management system
 - The `.env.sample` file shows the required configuration structure
 
-## Agentstr CLI
+## Agentstr CLI  
+For the comprehensive command reference, see the [CLI documentation](https://agentstr.com/docs/agentstr.cli.html).
 
 A lightweight command-line tool for deploying Agentstr agents to cloud providers with minimal configuration.
 
@@ -126,33 +127,36 @@ uv add agentstr-sdk[cli]  # or: pip install "agentstr-sdk[cli]"
 ```
 This places an `agentstr` executable on your `$PATH`.
 
+### Multicloud CI/CD with GitHub Actions
+Ready-to-use workflows let you deploy to **AWS**, **GCP**, or **Azure** with a single push. Each workflow installs the CLI and invokes `agentstr deploy` using the provider-specific config file.
+
+| Cloud | Workflow file | What it does |
+|-------|---------------|--------------|
+| AWS   | [`deploy-aws.yml`](.github/workflows/deploy-aws.yml) | Installs deps, logs in with AWS creds and runs `agentstr deploy -f configs/aws.yml`. |
+| GCP   | [`deploy-gcp.yml`](.github/workflows/deploy-gcp.yml) | Authenticates via service-account JSON, installs `kubectl`, gets GKE creds and runs `agentstr deploy -f configs/gcp.yml`. |
+| Azure | [`deploy-azure.yml`](.github/workflows/deploy-azure.yml) | Uses `az` login and runs `agentstr deploy -f configs/azure.yml`. |
+
+Copy the desired file into your own repo, set the referenced secrets, and enjoy push-to-deploy for your agents.
+
 ### Global options
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--provider` [aws\|gcp\|azure] | Target cloud provider. | value of `AGENTSTR_PROVIDER` env var, or the provider specified in the config file |
 | `-f, --config <path>` | YAML config file. Can also set `AGENTSTR_CONFIG`. | – |
 | `-h, --help` | Show help for any command. | – |
 
 If your config YAML contains a `provider:` field the CLI will infer the cloud automatically, so you usually only need the config path.
 
-You can avoid passing `--config` (and optionally `--provider`) every time by exporting:
-```bash
-export AGENTSTR_PROVIDER=aws  # or gcp / azure
-export AGENTSTR_CONFIG=configs/aws.yml
-```
-
 ### Config files
-A YAML file lets you declare most options once and reuse them across commands. Pass it with `-f/--config` **anywhere** on the command line or set `AGENTSTR_CONFIG`.
+Declare your deployment once in a YAML file and reuse it across commands.
 
 ```bash
-# Equivalent syntaxes
-agentstr -f configs/azure.yml deploy my_app.py
-agentstr deploy my_app.py --config configs/azure.yml
-AGENTSTR_CONFIG=configs/azure.yml agentstr deploy my_app.py
+agentstr deploy -f configs/aws.yml
 ```
 
 #### Sample configs  
 Sample YAML files live in the [`configs/`](configs) folder: [aws.yml](configs/aws.yml), [gcp.yml](configs/gcp.yml) and [azure.yml](configs/azure.yml).
+
+[aws.yml](configs/aws.yml)
 
 ```yaml
 # configs/aws.yml
@@ -164,6 +168,8 @@ secrets:
   EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:123:secret:EXAMPLE_MCP_SERVER_NSEC
 ```
 
+[gcp.yml](configs/gcp.yml)
+
 ```yaml
 # configs/gcp.yml
 provider: gcp
@@ -173,6 +179,8 @@ env:
 secrets:
   EXAMPLE_MCP_SERVER_NSEC: projects/123/secrets/EXAMPLE_MCP_SERVER_NSEC/versions/latest
 ```
+
+[azure.yml](configs/azure.yml)
 
 ```yaml
 # configs/azure.yml
@@ -184,48 +192,56 @@ secrets:
   EXAMPLE_MCP_SERVER_NSEC: https://myvault.vault.azure.net/secrets/EXAMPLE_MCP_SERVER_NSEC
 ```
 
-### Commands
+### Config file reference
+
+`agentstr` commands rely on a small YAML file that bundles everything required for a deployment. A minimal example lives in [`configs/aws.yml`](configs/aws.yml) and similar files for the other clouds.
+
+```yaml
+provider: aws             # Target cloud provider: aws | gcp | azure
+file_path: app/agent.py   # Path to the Python entry-point for your agent
+name: my-agent            # Optional – deployment name (defaults to file_path stem)
+cpu: 256                  # Optional – CPU units / cores
+memory: 512               # Optional – Memory in MiB
+extra_pip_deps:           # Optional – extra Python packages to install
+  - openai
+  - langchain
+env:                      # Optional – environment variables
+  KEY: value
+secrets:                  # Optional – provider-managed secrets
+  MY_SECRET: arn:aws:secretsmanager:us-west-2:123:secret:MY_SECRET
+```
+
+Key fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `provider` | string | Required. One of `aws`, `gcp`, `azure`. |
+| `file_path` | path | Required. Python file that will be executed inside the container. |
+| `name` | string | Deployment/service name. Defaults to the filename without extension. |
+| `cpu` | int | CPU units/cores to allocate. Defaults vary by provider. |
+| `memory` | int | Memory in MiB. Defaults to 512. |
+| `env` | map | Environment variables passed to the container. |
+| `secrets` | map | Key/value pairs stored in the provider’s secret manager. Values must be the provider-specific reference (ARN/URI/path). |
+| `pip` | list | Extra PyPI packages installed into the image before deploy. |
+
+With the config in place you can deploy, list, stream logs, etc. by referencing it:
+
+```bash
+# Deploy / update
+agentstr deploy -f configs/aws.yml
+
+# View logs
+agentstr logs -f configs/aws.yml
+
+# Destroy
+agentstr destroy -f configs/aws.yml
+```
 | Command | Purpose |
 |---------|---------|
 | `deploy <app.py>` | Build Docker image, push and deploy your `app.py` as a container task/service. |
 | `list` | List existing deployments for the selected provider. |
 | `logs <name>` | Stream recent logs from the deployment. |
 | `destroy <name>` | Tear down the deployment/service. |
-| `put-secret <key> <value>` | Create or update a cloud-provider secret and return its reference string. |
-| `put-secrets <env_file>` | Create or update multiple secrets from a .env file. |
-
-#### `deploy` options
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--name <string>`          | Override deployment name (defaults to filename without extension). | `<app>` |
-| `--cpu <int>`              | CPU units (AWS) / cores (GCP/Azure). | `256` (AWS) / `1` (GCP/Azure) |
-| `--memory <int>`           | MiB (AWS) / MiB (GCP/Azure). | `512` |
-| `--env KEY=VAL` (repeat)   | Add environment variables passed to container. | – |
-| `--pip <package>` (repeat) | Extra Python dependencies installed into the image. | – |
-| `--secret KEY=VAL` (repeat)| Secrets, merged with `--env` but shown separately in logs. | – |
-
-#### Examples (with config files)
-```bash
-# Deploy an agent with extra deps and environment variables to AWS
-agentstr deploy my_agent.py \
-    --provider aws \
-    --env RELAYS=$RELAYS \
-    --secret MY_AGENT_NOSTR_NSEC=$MY_AGENT_NOSTR_NSEC \
-    --pip openai langchain
-
-# Upsert secrets from .env file
-agentstr put-secrets path/to/.env
-
-# Change provider per command
-agentstr deploy bot.py --provider gcp --cpu 2 --memory 1024
-
-# View logs
-agentstr logs bot
-
-# Destroy
-agentstr destroy bot
-```
-
 ---
 
 ## Contributing
