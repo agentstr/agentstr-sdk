@@ -190,7 +190,7 @@ secrets:
   EXAMPLE_MCP_SERVER_NSEC: https://myvault.vault.azure.net/secrets/EXAMPLE_MCP_SERVER_NSEC
 ```
 
-### Config file reference
+### Configuration
 
 The `agentstr` commands rely on a small YAML file that bundles everything required for a deployment. A minimal example exists for [AWS](configs/aws.yml), [GCP](configs/gcp.yml) and [Azure](configs/azure.yml).
 
@@ -223,6 +223,21 @@ Key fields:
 | `extra_pip_deps` | list | Extra PyPI packages installed into the image before deploy. |
 
 With the config in place you can deploy, list, stream logs, etc. by referencing it:
+
+#### Cloud Provider Environment Variables
+
+```bash
+# AWS (assuming aws is authenticated)
+export AWS_PROFILE=your-profile
+
+# GCP (assuming gcloud is authenticated)
+export GCP_PROJECT=your-project
+
+# Azure (assuming az is authenticated)
+export AZURE_SUBSCRIPTION_ID=your-subscription-id
+```
+
+#### CLI Commands
 
 ```bash
 # Deploy / update
