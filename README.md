@@ -156,8 +156,6 @@ agentstr deploy -f configs/aws.yml
 #### Sample configs  
 Sample YAML files live in the [`configs/`](configs) folder: [aws.yml](configs/aws.yml), [gcp.yml](configs/gcp.yml) and [azure.yml](configs/azure.yml).
 
-[aws.yml](configs/aws.yml)
-
 ```yaml
 # configs/aws.yml
 provider: aws
@@ -168,8 +166,6 @@ secrets:
   EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:123:secret:EXAMPLE_MCP_SERVER_NSEC
 ```
 
-[gcp.yml](configs/gcp.yml)
-
 ```yaml
 # configs/gcp.yml
 provider: gcp
@@ -179,8 +175,6 @@ env:
 secrets:
   EXAMPLE_MCP_SERVER_NSEC: projects/123/secrets/EXAMPLE_MCP_SERVER_NSEC/versions/latest
 ```
-
-[azure.yml](configs/azure.yml)
 
 ```yaml
 # configs/azure.yml
@@ -194,7 +188,7 @@ secrets:
 
 ### Config file reference
 
-`agentstr` commands rely on a small YAML file that bundles everything required for a deployment. A minimal example lives in [`configs/aws.yml`](configs/aws.yml) and similar files for the other clouds.
+The `agentstr` commands rely on a small YAML file that bundles everything required for a deployment. A minimal example exists for [AWS](configs/aws.yml), [GCP](configs/gcp.yml) and [Azure](configs/azure.yml).
 
 ```yaml
 provider: aws             # Target cloud provider: aws | gcp | azure
@@ -222,7 +216,7 @@ Key fields:
 | `memory` | int | Memory in MiB. Defaults to 512. |
 | `env` | map | Environment variables passed to the container. |
 | `secrets` | map | Key/value pairs stored in the provider’s secret manager. Values must be the provider-specific reference (ARN/URI/path). |
-| `pip` | list | Extra PyPI packages installed into the image before deploy. |
+| `extra_pip_deps` | list | Extra PyPI packages installed into the image before deploy. |
 
 With the config in place you can deploy, list, stream logs, etc. by referencing it:
 
@@ -233,16 +227,12 @@ agentstr deploy -f configs/aws.yml
 # View logs
 agentstr logs -f configs/aws.yml
 
+# List deployments
+agentstr list -f configs/aws.yml
+
 # Destroy
 agentstr destroy -f configs/aws.yml
 ```
-| Command | Purpose |
-|---------|---------|
-| `deploy <app.py>` | Build Docker image, push and deploy your `app.py` as a container task/service. |
-| `list` | List existing deployments for the selected provider. |
-| `logs <name>` | Stream recent logs from the deployment. |
-| `destroy <name>` | Tear down the deployment/service. |
----
 
 ## Contributing
 
