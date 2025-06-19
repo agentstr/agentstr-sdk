@@ -41,8 +41,10 @@ jobs:
             location: us-central1-b
             credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      - name: Deploy to GCP
+      - name: Install gke-gcloud-auth-plugin
         uses: simenandre/setup-gke-gcloud-auth-plugin@v1 # Or the latest version
+
+      - name: Deploy to GCP
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: uv run agentstr deploy -f configs/gcp.yml
