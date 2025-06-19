@@ -72,6 +72,10 @@ cd agentstr-sdk
 uv sync --all-extras
 ```
 
+## Full Documentation
+
+For full SDK and CLI documentation, visit **[docs.agentstr.com](https://docs.agentstr.com)**.
+
 ## Quick Start
 
 ### Environment Setup
@@ -104,7 +108,7 @@ uv run examples/nostr_dspy_agent.py
 - The `.env.sample` file shows the required configuration structure
 
 ## Agentstr CLI  
-For the comprehensive command reference, see the [CLI documentation](https://agentstr.com/docs/agentstr.cli.html).
+For the comprehensive command reference, see the [CLI documentation](https://docs.agentstr.com/agentstr.cli.html).
 
 A lightweight command-line tool for deploying Agentstr agents to cloud providers with minimal configuration.
 

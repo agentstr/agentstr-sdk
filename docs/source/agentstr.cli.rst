@@ -41,18 +41,8 @@ extra:
 This places an ``agentstr`` executable on your ``$PATH``.
 
 
-Basic commands
+Basic Commands
 --------------
-
-.. code-block:: bash
-
-   agentstr deploy -f configs/aws.yml      # create / update
-   agentstr list -f configs/aws.yml        # list deployments
-   agentstr logs -f configs/aws.yml        # live logs
-   agentstr destroy -f configs/aws.yml     # tear down
-
-
-Once your YAML is ready you can:
 
 * - ``deploy -f path/to/config.yaml``
   - Build Docker image, push and deploy *app.py* as a container service.
@@ -63,8 +53,8 @@ Once your YAML is ready you can:
 * - ``destroy -f path/to/config.yaml``
   - Tear down the deployment/service.
 
-Using a config file
--------------------
+Configuration
+-------------
 
 A minimal template you can reuse across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
 
