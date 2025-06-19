@@ -40,7 +40,7 @@ extra:
 
 This places an ``agentstr`` executable on your ``$PATH``.
 
-Global options
+Using a config file
 --------------
 
 .. list-table::
@@ -59,22 +59,19 @@ Global options
      - Show contextual help.
      - –
 
-If your YAML config contains a top-level ``provider:`` key, the CLI will automatically infer the cloud, so you normally only need to reference the config file.
+ ``provider:`` key, the CLI will automatically infer the cloud, so you normally only need to reference the config file.
 
-To avoid passing flags every time, you can export environment variables:
+Basic commands
+--------------
+
+Once your YAML is ready you can:
 
 .. code-block:: bash
 
-   export AGENTSTR_PROVIDER=gcp  # optional when provider in config
-   export AGENTSTR_CONFIG=configs/gcp.yml
+   agentstr deploy -f configs/aws.yml      # create / update
+   agentstr logs -f configs/aws.yml        # live logs
+   agentstr destroy -f configs/aws.yml     # tear down
 
-Commands
---------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Command
      - Purpose
    * - ``deploy <app.py>``
      - Build Docker image, push and deploy *app.py* as a container service.
@@ -89,7 +86,7 @@ Commands
    * - ``destroy <name>``
      - Tear down the deployment/service.
 
-``deploy`` options
+
 ------------------
 
 .. list-table::
@@ -119,34 +116,74 @@ Commands
 
 Config files (``configs/`` folder)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-A YAML file lets you declare most options once and reuse them across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
+A minimal template you can reuse across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
 
-.. code-block:: bash
+.. code-block:: yaml
 
-   agentstr -f configs/azure.yml deploy
-   agentstr deploy --config configs/azure.yml
-   AGENTSTR_CONFIG=configs/azure.yml agentstr deploy
+   provider: aws            # aws | gcp | azure
+   file_path: app/agent.py  # Python entry-point
+   name: my-agent           # optional – deployment name
+   cpu: 256                 # optional – CPU units / cores
+   memory: 512              # optional – memory in MiB
+   extra_pip_deps:          # optional – extra pip packages
+     - openai
+     - langchain
+   env:                     # optional – env vars
+     MY_VAR: 123
+   secrets:                 # optional – provider secret refs
+     MY_SECRET: arn:aws:secretsmanager:us-west-2:123:secret:MY_SECRET
 
-Examples
-~~~~~~~~
 
 .. code-block:: bash
   
-   # Deploy an agent with extra deps and environment variables to AWS
-   agentstr deploy my_agent.py \
-       --provider aws \
-       --env RELAYS=$RELAYS \
-       --secret MY_AGENT_NOSTR_NSEC=$MY_AGENT_NOSTR_NSEC \
-       --pip openai langchain
+  # Deploy / update
+  agentstr deploy -f configs/aws.yml
 
-   # Upsert secrets from .env file
-   agentstr put-secrets path/to/.env
- 
-   # Change provider per command
-   agentstr deploy bot.py --provider gcp --cpu 2 --memory 1024
+  # View logs
+  agentstr logs -f configs/aws.yml
 
-   # View logs
-   agentstr logs bot
+  # Destroy
+  agentstr destroy -f configs/aws.yml
 
-   # Destroy
-   agentstr destroy bot
+Config reference
+-------------------------
+The repository ships with ready-made workflows to deploy your agent to **AWS**, **GCP** or **Azure** on every push. Copy the desired file, set the required secrets and you are ready to _push-to-deploy_.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 20 40
+
+   * - Cloud
+     - Workflow file
+     - Purpose
+   * - AWS
+     - :file:`.github/workflows/deploy-aws.yml`
+     - Installs dependencies, authenticates with AWS and runs ``agentstr deploy -f configs/aws.yml``.
+   * - GCP
+     - :file:`.github/workflows/deploy-gcp.yml`
+     - Authenticates with a service-account key, installs ``kubectl`` / GKE plugin and deploys using ``configs/gcp.yml``.
+   * - Azure
+     - :file:`.github/workflows/deploy-azure.yml`
+     - Logs in with ``az`` and deploys using ``configs/azure.yml``.
+
+Below are the workflow definitions for reference:
+
+.. tabs::
+
+   .. tab:: AWS
+
+      .. literalinclude:: ../../.github/workflows/deploy-aws.yml
+         :language: yaml
+         :linenos:
+
+   .. tab:: GCP
+
+      .. literalinclude:: ../../.github/workflows/deploy-gcp.yml
+         :language: yaml
+         :linenos:
+
+   .. tab:: Azure
+
+      .. literalinclude:: ../../.github/workflows/deploy-azure.yml
+         :language: yaml
+         :linenos:
