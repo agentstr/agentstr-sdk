@@ -26,9 +26,6 @@ jobs:
         with:
           python-version-file: ".python-version"
 
-      - name: Bump patch version
-        run: python .github/scripts/bump_patch.py
-
       - name: Install the project
         run: uv sync --all-extras --dev
 
@@ -37,10 +34,12 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      # Get the GKE credentials so we can deploy to the cluster
+      - uses: google-github-actions/get-gke-credentials@db150f2cc60d1716e61922b832eae71d2a45938f
         with:
-          version: "latest"
+            cluster_name: agentstr-cluster
+            location: us-central1-b
+            credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Deploy to GCP
         env:
