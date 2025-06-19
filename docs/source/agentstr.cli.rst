@@ -40,82 +40,22 @@ extra:
 
 This places an ``agentstr`` executable on your ``$PATH``.
 
-Using a config file
+
+Basic Commands
 --------------
 
-.. list-table::
-   :header-rows: 1
+* - ``deploy -f path/to/config.yaml``
+  - Build Docker image, push and deploy *app.py* as a container service.
+* - ``list -f path/to/config.yaml``
+  - List existing deployments.
+* - ``logs -f path/to/config.yaml``
+  - Stream recent logs from a deployment.
+* - ``destroy -f path/to/config.yaml``
+  - Tear down the deployment/service.
 
-   * - Option
-     - Description
-     - Default
-   * - ``--provider`` ``aws|gcp|azure``
-     - Target cloud provider.
-     - ``AGENTSTR_PROVIDER`` env-var, otherwise inferred from config or ``aws``
-   * - ``-f``, ``--config`` *PATH*
-     - YAML config file (can also use ``AGENTSTR_CONFIG``).
-     - –
-   * - ``-h``, ``--help``
-     - Show contextual help.
-     - –
+Configuration
+-------------
 
- ``provider:`` key, the CLI will automatically infer the cloud, so you normally only need to reference the config file.
-
-Basic commands
---------------
-
-Once your YAML is ready you can:
-
-.. code-block:: bash
-
-   agentstr deploy -f configs/aws.yml      # create / update
-   agentstr logs -f configs/aws.yml        # live logs
-   agentstr destroy -f configs/aws.yml     # tear down
-
-     - Purpose
-   * - ``deploy <app.py>``
-     - Build Docker image, push and deploy *app.py* as a container service.
-   * - ``put-secret <key> <value>``
-     - Create or update a single secret and print its reference.
-   * - ``put-secrets <env_file>``
-     - Create or update multiple secrets from a .env file.
-   * - ``list``
-     - List existing deployments.
-   * - ``logs <name>``
-     - Stream recent logs from a deployment.
-   * - ``destroy <name>``
-     - Tear down the deployment/service.
-
-
-------------------
-
-.. list-table::
-   :header-rows: 1
-
-   * - Option
-     - Description
-     - Default
-   * - ``--name`` *STRING*
-     - Override deployment name (defaults to filename stem).
-     - ``<app>``
-   * - ``--cpu`` *INT*
-     - CPU units (AWS) / cores (GCP/Azure).
-     - ``256`` (AWS) / ``0.25`` (GCP/Azure)
-   * - ``--memory`` *INT*
-     - Memory in MiB.
-     - ``512``
-   * - ``--env`` *KEY=VAL* (repeat)
-     - Add environment variables passed to the container.
-     - –
-   * - ``--pip`` *PACKAGE* (repeat)
-     - Extra Python dependencies installed into the image.
-     - –
-   * - ``--secret`` *KEY=VAL* (repeat)
-     - Secrets are pulled from cloud provider's secret manager.
-     - –
-
-Config files (``configs/`` folder)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A minimal template you can reuse across commands. Pass it *anywhere* on the command line with ``-f/--config`` or set the ``AGENTSTR_CONFIG`` env var.
 
 .. code-block:: yaml
@@ -142,12 +82,15 @@ A minimal template you can reuse across commands. Pass it *anywhere* on the comm
   # View logs
   agentstr logs -f configs/aws.yml
 
+  # List deployments
+  agentstr list -f configs/aws.yml
+
   # Destroy
   agentstr destroy -f configs/aws.yml
 
-Config reference
--------------------------
-The repository ships with ready-made workflows to deploy your agent to **AWS**, **GCP** or **Azure** on every push. Copy the desired file, set the required secrets and you are ready to _push-to-deploy_.
+CI/CD - GitHub Actions
+----------------------
+The repository ships with ready-made workflows to deploy your agent to **AWS**, **GCP** or **Azure** on every push. Copy the desired file, set the required secrets and you are ready to deploy.
 
 .. list-table::
    :header-rows: 1
@@ -157,33 +100,31 @@ The repository ships with ready-made workflows to deploy your agent to **AWS**, 
      - Workflow file
      - Purpose
    * - AWS
-     - :file:`.github/workflows/deploy-aws.yml`
+     - :file:`.github/workflows/deploy-aws.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-aws.yml>`_
      - Installs dependencies, authenticates with AWS and runs ``agentstr deploy -f configs/aws.yml``.
    * - GCP
-     - :file:`.github/workflows/deploy-gcp.yml`
+     - :file:`.github/workflows/deploy-gcp.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-gcp.yml>`_
      - Authenticates with a service-account key, installs ``kubectl`` / GKE plugin and deploys using ``configs/gcp.yml``.
    * - Azure
-     - :file:`.github/workflows/deploy-azure.yml`
+     - :file:`.github/workflows/deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-azure.yml>`_
      - Logs in with ``az`` and deploys using ``configs/azure.yml``.
 
 Below are the workflow definitions for reference:
 
-.. tabs::
+**AWS**
 
-   .. tab:: AWS
+.. literalinclude:: ../../.github/workflows/deploy-aws.yml
+   :language: yaml
+   :linenos:
+    
+**GCP**
 
-      .. literalinclude:: ../../.github/workflows/deploy-aws.yml
-         :language: yaml
-         :linenos:
+.. literalinclude:: ../../.github/workflows/deploy-gcp.yml
+   :language: yaml
+   :linenos:
 
-   .. tab:: GCP
+**Azure**
 
-      .. literalinclude:: ../../.github/workflows/deploy-gcp.yml
-         :language: yaml
-         :linenos:
-
-   .. tab:: Azure
-
-      .. literalinclude:: ../../.github/workflows/deploy-azure.yml
-         :language: yaml
-         :linenos:
+.. literalinclude:: ../../.github/workflows/deploy-azure.yml
+   :language: yaml
+   :linenos:
