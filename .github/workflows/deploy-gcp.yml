@@ -39,5 +39,5 @@ jobs:
 
       - name: Deploy to GCP
         env:
-          GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: uv run agentstr deploy -f configs/gcp.yml
