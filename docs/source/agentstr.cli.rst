@@ -100,13 +100,13 @@ The repository ships with ready-made workflows to deploy your agent to **AWS**, 
      - Workflow file
      - Purpose
    * - AWS
-     - :file:`.github/workflows/deploy-aws.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-aws.yml>`_
+     - `deploy-aws.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-aws.yml>`_
      - Installs dependencies, authenticates with AWS and runs ``agentstr deploy -f configs/aws.yml``.
    * - GCP
-     - :file:`.github/workflows/deploy-gcp.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-gcp.yml>`_
+     - `deploy-gcp.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-gcp.yml>`_
      - Authenticates with a service-account key, installs ``kubectl`` / GKE plugin and deploys using ``configs/gcp.yml``.
    * - Azure
-     - :file:`.github/workflows/deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-azure.yml>`_
+     - `deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/dev/.github/workflows/deploy-azure.yml>`_
      - Logs in with ``az`` and deploys using ``configs/azure.yml``.
 
 Below are the workflow definitions for reference:
