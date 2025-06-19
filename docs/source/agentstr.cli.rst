@@ -73,6 +73,56 @@ A minimal template you can reuse across commands. Pass it *anywhere* on the comm
    secrets:                 # optional – provider secret refs
      MY_SECRET: arn:aws:secretsmanager:us-west-2:123:secret:MY_SECRET
 
+.. list-table:: Key fields
+   :header-rows: 1
+   :widths: 15 10 45
+
+   * - Field
+     - Type
+     - Description
+   * - ``provider``
+     - string
+     - Required. One of ``aws``, ``gcp``, ``azure``.
+   * - ``file_path``
+     - path
+     - Required. Python file executed inside the container.
+   * - ``name``
+     - string
+     - Deployment/service name. Defaults to filename stem.
+   * - ``cpu``
+     - int
+     - CPU units / cores to allocate.
+   * - ``memory``
+     - int
+     - Memory in MiB.
+   * - ``env``
+     - map
+     - Environment variables passed to the container.
+   * - ``secrets``
+     - map
+     - Provider-managed secret references (ARN/URI/path).
+   * - ``extra_pip_deps``
+     - list
+     - Extra PyPI packages installed into the image before deploy.
+
+
+
+Cloud Provider Environment Variables
+------------------------------------
+
+.. code-block:: bash
+
+   # AWS (assuming aws is authenticated)
+   export AWS_PROFILE=your-profile
+
+   # GCP (assuming gcloud is authenticated)
+   export GCP_PROJECT=your-project
+
+   # Azure (assuming az is authenticated)
+   export AZURE_SUBSCRIPTION_ID=your-subscription-id
+
+CLI Commands
+------------
 
 .. code-block:: bash
   
