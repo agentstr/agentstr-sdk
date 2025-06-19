@@ -37,6 +37,11 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest"
+
       - name: Deploy to GCP
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
