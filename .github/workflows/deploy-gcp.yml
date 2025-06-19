@@ -41,9 +41,6 @@ jobs:
             location: us-central1-b
             credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      - name: Install gke-gcloud-auth-plugin
-        run: sudo apt-get update && sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin google-cloud-sdk-kubectl
-
       - name: Deploy to GCP
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
