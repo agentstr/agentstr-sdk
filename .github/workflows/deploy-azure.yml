@@ -5,8 +5,8 @@ name: deploy-azure
 on:
   workflow_dispatch:
   push:
-    #branches:
-    #  - main
+    branches:
+      - main
     paths:
       - "configs/azure.yml"
       - ".github/workflows/deploy-azure.yml"
