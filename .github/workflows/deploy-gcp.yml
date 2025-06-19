@@ -39,7 +39,7 @@ jobs:
         with:
             cluster_name: agentstr-cluster
             location: us-central1-b
-            credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+            credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Deploy to GCP
         env:
