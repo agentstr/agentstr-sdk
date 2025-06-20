@@ -5,6 +5,14 @@ A comprehensive SDK for building decentralized, agent-based applications on the 
 The Agentstr SDK provides tools and utilities for creating, managing, and interacting with
 autonomous agents in a decentralized network, enabling secure and scalable agent-to-agent communication.
 
+Installation
+------------
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
+
 .. automodule:: agentstr
    :members:
    :undoc-members:
@@ -18,6 +26,7 @@ The Agentstr SDK is organized into the following core modules:
    :maxdepth: 2
 
    agentstr.a2a
+   agentstr.commands
    agentstr.mcp
    agentstr.nostr_agent_server
    agentstr.nostr_client

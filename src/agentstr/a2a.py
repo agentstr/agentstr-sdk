@@ -1,9 +1,7 @@
-import os
-import json
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import BaseModel
-#import dspy
+import dspy
 
 from agentstr.logger import get_logger
 
@@ -96,36 +94,61 @@ class PriceHandlerResponse(BaseModel):
     skills_used: list[str] = []
 
 
+class CanHandleResponse(BaseModel):
+    """Response model for the can handle handler.
+
+    Attributes:
+        can_handle: Whether the agent can handle the request
+        user_message: Friendly message to explain why the agent can or cannot handle the request
+    """
+    can_handle: bool
+    user_message: str = ""
+
+
 CHAT_HISTORY = {}  # Thread id -> [str]
 
 
-'''
-class PriceHandlerPrompt(dspy.Signature):
+class CanHandlePrompt(dspy.Signature):
     """Analyze if the agent can handle this request based on their skills and description and chat history.
-Consider both the agent's capabilities and whether the request matches their purpose.
+Consider both the agent's capabilities and whether the request matches their purpose."""
+    user_request: str = dspy.InputField(desc="The user's request")
+    agent_card: AgentCard = dspy.InputField(desc="The agent's model card")
+    history: dspy.History = dspy.InputField(desc="The conversation history")
+    user_response: CanHandleResponse = dspy.OutputField(
+        desc=(
+                "Message that explains why the agent can or cannot handle the request."
+            )
+        )
+
+class PriceHandlerPrompt(dspy.Signature):
+    """Assuming the agent can handle this request, determine the cost in satoshis.
 
 The agent may need to use multiple skills to handle the request. If so, include all relevant skills.
 
 The user_message should be a friendly, conversational message that:
 - Confirms the action to be taken
 - Explains what will be done in simple terms
-- Asks for confirmation to proceed
 - Is concise (1-2 sentences max)"""
 
     user_request: str = dspy.InputField(desc="The user's request")
+    agent_card: AgentCard = dspy.InputField(desc="The agent's model card")
     history: dspy.History = dspy.InputField(desc="The conversation history")
     user_response: PriceHandlerResponse = dspy.OutputField(
         desc=(
                 "Message that summarizes the process result, and the information users need, e.g., the "
                 "confirmation_number if a new flight is booked."
             )
-        )'''
+        )
+    satoshis_estimate: int = dspy.OutputField(
+        desc="Estimated cost in satoshis for the request"
+    )
 
 
 
 class PriceHandler:
-    def __init__(self, llm_callable: Callable[[str], str]):
-        self.llm_callable = llm_callable
+    def __init__(self, llm_api_key: str, llm_model_name: str, llm_base_url: str):
+        self.llm = dspy.LM(model=llm_model_name, api_base=llm_base_url.rstrip('/v1'), api_key=llm_api_key, model_type='chat')
+
 
     async def handle(self, user_message: str, agent_card: AgentCard, thread_id: str | None = None) -> PriceHandlerResponse:
         """Determine if an agent can handle a user's request and calculate the cost.
@@ -151,112 +174,44 @@ class PriceHandler:
         logger.debug(f"Agent router: {user_message}")
         logger.debug(f"Agent card: {agent_card.model_dump()}")
 
-        # Prepare the prompt for the LLM
-        prompt = f"""You are an agent router that determines if an agent can handle a user's request.
+        # Get the LLM response
+        dspy.settings.configure(lm=self.llm)
+        module = dspy.ChainOfThought(CanHandlePrompt)
+        result: CanHandlePrompt = await module.acall(user_request=user_message, agent_card=agent_card, history=dspy.History(messages=[]))
 
-Agent Information:
-Name: {agent_card.name}
-Description: {agent_card.description}
+        logger.info(f"LLM input: {user_message}, {agent_card.model_dump_json()}")
+        logger.info(f"LLM response: {result.user_response.model_dump_json()}")
 
-Skills:"""
-
-        for skill in agent_card.skills:
-            prompt += f"\n- {skill.name}: {skill.description}"
-
-        prompt += f"\n\nUser Request History: \n\n{user_message}\n\n"
-        prompt += """Analyze if the agent can handle this request based on their skills and description and chat history.
-Consider both the agent's capabilities and whether the request matches their purpose.
-
-The agent may need to use multiple skills to handle the request. If so, include all
-relevant skills.
-
-The user_message should be a friendly, conversational message that:
-- Confirms the action to be taken
-- Explains what will be done in simple terms
-- Asks for confirmation to proceed
-- Is concise (1-2 sentences max)
-
-Respond with a JSON object with these fields:
-{
-    "can_handle": boolean,    # Whether the agent can handle this request
-    "user_message": string,   # Friendly message to ask the user if they want to proceed
-    "skills_used": [string]   # Names of skills being used, if any
-}"""
-        logger.debug(f"Prompt: {prompt}")
-        try:
-            # Get the LLM response
-            response = await self.llm_callable(prompt)
-
-            # Seek to first { and last }
-            response = response[response.find("{"):response.rfind("}")+1]
-            logger.debug(f"LLM response: {response}")
-
-            # Parse the response
-            try:
-                result = json.loads(response.strip())
-                can_handle = result.get("can_handle", False)
-                user_message = result.get("user_message", "")
-
-                # Get skills used
-                skills_used: list[str] = result.get("skills_used", [])
-
-                # Calculate total cost based on skills used
-                cost = 0
-                if can_handle:
-                    # If specific skills are used, sum their costs
-                    if skills_used:
-                        skill_cost = 0
-                        for skill_name in skills_used:
-                            for skill in agent_card.skills:
-                                if skill.name.lower() == skill_name.lower() and skill.satoshis is not None:
-                                    skill_cost += skill.satoshis
-                                    break
-                        # Only use skill-based pricing if at least one skill has a price
-                        if skill_cost > 0:
-                            cost = skill_cost
-                    # Add base price to skill-based pricing
-                    if agent_card.satoshis is not None:
-                        cost += agent_card.satoshis
-
-                logger.debug(f"Router response: {can_handle}, {cost}, {user_message}, {skills_used}")
-                return PriceHandlerResponse(
-                    can_handle=can_handle,
-                    cost_sats=cost,
-                    user_message=user_message,
-                    skills_used=skills_used,
-                )
-
-            except (json.JSONDecodeError, ValueError) as e:
-                logger.error(f"Error parsing LLM response: {e!s}")
-                return PriceHandlerResponse(
-                    can_handle=False,
-                    cost_sats=0,
-                    user_message=f"Error parsing LLM response: {e!s}",
-                    skills_used=[],
-                )
-
-        except Exception as e:
-            logger.error(f"Error in agent routing: {e!s}")
+        if not result.user_response.can_handle:
+            logger.info(f"Agent cannot handle request: {result.user_response.user_message}")
             return PriceHandlerResponse(
                 can_handle=False,
                 cost_sats=0,
-                user_message=f"Error in agent routing: {e!s}",
+                user_message=result.user_response.user_message,
                 skills_used=[],
             )
 
+        # Get the LLM response
+        dspy.settings.configure(lm=self.llm)
+        module = dspy.ChainOfThought(PriceHandlerPrompt)
+        result: PriceHandlerPrompt = await module.acall(user_request=user_message, agent_card=agent_card, history=dspy.History(messages=[]))
 
-def default_price_handler(base_url: str | None = None, api_key: str | None = None, model_name: str | None = None) -> PriceHandler:
+        logger.info(f"Agent can handle request: {result.user_response.model_dump_json()}")
+        logger.info(f"Estimated satoshis: {result.satoshis_estimate}")
+
+        return PriceHandlerResponse(
+            can_handle=True,
+            cost_sats=result.satoshis_estimate,
+            user_message=result.user_response.user_message,
+            skills_used=result.user_response.skills_used,
+        )
+
+
+
+def default_price_handler(base_url: str, api_key: str, model_name: str) -> PriceHandler:
     """Create a default price handler using the given LLM parameters."""
-    from langchain_openai import ChatOpenAI
-
-    async def llm_callable(prompt: str) -> str:
-        return (await ChatOpenAI(
-            temperature=0,
-            base_url=base_url or os.getenv("LLM_BASE_URL"),
-            api_key=api_key or os.getenv("LLM_API_KEY"),
-            model_name=model_name or os.getenv("LLM_MODEL_NAME"),
-        ).ainvoke(prompt)).content
-
     return PriceHandler(
-        llm_callable=llm_callable
+        llm_api_key=api_key,
+        llm_model_name=model_name,
+        llm_base_url=base_url,
     )
