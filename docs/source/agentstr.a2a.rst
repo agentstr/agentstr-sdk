@@ -1,4 +1,4 @@
-A2A (Agent-to-Agent)
+Agent-to-Agent (A2A)
 ====================
 
 This module provides the core functionality for agent-to-agent communication in the Agentstr SDK.

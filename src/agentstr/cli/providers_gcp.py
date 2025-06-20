@@ -13,6 +13,7 @@ import base64
 import re
 import yaml  # type: ignore
 import uuid
+import secrets
 import tempfile
 
 from .providers import _catch_exceptions, register_provider, Provider  # type: ignore
@@ -470,6 +471,133 @@ CMD [\"python\", \"/app/app.py\"]
         return ref
 
     @_catch_exceptions
+    def provision_database(self, deployment_name: str) -> tuple[str, str]:  # noqa: D401
+        """Provision a Cloud SQL Postgres instance and store DATABASE_URL secret."""
+        project, region, zone = self._check_prereqs()
+        # ------------------------------------------------------------------
+        # Build valid Cloud SQL instance ID: lowercase letters, digits, hyphens;
+        # must start with letter, ≤98 chars.
+        # ------------------------------------------------------------------
+        import re
+
+        raw_id = f"agentstr-{deployment_name.lower()}"
+        inst = re.sub(r"[^a-z0-9-]", "-", raw_id)
+        inst = re.sub(r"-+", "-", inst).strip("-")
+        if not inst[0].isalpha():
+            inst = f"a{inst}"
+        instance_id = inst[:98]
+        root_pass = secrets.token_urlsafe(24)
+
+        # ------------------------------------------------------------------
+        # If DATABASE_URL secret already exists, assume DB is provisioned. Reuse.
+        # ------------------------------------------------------------------
+        secret_name = f"agentstr-{deployment_name}-DATABASE_URL"
+        desc_pre = subprocess.run([
+            "gcloud",
+            "secrets",
+            "describe",
+            secret_name,
+            "--project",
+            project,
+            "--format=value(name)",
+        ], capture_output=True, text=True)
+        if desc_pre.returncode == 0:
+            click.echo("Cloud SQL instance & secret already exist – reusing.")
+            secret_ref = f"projects/{project}/secrets/{secret_name}/versions/latest"
+            return "DATABASE_URL", secret_ref
+        # Check if instance exists
+        inst_check = subprocess.run([
+            "gcloud",
+            "sql",
+            "instances",
+            "describe",
+            instance_id,
+            "--project",
+            project,
+            "--format=value(name)",
+        ], capture_output=True, text=True)
+        if inst_check.returncode != 0:
+            click.echo("Creating Cloud SQL Postgres (db-f1-micro) – may take a few minutes ...")
+            self._run_cmd([
+                "gcloud",
+                "sql",
+                "instances",
+                "create",
+                instance_id,
+                "--database-version=POSTGRES_15",
+                "--cpu=1",
+                "--memory=4GiB",
+                "--region",
+                region,
+                "--project",
+                project,
+                "--quiet",
+            ])
+        # Wait until instance is RUNNABLE
+        click.echo("Waiting for Cloud SQL instance to become RUNNABLE (this may take a few minutes) ...")
+        import time
+        while True:
+            state_out = subprocess.check_output([
+                "gcloud",
+                "sql",
+                "instances",
+                "describe",
+                instance_id,
+                "--project",
+                project,
+                "--format=value(state)",
+            ], text=True).strip()
+            if state_out == "RUNNABLE":
+                break
+            time.sleep(10)
+
+        # Set root password (idempotent)
+        self._run_cmd([
+            "gcloud",
+            "sql",
+            "users",
+            "set-password",
+            "postgres",
+            "--instance",
+            instance_id,
+            "--password",
+            root_pass,
+            "--project",
+            project,
+        ])
+        # Obtain public IP
+        out = subprocess.check_output([
+            "gcloud",
+            "sql",
+            "instances",
+            "describe",
+            instance_id,
+            "--project",
+            project,
+            "--format=value(ipAddresses[0].ipAddress)",
+        ], text=True)
+        ip = out.strip()
+        conn = f"postgresql://postgres:{root_pass}@{ip}:5432/postgres"
+        secret_name = secret_name
+        # Check if secret exists already
+        desc = subprocess.run([
+            "gcloud",
+            "secrets",
+            "describe",
+            secret_name,
+            "--project",
+            project,
+            "--format=value(name)",
+        ], capture_output=True, text=True)
+        if desc.returncode == 0:
+            click.echo("Reusing existing DATABASE_URL secret.")
+            secret_ref = f"projects/{project}/secrets/{secret_name}/versions/latest"
+            return "DATABASE_URL", secret_ref
+        # Otherwise create
+        secret_ref = self.put_secret(secret_name, conn)
+        click.echo("Cloud SQL Postgres ready and secret stored.")
+        return "DATABASE_URL", secret_ref
+
     def destroy(self, deployment_name: str):  # noqa: D401
         deployment_name = deployment_name.replace("_", "-")
         # Delete service and deployment

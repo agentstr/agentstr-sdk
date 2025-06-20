@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import uuid
 import base64
+import secrets
 import json
 import os
 from pathlib import Path
@@ -450,6 +451,77 @@ CMD [\"python\", \"/app/app.py\"]
         return arn
 
     @_catch_exceptions
+    def get_secret(self, name: str) -> str:  # noqa: D401
+        sm = self.boto3.client("secretsmanager")
+        resp = sm.get_secret_value(SecretId=name)
+        return resp["SecretString"]
+
+    @_catch_exceptions
+    def provision_database(self, deployment_name: str) -> tuple[str, str]:  # noqa: D401
+        """Provision an RDS PostgreSQL instance and store DATABASE_URL secret.
+
+        This creates a minimal t3.micro Postgres instance (free-tier eligible in
+        many regions). It waits until the instance is available and then stores
+        the connection string in Secrets Manager, returning the secret ARN.
+        """
+        rds = self.boto3.client("rds", region_name=self.ecs.meta.region_name)
+        # ------------------------------------------------------------------
+        # Build a valid RDS identifier: letters, digits, hyphens; start with letter
+        # ------------------------------------------------------------------
+        import re
+
+        raw_id = f"agentstr-{deployment_name.lower()}"
+        # replace invalid chars with hyphen
+        sanitized = re.sub(r"[^a-z0-9-]", "-", raw_id)
+        # collapse duplicate hyphens
+        sanitized = re.sub(r"-+", "-", sanitized)
+        # trim leading/trailing hyphens
+        sanitized = sanitized.strip("-")
+        # ensure starts with letter
+        if not sanitized[0].isalpha():
+            sanitized = f"a{sanitized}"  # prepend letter if needed
+        # RDS identifier max 63 chars
+        db_id = sanitized[:63]
+        master_user = "agentuser"
+        password = secrets.token_urlsafe(24)
+        try:
+            rds.describe_db_instances(DBInstanceIdentifier=db_id)
+            click.echo("RDS instance already exists – reusing.")
+            try:
+                secret_resp = self.boto3.client("secretsmanager").get_secret_value(SecretId=f"agentstr/{deployment_name}/DATABASE_URL")
+                return "DATABASE_URL", secret_resp["ARN"]
+            except self.boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
+                click.echo("Secret missing; generating new credentials and updating master password ...")
+                # Reset master password
+                rds.modify_db_instance(
+                    DBInstanceIdentifier=db_id,
+                    MasterUserPassword=password,
+                    ApplyImmediately=True,
+                )
+        except rds.exceptions.DBInstanceNotFoundFault:
+            click.echo("Creating Postgres (RDS) instance – this may take several minutes ...")
+            rds.create_db_instance(
+                DBInstanceIdentifier=db_id,
+                AllocatedStorage=20,
+                DBInstanceClass="db.t3.micro",
+                Engine="postgres",
+                MasterUsername=master_user,
+                MasterUserPassword=password,
+                PubliclyAccessible=True,
+                StorageEncrypted=True,
+                BackupRetentionPeriod=0,
+            )
+        waiter = rds.get_waiter("db_instance_available")
+        waiter.wait(DBInstanceIdentifier=db_id)
+        # Build or update secret now that endpoint is ready
+        inst = rds.describe_db_instances(DBInstanceIdentifier=db_id)["DBInstances"][0]
+        endpoint = inst["Endpoint"]["Address"]
+        conn = f"postgresql://{master_user}:{password}@{endpoint}:5432/postgres"
+        secret_name = f"agentstr/{deployment_name}/DATABASE_URL"
+        secret_arn = self.put_secret(secret_name, conn)
+        click.echo("Postgres ready and secret stored.")
+        return "DATABASE_URL", secret_arn
+
     def destroy(self, deployment_name: str):  # noqa: D401
         click.echo(f"[AWS] Destroying {deployment_name} ...")
         try:

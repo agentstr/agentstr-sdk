@@ -3,6 +3,8 @@ provider: aws
 
 file_path: examples/mcp_server.py
 
+database: true  # Provision postgres database
+
 extra_pip_deps:  # Additional Python deps installed in image
   - agentstr-sdk==0.4.1
 

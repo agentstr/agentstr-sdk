@@ -20,6 +20,7 @@ dependencies = [
     "pynostr>=0.6.2",
     "websockets>=15.0.1",
     "dspy>=2.6.24",
+    "asyncpg>=0.30.0",
 ]
 readme = "README.md"
 [build-system]

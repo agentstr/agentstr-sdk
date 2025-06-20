@@ -3,24 +3,23 @@ import os
 
 
 class Logger:
-    """
-    A logger class that configures logging with a log level from the LOG_LEVEL environment variable.
-    Default log level is INFO if not specified in the environment.
-    """
-    _instance = None
-    _initialized = False
+    """Cache and configure :pyclass:`logging.Logger` instances by *name*."""
 
-    def __new__(cls, name: str | None = None):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    _instances: dict[str, "Logger"] = {}
 
-    def __init__(self, name: str | None = None):
-        if not self._initialized:
-            self.name = name or __name__
-            self.logger = logging.getLogger(self.name)
-            self._setup_logger()
-            self._initialized = True
+    def __new__(cls, name: str | None = None):  # noqa: D401
+        key = name or __name__
+        if key not in cls._instances:
+            cls._instances[key] = super().__new__(cls)
+        return cls._instances[key]
+
+    def __init__(self, name: str | None = None):  # noqa: D401
+        if hasattr(self, "_initialized") and self._initialized:  # already configured
+            return
+        self.name = name or __name__
+        self.logger = logging.getLogger(self.name)
+        self._setup_logger()
+        self._initialized = True
 
     def _setup_logger(self):
         """Configure the logger with the log level from environment variable."""

@@ -1,5 +1,5 @@
-Agentstr documentation
-==========================
+Agentstr Docs
+=============
 
 .. image:: https://img.shields.io/pypi/v/agentstr-sdk
    :target: https://pypi.org/project/agentstr-sdk/
