@@ -18,6 +18,7 @@ The Agentstr SDK is organized into the following core modules:
    :maxdepth: 2
 
    agentstr.a2a
+   agentstr.commands
    agentstr.mcp
    agentstr.nostr_agent_server
    agentstr.nostr_client

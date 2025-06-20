@@ -23,6 +23,12 @@ To ensure full stack decentralization, we recommend using [Routstr](https://rout
 ## Features
 
 ### Core Components
+
+#### Command Dispatcher
+
+The `agentstr.commands` module ships with a minimal dispatcher for chat-style
+“exclamation commands”. Use the ready-made `DefaultCommands` class or build
+your own by sub-classing `Commands`.
 - **Nostr Integration**: Full support for Nostr protocol operations
   - Event publishing and subscription
   - Direct messaging
