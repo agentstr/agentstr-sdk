@@ -17,10 +17,8 @@ agents:
 
 * ``!help`` – list all available commands
 * ``!describe`` – show the agent's name and description
-* ``!balance`` – return the user's current satoshi balance (pulled from the
-database)
-* ``!deposit [amount]`` – create a Nostr Wallet Connect invoice so the user can
-  top-up their balance and automatically credit it after settlement
+* ``!balance`` – return the user's current satoshi balance (pulled from the database)
+* ``!deposit [amount]`` – create a Nostr Wallet Connect invoice so the user can top-up their balance and automatically credit it after settlement
 
 Examples
 --------
@@ -68,14 +66,6 @@ class Commands:
 
         The method expects an *exclamation-prefixed* string such as
         ``"!help"`` or ``"!deposit 100"``.
-
-        Workflow
-        ~~~~~~~~
-        1. Verify the leading ``!`` – otherwise call :py:meth:`default`.
-        2. Remove the prefix and split on whitespace.
-        3. Look up the first word in :pyattr:`commands`.
-        4. Await the registered coroutine or fall back to
-           :py:meth:`default`.
         """
         if not command.startswith("!"):
             await self.default(command, pubkey)
@@ -123,6 +113,7 @@ class DefaultCommands(Commands):
         """Return a short overview of all built-in commands."""
         await self.nostr_client.send_direct_message(pubkey, """Available commands:
 !help - Show this help message
+!describe - Show the agent's name and description
 !balance - Show your balance
 !deposit [amount] - Deposit sats to your balance""")
 
