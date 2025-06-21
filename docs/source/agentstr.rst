@@ -9,14 +9,9 @@ Installation
 ------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    installation
-
-.. automodule:: agentstr
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Core Modules
 ------------
@@ -27,6 +22,7 @@ The Agentstr SDK is organized into the following core modules:
 
    agentstr.a2a
    agentstr.commands
+   agentstr.database
    agentstr.mcp
    agentstr.nostr_agent_server
    agentstr.nostr_client

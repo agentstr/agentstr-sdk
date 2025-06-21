@@ -137,10 +137,15 @@ def cli(ctx: click.Context, provider: Optional[str]):  # noqa: D401
     multiple=True,
     help="Additional Python package (pip install) to include in the container. Repeatable.",
 )
+@click.option(
+    "--database/--no-database",
+    default=None,
+    help="Provision a managed Postgres database and inject DATABASE_URL secret.",
+)
 @click.option("--cpu", type=int, default=None, show_default=True, help="Cloud provider vCPU units (e.g. 256=0.25 vCPU).")
 @click.option("--memory", type=int, default=512, show_default=True, help="Cloud provider memory (MiB).")
 @click.pass_context
-def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int):  # noqa: D401
+def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int, database: bool | None):  # noqa: D401
     """Deploy an application file (server or agent) to the chosen provider."""
     cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
@@ -173,7 +178,6 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
     if provider.name in {"gcp", "azure"} and isinstance(cpu, int) and cpu > 4:
         cpu = cpu / 1000
 
-
     if memory == 512:  # default flag value, check config override
         memory = cfg.get("memory", memory)
 
@@ -187,6 +191,20 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
             raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
 
     deployment_name = name or cfg.get("name") or file_path.stem
+
+    # Handle database provisioning ------------------------------------
+    cfg_db = cfg.get("database")
+    if database is None:
+        database = bool(cfg_db)
+    if database:
+        click.echo("Provisioning managed Postgres database ...")
+        env_key, secret_ref = provider.provision_database(deployment_name)
+        secrets_dict[env_key] = secret_ref
+        if provider.name == "aws":
+            secrets_dict["DATABASE_URL"] = secret_ref[:-7]
+
+
+    # Continue with normal deploy -------------------------------------
     provider.deploy(
         file_path,
         deployment_name,

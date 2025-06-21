@@ -155,6 +155,7 @@ Only use the following tools: [{skills_used}]
             logger.debug("Ignoring lightning invoices")
             return
         elif message.strip().startswith("!"):
+            logger.debug("Processing command: " + message.strip())
             await self.commands.run_command(message.strip(), event.pubkey)
             return
         message = message.strip()

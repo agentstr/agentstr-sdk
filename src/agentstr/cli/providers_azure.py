@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import os
 import uuid
+import secrets
 import tempfile
 from pathlib import Path
 from typing import Dict, Optional, List, Set
@@ -128,7 +129,7 @@ class AzureProvider(Provider):  # noqa: D401
         if not shutil.which("docker"):
             raise click.ClickException("Docker is required to build container images.")
         subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
-        region = os.getenv("AZURE_REGION", "eastus")
+        region = os.getenv("AZURE_REGION", "westus2")
         resource_group = os.getenv("AZURE_RESOURCE_GROUP", "agentstr-rg")
         if not subscription_id:
             raise click.ClickException("AZURE_SUBSCRIPTION_ID environment variable must be set.")
@@ -454,6 +455,123 @@ CMD [\"python\", \"/app/app.py\"]
         return uri
 
     @_catch_exceptions
+    def provision_database(self, deployment_name: str) -> tuple[str, str]:  # noqa: D401
+        """Provision Azure Database for PostgreSQL Flexible Server and store secret."""
+        deployment_name = deployment_name.replace("_", "-")
+        subscription_id, region, resource_group = self._check_prereqs()
+        server_name = os.getenv("DATABASE_SERVER_NAME", "agentstr")
+        admin_user = "agentuser"
+        password = secrets.token_urlsafe(24)
+
+        # ------------------------------------------------------------------
+        # If Key Vault secret already exists, assume DB is provisioned. Reuse.
+        # ------------------------------------------------------------------
+        vault_name = os.getenv("AZURE_KEY_VAULT", "agentstr-kv")
+        secret_name = f"agentstr-DATABASE_URL"
+        pre_chk = subprocess.run([
+            "az",
+            "keyvault",
+            "secret",
+            "show",
+            "--vault-name",
+            vault_name,
+            "--name",
+            secret_name,
+            "--query",
+            "id",
+            "-o",
+            "tsv",
+        ], capture_output=True, text=True)
+        if pre_chk.returncode == 0:
+            click.echo("Azure DB & DATABASE_URL secret already exist – reusing.")
+            return "DATABASE_URL", pre_chk.stdout.strip()
+
+        # Check existence
+        show_cmd = [
+            "az",
+            "postgres",
+            "flexible-server",
+            "show",
+            "--name",
+            server_name,
+            "--resource-group",
+            resource_group,
+            "--subscription",
+            subscription_id,
+            "-o",
+            "json",
+        ]
+        exists = subprocess.run(show_cmd, capture_output=True)
+    
+        # If server exists already, attempt to reuse secret
+        if exists.returncode == 0:
+            show_secret = subprocess.run([
+                "az",
+                "keyvault",
+                "secret",
+                "show",
+                "--vault-name",
+                vault_name,
+                "--name",
+                secret_name,
+                "--query",
+                "id",
+                "-o",
+                "tsv",
+            ], capture_output=True, text=True)
+            if show_secret.returncode == 0:
+                click.echo("Reusing existing DATABASE_URL secret.")
+                return "DATABASE_URL", show_secret.stdout.strip()
+            click.echo("Secret missing; resetting admin password and creating secret ...")
+            # Reset password
+            self._run_cmd([
+                "az",
+                "postgres",
+                "flexible-server",
+                "update",
+                "--name",
+                server_name,
+                "--resource-group",
+                resource_group,
+                "--admin-password",
+                password,
+            ])
+        else:
+            click.echo("Creating Azure Postgres Flexible Server – may take a few minutes ...")
+            self._run_cmd([
+                "az",
+                "postgres",
+                "flexible-server",
+                "create",
+                "--name",
+                server_name,
+                "--resource-group",
+                resource_group,
+                "--location",
+                region,
+                "--admin-user",
+                admin_user,
+                "--admin-password",
+                password,
+                "--sku-name",
+                "Standard_B1ms",
+                "--tier",
+                "Burstable",
+                "--version",
+                "15",
+                "--public-access",
+                "0.0.0.0-255.255.255.255",
+                "--storage-size",
+                "32",
+                "--yes",
+            ])
+        # Build connection string
+        host = f"{server_name}.postgres.database.azure.com"
+        conn = f"postgresql://{admin_user}:{password}@{host}:5432/postgres?sslmode=require"
+        secret_ref = self.put_secret(secret_name, conn)
+        click.echo("Azure Postgres ready and secret stored.")
+        return "DATABASE_URL", secret_ref
+
     def destroy(self, deployment_name: str):  # noqa: D401
         deployment_name = deployment_name.replace("_", "-")
         _, _, resource_group = self._check_prereqs()

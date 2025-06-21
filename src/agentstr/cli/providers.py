@@ -68,6 +68,19 @@ class Provider(abc.ABC):  # noqa: D401
     def destroy(self, deployment_name: str):  # noqa: D401
         """Destroy/tear down a deployment."""
 
+    # Database ------------------------------------------------------------
+    @abc.abstractmethod
+    @_catch_exceptions
+    def provision_database(self, deployment_name: str) -> tuple[str, str]:  # noqa: D401
+        """Provision a Postgres database and return (env_var_name, secret_ref).
+
+        Implementations should create the database securely and store the
+        resulting connection string in the provider's secret manager. The
+        secret *reference* (ARN/URI/etc.) is returned so the CLI can attach it
+        as a container secret. The *env_var_name* is the environment key that
+        will be populated from that secret (e.g. ``DATABASE_URL``).
+        """
+
     # Secrets -------------------------------------------------------------
     @abc.abstractmethod
     @_catch_exceptions
