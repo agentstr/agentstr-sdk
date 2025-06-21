@@ -468,27 +468,14 @@ CMD [\"python\", \"/app/app.py\"]
         # ------------------------------------------------------------------
         # Build a valid RDS identifier: letters, digits, hyphens; start with letter
         # ------------------------------------------------------------------
-        import re
-
-        raw_id = f"agentstr-{deployment_name.lower()}"
-        # replace invalid chars with hyphen
-        sanitized = re.sub(r"[^a-z0-9-]", "-", raw_id)
-        # collapse duplicate hyphens
-        sanitized = re.sub(r"-+", "-", sanitized)
-        # trim leading/trailing hyphens
-        sanitized = sanitized.strip("-")
-        # ensure starts with letter
-        if not sanitized[0].isalpha():
-            sanitized = f"a{sanitized}"  # prepend letter if needed
-        # RDS identifier max 63 chars
-        db_id = sanitized[:63]
+        db_id = os.getenv("DATABASE_INSTANCE_ID", "agentstr")
         master_user = "agentuser"
         password = secrets.token_urlsafe(24)
         try:
             rds.describe_db_instances(DBInstanceIdentifier=db_id)
             click.echo("RDS instance already exists – reusing.")
             try:
-                secret_resp = self.boto3.client("secretsmanager").get_secret_value(SecretId=f"agentstr/{deployment_name}/DATABASE_URL")
+                secret_resp = self.boto3.client("secretsmanager").get_secret_value(SecretId=f"agentstr/DATABASE_URL")
                 return "DATABASE_URL", secret_resp["ARN"]
             except self.boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
                 click.echo("Secret missing; generating new credentials and updating master password ...")
@@ -517,7 +504,7 @@ CMD [\"python\", \"/app/app.py\"]
         inst = rds.describe_db_instances(DBInstanceIdentifier=db_id)["DBInstances"][0]
         endpoint = inst["Endpoint"]["Address"]
         conn = f"postgresql://{master_user}:{password}@{endpoint}:5432/postgres"
-        secret_name = f"agentstr/{deployment_name}/DATABASE_URL"
+        secret_name = f"agentstr/DATABASE_URL"
         secret_arn = self.put_secret(secret_name, conn)
         click.echo("Postgres ready and secret stored.")
         return "DATABASE_URL", secret_arn

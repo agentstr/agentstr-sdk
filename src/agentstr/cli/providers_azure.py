@@ -129,7 +129,7 @@ class AzureProvider(Provider):  # noqa: D401
         if not shutil.which("docker"):
             raise click.ClickException("Docker is required to build container images.")
         subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
-        region = os.getenv("AZURE_REGION", "eastus")
+        region = os.getenv("AZURE_REGION", "westus2")
         resource_group = os.getenv("AZURE_RESOURCE_GROUP", "agentstr-rg")
         if not subscription_id:
             raise click.ClickException("AZURE_SUBSCRIPTION_ID environment variable must be set.")
@@ -459,7 +459,7 @@ CMD [\"python\", \"/app/app.py\"]
         """Provision Azure Database for PostgreSQL Flexible Server and store secret."""
         deployment_name = deployment_name.replace("_", "-")
         subscription_id, region, resource_group = self._check_prereqs()
-        server_name = f"agentstr-{deployment_name}"[:63]
+        server_name = os.getenv("DATABASE_SERVER_NAME", "agentstr")
         admin_user = "agentuser"
         password = secrets.token_urlsafe(24)
 
@@ -467,7 +467,7 @@ CMD [\"python\", \"/app/app.py\"]
         # If Key Vault secret already exists, assume DB is provisioned. Reuse.
         # ------------------------------------------------------------------
         vault_name = os.getenv("AZURE_KEY_VAULT", "agentstr-kv")
-        secret_name = f"agentstr-{deployment_name}-DATABASE_URL"
+        secret_name = f"agentstr-DATABASE_URL"
         pre_chk = subprocess.run([
             "az",
             "keyvault",

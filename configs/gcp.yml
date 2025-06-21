@@ -1,12 +1,12 @@
 # Sample GCP configuration for agentstr CLI (GKE)
 provider: gcp
 
-file_path: examples/mcp_server.py
+file_path: examples/commands_server.py
 
 database: true  # Provision postgres database
 
 extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk==0.4.1
+  - agentstr-sdk==0.4.12
 
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom

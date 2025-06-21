@@ -398,8 +398,11 @@ CMD [\"python\", \"/app/app.py\"]
             },
         }
         # Delete previous deployment if it exists
-        delete_cmd = ["kubectl", "delete", "deployment", deployment_name]
-        self._run_cmd(delete_cmd)
+        try:
+            delete_cmd = ["kubectl", "delete", "deployment", deployment_name]
+            self._run_cmd(delete_cmd)
+        except Exception:
+            pass
         # Apply manifests via kubectl – include secrets first
         manifest = yaml.safe_dump_all(secret_manifests + [deployment_yaml])
         apply_cmd = ["kubectl", "apply", "-f", "-"]
@@ -474,24 +477,14 @@ CMD [\"python\", \"/app/app.py\"]
     def provision_database(self, deployment_name: str) -> tuple[str, str]:  # noqa: D401
         """Provision a Cloud SQL Postgres instance and store DATABASE_URL secret."""
         project, region, zone = self._check_prereqs()
-        # ------------------------------------------------------------------
-        # Build valid Cloud SQL instance ID: lowercase letters, digits, hyphens;
-        # must start with letter, ≤98 chars.
-        # ------------------------------------------------------------------
-        import re
 
-        raw_id = f"agentstr-{deployment_name.lower()}"
-        inst = re.sub(r"[^a-z0-9-]", "-", raw_id)
-        inst = re.sub(r"-+", "-", inst).strip("-")
-        if not inst[0].isalpha():
-            inst = f"a{inst}"
-        instance_id = inst[:98]
+        instance_id = os.getenv('DATABASE_INSTANCE_ID', 'agentstr')
         root_pass = secrets.token_urlsafe(24)
 
         # ------------------------------------------------------------------
         # If DATABASE_URL secret already exists, assume DB is provisioned. Reuse.
         # ------------------------------------------------------------------
-        secret_name = f"agentstr-{deployment_name}-DATABASE_URL"
+        secret_name = f"agentstr-DATABASE_URL"
         desc_pre = subprocess.run([
             "gcloud",
             "secrets",
