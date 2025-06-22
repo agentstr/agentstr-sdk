@@ -220,7 +220,7 @@ Only use the following tools: [{skills_used}]
                     response = f"{response}\n\nPlease pay {price_handler_response.cost_sats} sats: {invoice}"
                     tasks.append(self._handle_paid_invoice(event, content, invoice, price_handler_response))
 
-                tasks.append(self.client.send_direct_message(event.pubkey, response, event_ref=event.id))
+                tasks.append(self.client.send_direct_message(event.pubkey, response))
                 await asyncio.gather(*tasks)
 
         except Exception as e:
