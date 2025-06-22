@@ -124,6 +124,31 @@ class GCPProvider(Provider):  # noqa: D401
         ]
         self._run_cmd(create_cmd)
 
+    # ------------------------------------------------------------------
+    # Cluster node external IP helper
+    # ------------------------------------------------------------------
+    def _get_cluster_external_ips(self, cluster_name: str, project: str, zone: str) -> list[str]:  # noqa: D401
+        """Return list of external IPv4 addresses of at most 5 GKE nodes."""
+        list_cmd = [
+            "gcloud",
+            "compute",
+            "instances",
+            "list",
+            "--filter",
+            f"name~^gke-{cluster_name}",
+            "--project",
+            project,
+            "--zones",
+            zone,
+            "--format=value(networkInterfaces[0].accessConfigs[0].natIP)",
+        ]
+        try:
+            output = subprocess.check_output(list_cmd, text=True).strip()
+        except subprocess.CalledProcessError:
+            return []
+        ips = [line for line in output.split("\n") if line]
+        return ips[:5]
+
     def _check_prereqs(self):  # noqa: D401
         if not shutil.which("gcloud"):
             raise click.ClickException("gcloud CLI is required for GCP provider. Install Google Cloud SDK.")
@@ -288,6 +313,33 @@ CMD [\"python\", \"/app/app.py\"]
                 "--role", "roles/secretmanager.secretAccessor",
                 "--project", project])
 
+        project, region, zone = self._check_prereqs()
+        image_uri = self._build_and_push_image(file_path, deployment_name, dependencies)
+
+        cluster_name = self._ensure_cluster(project, zone)
+        self._configure_kubectl(cluster_name, project, zone)
+
+        # ------------------------------------------------------------------
+        # Authorize Cloud SQL instance networks for cluster node IPs
+        # ------------------------------------------------------------------
+        instance_id = os.getenv("DATABASE_INSTANCE_ID", "agentstr")
+        node_ips = self._get_cluster_external_ips(cluster_name, project, zone)
+        if node_ips:
+            cidrs = [f"{ip}/32" for ip in node_ips]
+            click.echo(f"Authorizing Cloud SQL instance {instance_id} for node IPs: {', '.join(cidrs)}")
+            self._run_cmd([
+                "gcloud",
+                "sql",
+                "instances",
+                "patch",
+                instance_id,
+                "--authorized-networks",
+                ",".join(cidrs),
+                "--project",
+                project,
+                "--quiet",
+            ])
+
         # Create/patch Kubernetes service account bound to GCP SA (Workload Identity)
         ksa_name = f"{deployment_name}-ksa"
         sa_yaml = {
@@ -307,11 +359,6 @@ CMD [\"python\", \"/app/app.py\"]
         click.echo(
             f"[GCP/GKE] Deploying {file_path} as '{deployment_name}' (cpu={cpu}, memory={memory}, deps={dependencies}) ..."
         )
-        project, region, zone = self._check_prereqs()
-        image_uri = self._build_and_push_image(file_path, deployment_name, dependencies)
-
-        cluster_name = self._ensure_cluster(project, zone)
-        self._configure_kubectl(cluster_name, project, zone)
 
         # ------------------------------------------------------------------
         # Materialize GCP Secret Manager secrets into Kubernetes secrets
