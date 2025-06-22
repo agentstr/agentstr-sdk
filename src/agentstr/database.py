@@ -14,11 +14,13 @@ from __future__ import annotations
 
 import abc
 import os
-from typing import Optional, Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable, Any, List, Literal
 
 import aiosqlite
 import asyncpg
-from pydantic import BaseModel
+import json
+from datetime import datetime
+from pydantic import BaseModel, Field
 
 from agentstr.logger import get_logger
 
@@ -30,6 +32,35 @@ class User(BaseModel):
 
     user_id: str
     available_balance: int = 0
+
+
+class Message(BaseModel):
+    """Chat/message row stored per agent/thread."""
+
+    agent_name: str
+    thread_id: str
+    idx: int
+    user_id: str
+    role: Literal["user", "agent"]
+    content: str
+    metadata: dict[str, Any] | None = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @classmethod
+    def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
+        if row is None:
+            raise ValueError("Row cannot be None")
+        # Both sqlite and pg rows behave like dicts with keys
+        return cls(
+            agent_name=row["agent_name"],
+            thread_id=row["thread_id"],
+            idx=row["idx"],
+            user_id=row["user_id"],
+            role=row["role"],
+            content=row["content"],
+            metadata=json.loads(row["metadata"]) if row["metadata"] else None,
+            created_at=row["created_at"],
+        )
 
 @runtime_checkable
 class _DatabaseProtocol(Protocol):
@@ -45,6 +76,27 @@ class _DatabaseProtocol(Protocol):
         ...
 
     async def upsert_user(self, user: "User") -> None:
+        ...
+
+    async def add_message(
+        self,
+        thread_id: str,
+        user_id: str,
+        role: Literal["user", "agent"],
+        content: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> "Message":
+        ...
+
+    async def get_messages(
+        self,
+        thread_id: str,
+        *,
+        limit: int | None = None,
+        before_idx: int | None = None,
+        after_idx: int | None = None,
+        reverse: bool = False,
+    ) -> List["Message"]:
         ...
 
 
@@ -79,6 +131,32 @@ class BaseDatabase(abc.ABC):
     async def upsert_user(self, user: "User") -> None:
         """Create or update *user* in storage atomically."""
 
+    # ------------------------------------------------------------------
+    # Message history operations
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def add_message(
+        self,
+        thread_id: str,
+        user_id: str,
+        role: Literal["user", "agent"],
+        content: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> "Message":
+        """Append a message to a thread and return the stored model."""
+
+    @abc.abstractmethod
+    async def get_messages(
+        self,
+        thread_id: str,
+        *,
+        limit: int | None = None,
+        before_idx: int | None = None,
+        after_idx: int | None = None,
+        reverse: bool = False,
+    ) -> List["Message"]:
+        """Retrieve messages for *thread_id* ordered by idx."""
+
 
 class SQLiteDatabase(BaseDatabase):
     """SQLite implementation using `aiosqlite`."""
@@ -105,10 +183,38 @@ class SQLiteDatabase(BaseDatabase):
         )
         await self.conn.commit()
 
+    async def _ensure_message_table(self) -> None:
+        async with self.conn.execute(
+            """CREATE TABLE IF NOT EXISTS message (
+                agent_name TEXT NOT NULL,
+                thread_id TEXT NOT NULL,
+                idx INTEGER NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                metadata TEXT,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (agent_name, thread_id, idx)
+            )"""
+        ):
+            pass
+        # Index on agent_name for faster agent filtering
+        await self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_message_agent_name ON message (agent_name)"
+        )
+        # Index on thread_id for faster thread filtering
+        await self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_message_thread_id ON message (thread_id)"
+        )
+        await self.conn.commit()
+
     # --------------------------- API ----------------------------------
     async def async_init(self) -> "SQLiteDatabase":
         self.conn = await aiosqlite.connect(self._db_path)
+        # Return rows as mappings so we can access by column name
+        self.conn.row_factory = aiosqlite.Row
         await self._ensure_user_table()
+        await self._ensure_message_table()
         return self
 
     async def close(self) -> None:
@@ -149,6 +255,7 @@ class PostgresDatabase(BaseDatabase):
         logger.debug("Connecting to Postgres: %s", self.connection_string)
         self.conn = await asyncpg.connect(dsn=self.connection_string)
         await self._ensure_user_table()
+        await self._ensure_message_table()
         return self
 
     async def close(self) -> None:
@@ -225,6 +332,7 @@ def Database(connection_string: Optional[str] = None, *, agent_name: str = "defa
 __all__ = [
     "User",
     "Database",
+    "Message",
     "SQLiteDatabase",
     "PostgresDatabase",
 ]
