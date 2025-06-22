@@ -67,10 +67,12 @@ class EventRelay:
             Times out after `timeout` seconds if no matching events are found.
         """
         limit = filters.limit if filters.limit else limit
+        logger.debug(f"Filter limit: {limit}")
         subscription = create_subscription(filters)
         events = []
         t0 = time.time()
         time_remaining = timeout
+        logger.debug(f"Connecting to relay: {self.relay}")
         async with connect(self.relay) as ws:
             logger.debug(f"Sending subscription: {json.dumps(subscription)}")
             await ws.send(json.dumps(subscription))

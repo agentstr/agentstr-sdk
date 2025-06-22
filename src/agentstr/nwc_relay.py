@@ -85,7 +85,7 @@ def process_nwc_string(string: str) -> dict:
     return obj
 
 
-def get_signed_event(event: dict, private_key: str):
+def get_signed_event(event: dict, private_key: str) -> Event:
     """Create and sign a Nostr event with the given private key.
 
     Args:
@@ -116,14 +116,19 @@ class NWCRelay:
         logger.info(f"Initializing NWCRelay with connection string: {nwc_connection_string[:10]}...")
         try:
             self.nwc_info = process_nwc_string(nwc_connection_string)
+            logger.debug(f"NWC info: {self.nwc_info}")
             if relay is None:
                 relay = self.nwc_info["relay"]
             logger.debug(f"Using relay: {relay}")
-            self.event_relay = EventRelay(relay, private_key=PrivateKey.from_hex(self.nwc_info["app_privkey"]))
+            self.private_key = PrivateKey.from_hex(self.nwc_info["app_privkey"])
             logger.info("NWCRelay initialized successfully")
         except Exception as e:
             logger.critical(f"Failed to initialize NWCRelay: {e!s}", exc_info=True)
             raise
+
+    @property
+    def event_relay(self) -> EventRelay:
+        return EventRelay(self.nwc_info["relay"], private_key=self.private_key)
 
     async def get_response(self, event_id: str) -> Event | None:
         """Get response for a specific event ID."""
@@ -134,7 +139,7 @@ class NWCRelay:
             limit=1,
         )
         for _ in range(10):
-            event = await self.event_relay.get_event(filters=filters, timeout=5, close_on_eose=True)
+            event = await self.event_relay.get_event(filters=filters, timeout=10, close_on_eose=False)#True)
             if event:
                 return event
             await asyncio.sleep(0)
@@ -167,10 +172,11 @@ class NWCRelay:
         }
         logger.debug(f"Sending invoice request: {json.dumps(obj)}")
         event = get_signed_event(obj, self.nwc_info["app_privkey"])
+        # Send event and concurrently wait for response
+        response_task = asyncio.create_task(self.get_response(event.id))
         await self.event_relay.send_event(event)
-        response = await self.get_response(event.id)
+        response = await response_task
         if response is None:
-            logger.error("Failed to receive invoice response")
             return None
         ersp = response.content
         drsp = decrypt(self.nwc_info["app_privkey"], self.nwc_info["wallet_pubkey"], ersp)
@@ -202,9 +208,10 @@ class NWCRelay:
             "pubkey": self.nwc_info["app_pubkey"],
         }
         event = get_signed_event(obj, self.nwc_info["app_privkey"])
-        eid = event.id
+        # Send event and concurrently wait for response
+        response_task = asyncio.create_task(self.get_response(event.id))
         await self.event_relay.send_event(event)
-        response = await self.get_response(eid)
+        response = await response_task
         if response is None:
             return None
         ersp = response.content
@@ -270,8 +277,10 @@ class NWCRelay:
             "pubkey": self.nwc_info["app_pubkey"],
         }
         event = get_signed_event(obj, self.nwc_info["app_privkey"])
+        # Send event and concurrently wait for response
+        response_task = asyncio.create_task(self.get_response(event.id))
         await self.event_relay.send_event(event)
-        response = await self.get_response(event.id)
+        response = await response_task
         if response is None:
             return None
         ersp = response.content
@@ -297,8 +306,10 @@ class NWCRelay:
             "pubkey": self.nwc_info["app_pubkey"],
         }
         event = get_signed_event(obj, self.nwc_info["app_privkey"])
+        # Send event and concurrently wait for response
+        response_task = asyncio.create_task(self.get_response(event.id))
         await self.event_relay.send_event(event)
-        response = await self.get_response(event.id)
+        response = await response_task
         if response is None:
             return None
         ersp = response.content
@@ -321,8 +332,9 @@ class NWCRelay:
             "pubkey": self.nwc_info["app_pubkey"],
         }
         event = get_signed_event(obj, self.nwc_info["app_privkey"])
+        response_task = asyncio.create_task(self.get_response(event.id))
         await self.event_relay.send_event(event)
-        response = await self.get_response(event.id)
+        response = await response_task
         if response is None:
             return None
         ersp = response.content
