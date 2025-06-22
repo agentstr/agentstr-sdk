@@ -206,13 +206,13 @@ class NostrClient:
 
         await self.relay_manager.send_event(metadata.to_event())
 
-    async def send_direct_message(self, recipient_pubkey: str, message: str, event_ref: str | None = None) -> Event:
+    async def send_direct_message(self, recipient_pubkey: str, message: str, tags: dict[str, str] | None = None) -> Event:
         """Send an encrypted direct message to a recipient.
 
         Args:
             recipient_pubkey: The recipient's public key in hex or bech32 format.
             message: The message content to send.
-            event_ref: Optional event ID to reference in the message.
+            tags: Optional tags to add to the message.
 
         Returns:
             The sent event.
@@ -229,7 +229,7 @@ class NostrClient:
             event = await self.relay_manager.send_message(
                 message=message,
                 recipient_pubkey=recipient_pubkey,
-                event_ref=event_ref,
+                tags=tags,
             )
             logger.info(f"Successfully sent direct message with event ID: {event.id[:10]}")
             logger.debug(f"Full event: {event.to_dict()}")
@@ -243,14 +243,14 @@ class NostrClient:
         """Wait for and return the next direct message from a recipient."""
         return await self.relay_manager.receive_message(recipient_pubkey, timestamp=timestamp, timeout=timeout)
 
-    async def send_direct_message_and_receive_response(self, recipient_pubkey: str, message: str, timeout: int = 60, event_ref: str | None = None) -> DecryptedMessage:
+    async def send_direct_message_and_receive_response(self, recipient_pubkey: str, message: str, timeout: int = 60, tags: dict[str, str] | None = None) -> DecryptedMessage:
         """Send an encrypted direct message to a recipient and wait for a response.
 
         Args:
             recipient_pubkey: The recipient's public key.
             message: The message content (string or dict, which will be JSON-encoded).
         """
-        return await self.relay_manager.send_receive_message(message=message, recipient_pubkey=recipient_pubkey, timeout=timeout, event_ref=event_ref)
+        return await self.relay_manager.send_receive_message(message=message, recipient_pubkey=recipient_pubkey, timeout=timeout, tags=tags)
 
     async def note_listener(self, callback: Callable[[Event], Any], pubkeys: list[str] | None = None,
                      tags: list[str] | None = None, following_only: bool = False, timestamp: int | None = None):

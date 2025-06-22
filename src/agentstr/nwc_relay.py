@@ -139,7 +139,7 @@ class NWCRelay:
             limit=1,
         )
         for _ in range(10):
-            event = await self.event_relay.get_event(filters=filters, timeout=10, close_on_eose=False)#True)
+            event = await self.event_relay.get_event(filters=filters, timeout=10, close_on_eose=False)
             if event:
                 return event
             await asyncio.sleep(0)

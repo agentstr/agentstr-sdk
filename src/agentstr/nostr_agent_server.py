@@ -1,12 +1,12 @@
 import asyncio
 from collections.abc import Callable
-from imaplib import Commands
 from typing import Any
 
-from pydantic import BaseModel
 from pynostr.event import Event
 
-from agentstr.a2a import AgentCard, ChatInput, PriceHandlerResponse, PriceHandler
+from agentstr.database import Database
+from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
+from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
@@ -14,12 +14,6 @@ from agentstr.nostr_mcp_client import NostrMCPClient
 
 logger = get_logger(__name__)
 
-
-class NoteFilters(BaseModel):
-    """Filters for filtering Nostr notes/events."""
-    nostr_pubkeys: list[str] | None = None  #: Filter by specific public keys
-    nostr_tags: list[str] | None = None  #: Filter by specific tags
-    following_only: bool = False  #: Only show notes from followed users (not implemented)
 
 
 class NostrAgentServer:
@@ -44,11 +38,11 @@ class NostrAgentServer:
 
         llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
-        async def agent_callable(input: ChatInput) -> str:
+        async def agent_callable(input: ChatInput) -> ChatOutput:
             result = await llm.ainvoke(
                 {"messages": [{"role": "user", "content": input.messages[-1]}]},
             )
-            return result["messages"][-1].content
+            return ChatOutput(message=result["messages"][-1].content)
 
         server = NostrAgentServer(
             nostr_mcp_client=mcp_client,
@@ -66,7 +60,7 @@ class NostrAgentServer:
                  private_key: str | None = None,
                  nwc_str: str | None = None,
                  agent_info: AgentCard | None = None,
-                 agent_callable: Callable[[ChatInput], str] | None = None,
+                 agent_callable: Callable[[ChatInput], str | ChatOutput] | None = None,
                  note_filters: NoteFilters | None = None,
                  price_handler: PriceHandler | None = None,
                  commands: Commands | None = None):
@@ -88,9 +82,9 @@ class NostrAgentServer:
         self.agent_callable = agent_callable
         self.note_filters = note_filters
         self.price_handler = price_handler
-        self.commands = commands or DefaultCommands()
+        self.commands = commands or DefaultCommands(db=Database(), nostr_client=self.client, agent_info=agent_info)
 
-    async def chat(self, message: str, thread_id: str | None = None) -> Any:
+    async def chat(self, message: str, thread_id: str | None = None) -> str | ChatOutput:
         """Send a message to the agent and retrieve the response.
 
         Args:
@@ -174,7 +168,7 @@ Only use the following tools: [{skills_used}]
                     await self.client.send_direct_message(event.pubkey, response)
                     return
 
-            cost_sats = cost_sats or (self.agent_info.satoshis if self.agent_info else 0)
+            cost_sats = cost_sats or ((self.agent_info.satoshis or 0) if self.agent_info else 0)
             if cost_sats > 0:
                 invoice = await self.client.nwc_relay.make_invoice(amount=cost_sats, description=f"Payment for {self.agent_info.name}")
                 if response is not None:
@@ -220,7 +214,7 @@ Only use the following tools: [{skills_used}]
                     response = f"{response}\n\nPlease pay {price_handler_response.cost_sats} sats: {invoice}"
                     tasks.append(self._handle_paid_invoice(event, content, invoice, price_handler_response))
 
-                tasks.append(self.client.send_direct_message(event.pubkey, response, event_ref=event.id))
+                tasks.append(self.client.send_direct_message(event.pubkey, response))
                 await asyncio.gather(*tasks)
 
         except Exception as e:

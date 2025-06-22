@@ -93,10 +93,10 @@ class RelayManager:
             tasks.append(asyncio.create_task(relay.send_event(event)))
         await asyncio.gather(*tasks)
 
-    def encrypt_message(self, message: str | dict, recipient_pubkey: str, event_ref: str | None = None) -> Event:
+    def encrypt_message(self, message: str | dict, recipient_pubkey: str, tags: dict[str, str] | None = None) -> Event:
         """Encrypt a message for the recipient and prepare it as a Nostr event."""
         recipient = get_public_key(recipient_pubkey)
-        dm = EncryptedDirectMessage(reference_event_id=event_ref)
+        dm = EncryptedDirectMessage()
 
         if isinstance(message, dict):
             message = json.dumps(message)
@@ -104,16 +104,19 @@ class RelayManager:
         dm.encrypt(self.private_key.hex(), cleartext_content=message, recipient_pubkey=recipient.hex())
         event = dm.to_event()
         event.created_at = int(time.time())
+        if tags:
+            for tag_key, tag_value in tags.items():
+                event.add_tag(tag_key, tag_value)
         event.compute_id()
         event.sign(self.private_key.hex())
         return event
 
-    async def send_message(self, message: str | dict, recipient_pubkey: str, event_ref: str | None = None) -> Event:
+    async def send_message(self, message: str | dict, recipient_pubkey: str, tags: dict[str, str] | None = None) -> Event:
         """Send an encrypted message to a recipient through all connected relays."""
         logger.info(f"Sending message to {recipient_pubkey[:10]}: {message}")
 
         try:
-            event = self.encrypt_message(message, recipient_pubkey, event_ref)
+            event = self.encrypt_message(message, recipient_pubkey, tags=tags)
             logger.debug(f"Encrypted message event: {event.id}")
 
             tasks = []
@@ -170,12 +173,12 @@ class RelayManager:
             logger.error(f"Error in receive_message: {e!s}", exc_info=True)
             raise
 
-    async def send_receive_message(self, message: str | dict, recipient_pubkey: str, timeout: int = 3, event_ref: str | None = None) -> DecryptedMessage | None:
+    async def send_receive_message(self, message: str | dict, recipient_pubkey: str, timeout: int = 3, tags: dict[str, str] | None = None) -> DecryptedMessage | None:
         """Send a message and wait for a response from the recipient.
 
         Returns the first response received within the timeout period.
         """
-        dm_event = await self.send_message(message, recipient_pubkey, event_ref)
+        dm_event = await self.send_message(message, recipient_pubkey, tags)
         timestamp = dm_event.created_at
         logger.debug(f"Sent receive DM event: {dm_event.to_dict()}")
         return await self.receive_message(recipient_pubkey, timestamp, timeout)

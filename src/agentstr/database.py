@@ -81,7 +81,7 @@ class BaseDatabase(abc.ABC):
 
 
 class SQLiteDatabase(BaseDatabase):
-    """SQLite implementation using :pypi:`aiosqlite`."""
+    """SQLite implementation using `aiosqlite`."""
 
     def __init__(self, connection_string: Optional[str] = None, *, agent_name: str = "default"):
         super().__init__(connection_string or "sqlite://agentstr_local.db", agent_name)
@@ -138,7 +138,7 @@ class SQLiteDatabase(BaseDatabase):
 
 
 class PostgresDatabase(BaseDatabase):
-    """PostgreSQL implementation using :pypi:`asyncpg`."""
+    """PostgreSQL implementation using `asyncpg`."""
 
     _TABLE_NAME = "agent_user"  # avoid reserved keyword "user"
 

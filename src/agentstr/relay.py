@@ -135,9 +135,9 @@ class EventRelay:
             )
         return None
 
-    async def send_message(self, message: str | dict, recipient_pubkey: str, event_ref: str | None = None) -> Event:
+    async def send_message(self, message: str | dict, recipient_pubkey: str) -> Event:
         recipient = get_public_key(recipient_pubkey)
-        dm = EncryptedDirectMessage(reference_event_id=event_ref)
+        dm = EncryptedDirectMessage()
 
         if isinstance(message, dict):
             message = json.dumps(message)
@@ -158,8 +158,8 @@ class EventRelay:
             return self.decrypt_message(event)
         return None
 
-    async def send_receive_message(self, message: str | dict, recipient_pubkey: str, timeout: int = 3, event_ref: str | None = None) -> DecryptedMessage | None:
-        dm_event = await self.send_message(message, recipient_pubkey, event_ref)
+    async def send_receive_message(self, message: str | dict, recipient_pubkey: str, timeout: int = 3) -> DecryptedMessage | None:
+        dm_event = await self.send_message(message, recipient_pubkey)
         timestamp = dm_event.created_at
         return await self.receive_message(recipient_pubkey, timestamp, timeout)
 
