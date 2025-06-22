@@ -118,9 +118,9 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'cli'", specifier = ">=1.38.36" },
     { name = "click", marker = "extra == 'all'", specifier = ">=8.1.7" },
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.1.7" },
-    { name = "dspy", specifier = ">=2.6.24" },
-    { name = "dspy", marker = "extra == 'all'", specifier = ">=2.6.24" },
-    { name = "dspy", marker = "extra == 'dspy'", specifier = ">=2.6.24" },
+    { name = "dspy", specifier = ">=2.6.27" },
+    { name = "dspy", marker = "extra == 'all'", specifier = ">=2.6.27" },
+    { name = "dspy", marker = "extra == 'dspy'", specifier = ">=2.6.27" },
     { name = "expiringdict", specifier = ">=1.2.2" },
     { name = "google-adk", marker = "extra == 'all'", specifier = ">=1.1.1" },
     { name = "google-adk", marker = "extra == 'google'", specifier = ">=1.1.1" },
@@ -1079,7 +1079,7 @@ wheels = [
 
 [[package]]
 name = "dspy"
-version = "2.6.24"
+version = "2.6.27"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1105,9 +1105,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "ujson" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/60/91/e8cd63cedecbe08e50e09aca49ea60c23805c4a6c7bd74309926ceda4d51/dspy-2.6.24.tar.gz", hash = "sha256:8f8d38c5369a687d22628f700e8a290ff62fad65ec00d2010ad5a1ef0a60e549", size = 226043, upload-time = "2025-05-17T02:34:06.929Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/8a/f7ff1a6d3b5294678f13d17ecfc596f49a59e494b190e4e30f7dea7df1dc/dspy-2.6.27.tar.gz", hash = "sha256:de1c4f6f6d127e0efed894e1915dac40f5d5623e7f1cf3d749c98d790066477a", size = 234604, upload-time = "2025-06-03T17:47:13.411Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/19/37c4b0fdb85e3960ad2ea86d40c1de98798c094dfa583d6b28fd3c846479/dspy-2.6.24-py3-none-any.whl", hash = "sha256:54e82648e95a37bce1951ae9cf23b9504512b03287e7dd20322723a402a8337d", size = 285874, upload-time = "2025-05-17T02:34:05.116Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/bb/8a75d44bc1b54dea0fa0428eb52b13e7ee533b85841d2c53a53dfc360646/dspy-2.6.27-py3-none-any.whl", hash = "sha256:54e55fd6999b6a46e09b0e49e8c4b71be7dd56a881e66f7a60b8d657650c1a74", size = 297296, upload-time = "2025-06-03T17:47:11.526Z" },
 ]
 
 [[package]]

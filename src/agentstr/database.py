@@ -147,7 +147,7 @@ class PostgresDatabase(BaseDatabase):
 
     async def async_init(self) -> "PostgresDatabase":
         logger.debug("Connecting to Postgres: %s", self.connection_string)
-        self.conn = await asyncpg.connect(self.connection_string)
+        self.conn = await asyncpg.connect(dsn=self.connection_string)
         await self._ensure_user_table()
         return self
 
@@ -216,6 +216,7 @@ def Database(connection_string: Optional[str] = None, *, agent_name: str = "defa
         logger.info("Using SQLite backend")
         return SQLiteDatabase(conn_str, agent_name=agent_name)
     if conn_str.startswith("postgres://") or conn_str.startswith("postgresql://"):
+        conn_str = conn_str.replace("postgresql://", "postgres://", 1)
         logger.info("Using Postgres backend")
         return PostgresDatabase(conn_str, agent_name=agent_name)
     raise ValueError(f"Unsupported connection string: {conn_str}")

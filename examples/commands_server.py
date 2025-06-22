@@ -11,10 +11,11 @@ from agentstr import AgentCard, NostrClient
 
 relays   = os.getenv("NOSTR_RELAYS").split(",")
 private_key = os.getenv("EXAMPLE_MCP_SERVER_NSEC")
+nwc_str = os.getenv("MCP_SERVER_NWC_CONN_STR")
+server_public_key = os.getenv("EXAMPLE_MCP_SERVER_PUBKEY")
 
-
-agent_info = AgentCard(name="TestAgent", description="Agent description.", nostr_pubkey="npub1pml2vm255v2e23rces5j2967e4t7g3jgm43hmysvjr8frttxyphqznpr36")
-nostr_client = NostrClient(relays=relays, private_key=private_key)
+agent_info = AgentCard(name="TestAgent", description="Agent description.", nostr_pubkey=server_public_key)
+nostr_client = NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str)
 
 
 

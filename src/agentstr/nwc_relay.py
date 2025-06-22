@@ -151,10 +151,11 @@ class NWCRelay:
             "params": {
                 "amount": amount * 1000,
                 "description": description,
+                "expiry": expires_in,
             } if amount else {
                 "description": description,
+                "expiry": expires_in,
             },
-            "expires_at": math.floor(time.time()) + expires_in,
         })
         emsg = encrypt(self.nwc_info["app_privkey"], self.nwc_info["wallet_pubkey"], msg)
         obj = {

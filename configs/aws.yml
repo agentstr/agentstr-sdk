@@ -6,7 +6,7 @@ file_path: examples/commands_server.py
 database: true  # Provision postgres database
 
 extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk==0.4.12
+  - agentstr-sdk==0.4.13
 
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
@@ -14,3 +14,4 @@ env:  # Environment Variables
 secrets:  # ARNs of AWS Secrets Manager entries
   EXAMPLE_MCP_SERVER_NSEC: arn:aws:secretsmanager:us-west-2:529710252048:secret:EXAMPLE_MCP_SERVER_NSEC
   MCP_SERVER_NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:529710252048:secret:MCP_SERVER_NWC_CONN_STR
+  EXAMPLE_MCP_SERVER_PUBKEY: arn:aws:secretsmanager:us-west-2:529710252048:secret:EXAMPLE_MCP_SERVER_PUBKEY

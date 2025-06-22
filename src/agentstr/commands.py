@@ -29,6 +29,9 @@ Examples
 """
 from typing import Callable
 from agentstr.database import Database
+from agentstr.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Commands:
@@ -134,7 +137,7 @@ class DefaultCommands(Commands):
         The user may optionally append an *amount in sats* to the command, e.g.
         ``"!deposit 1000"``. If omitted, the wallet will prompt for an amount.
         """
-        if not self.nostr_client.nwc_relay:
+        if not self.nostr_client.nwc_str:
             await self.nostr_client.send_direct_message(pubkey, "Nostr Wallet Connect (NWC) is not configured")
             return
 
@@ -144,7 +147,14 @@ class DefaultCommands(Commands):
                 amount = int(command.split()[1])
             except ValueError:
                 pass
+
+        logger.info(f"Creating invoice for {amount} sats")
         invoice = await self.nostr_client.nwc_relay.make_invoice(amount=amount, description="Deposit to your balance")
+        logger.info(f"Invoice created: {invoice}")
+
+        if not invoice:
+            await self.nostr_client.send_direct_message(pubkey, "Failed to create invoice")
+            return
 
         await self.nostr_client.send_direct_message(pubkey, invoice)
 
