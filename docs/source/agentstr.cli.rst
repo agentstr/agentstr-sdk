@@ -1,5 +1,5 @@
-Agentstr CLI
-============
+Cloud Deployments & CI/CD
+=========================
 
 The ``agentstr`` command-line tool lets you deploy a single-file Python “agent” to
 AWS ECS Fargate, Google Kubernetes Engine or Azure Container Instances with **zero
@@ -28,18 +28,6 @@ You need Docker running for *all* providers.
      - ``AZURE_SUBSCRIPTION_ID``
 
 Ensure each CLI is authenticated and Docker can push to the relevant registry.
-
-Installation
-------------
-The CLI is installed automatically when you install the SDK with the *cli*
-extra:
-
-.. code-block:: bash
-
-   uv add agentstr-sdk[cli]   # or: pip install "agentstr-sdk[cli]"
-
-This places an ``agentstr`` executable on your ``$PATH``.
-
 
 Basic Commands
 --------------
