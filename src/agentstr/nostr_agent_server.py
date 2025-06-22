@@ -121,7 +121,7 @@ Only use the following tools: [{skills_used}]
 
         logger.info("Handling paid invoice")
 
-        async def on_success():
+        async def on_success(amount_paid: int):
             logger.info(f"Payment succeeded for {self.agent_info.name}")
             result = await self.chat(message, thread_id=event.pubkey)
             response = str(result)

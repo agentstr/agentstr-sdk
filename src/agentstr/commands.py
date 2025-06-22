@@ -158,9 +158,9 @@ class DefaultCommands(Commands):
 
         await self.nostr_client.send_direct_message(pubkey, invoice)
 
-        async def on_payment_success():
+        async def on_payment_success(amount_paid: int):
             user = await self.db.get_user(pubkey)
-            user.available_balance += amount
+            user.available_balance += amount_paid
             await self.db.upsert_user(user)
             await self.nostr_client.send_direct_message(pubkey, f"Payment successful! Your new balance is {user.available_balance} sats")
         

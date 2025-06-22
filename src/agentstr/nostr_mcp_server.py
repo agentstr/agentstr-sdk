@@ -171,7 +171,7 @@ class NostrMCPServer:
                     invoice = await self.client.nwc_relay.make_invoice(amount=satoshis, description=f"Payment for {tool_name} tool")
                     response = invoice
 
-                    async def on_success():
+                    async def on_success(amount_paid: int):
                         logger.info(f"Payment succeeded for {tool_name}")
                         result = await self.call_tool(tool_name, arguments)
                         response = {"content": [{"type": "text", "text": result}]}

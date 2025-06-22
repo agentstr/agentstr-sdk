@@ -23,11 +23,14 @@ async def run()   :
     #message = await client.send_direct_message_and_receive_response(server_public_key, "!describe")
     #print(message.message)
 
-    #message = await client.send_direct_message_and_receive_response(server_public_key, "!balance")
+    message = await client.send_direct_message_and_receive_response(server_public_key, "!balance")
+    print(message.message)
+
+    #message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit 10")
     #print(message.message)
 
-    message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit 10")
-    print(message.message)
+    #message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit")
+    #print(message.message)
 
 
 if __name__ == "__main__":
