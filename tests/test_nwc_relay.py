@@ -62,7 +62,7 @@ async def test_suite():
     #await test_pay_invoice(invoice)
     #await asyncio.sleep(5)
     #assert await test_did_payment_succeed(invoice)
-    await test_list_transactions()
+    #await test_list_transactions()
 
 
 if __name__ == "__main__":

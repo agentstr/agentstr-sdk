@@ -17,11 +17,12 @@ server_public_key = os.getenv("EXAMPLE_MCP_SERVER_PUBKEY")
 async def run()   :
     # Initialize the client
     client = NostrClient(relays=relays, private_key=private_key)
-    #message = await client.send_direct_message_and_receive_response(server_public_key, "!help")
-    #print(message.message)
+    
+    message = await client.send_direct_message_and_receive_response(server_public_key, "!help")
+    print(message.message)
 
-    #message = await client.send_direct_message_and_receive_response(server_public_key, "!describe")
-    #print(message.message)
+    message = await client.send_direct_message_and_receive_response(server_public_key, "!describe")
+    print(message.message)
 
     message = await client.send_direct_message_and_receive_response(server_public_key, "!balance")
     print(message.message)
@@ -29,8 +30,8 @@ async def run()   :
     message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit")
     print(message.message)
 
-    #message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit 10")
-    #print(message.message)
+    message = await client.send_direct_message_and_receive_response(server_public_key, "!deposit 10")
+    print(message.message)
 
 
 if __name__ == "__main__":
