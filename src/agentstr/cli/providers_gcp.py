@@ -220,6 +220,38 @@ CMD [\"python\", \"/app/app.py\"]
             "--quiet",
         ])
 
+    # ------------------------------------------------------------------
+    # Private Service Connection helper for Cloud SQL private IP
+    # ------------------------------------------------------------------
+    def _ensure_private_vpc_connection(self, network: str, project: str):  # noqa: D401
+        """Ensure VPC peering between network and Google managed services exists."""
+        # Enable service networking API (idempotent)
+        subprocess.run([
+            "gcloud", "services", "enable", "servicenetworking.googleapis.com", "--project", project, "--quiet"
+        ], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Check existing peering
+        peer_check = subprocess.run([
+            "gcloud", "compute", "networks", "peerings", "list", "--network", network, "--project", project, "--format=value(name)"
+        ], capture_output=True, text=True)
+        if peer_check.returncode == 0 and peer_check.stdout.strip():
+            return  # peering exists
+        # Need to allocate IP range and connect peering (one-time)
+        alloc_name = "google-managed-services-default"
+        subprocess.run([
+            "gcloud", "compute", "addresses", "create", alloc_name,
+            "--global", "--purpose=VPC_PEERING", "--prefix-length=16",
+            "--network", network, "--project", project, "--quiet"
+        ], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Connect peering with the allocated range
+        subprocess.run([
+            "gcloud", "services", "vpc-peerings", "connect",
+            "--service=servicenetworking.googleapis.com",
+            "--network", network,
+            "--ranges", alloc_name,
+            "--project", project,
+            "--quiet",
+        ], check=False)
+
     def _ensure_cluster(self, project: str, zone: str):  # noqa: D401
         cluster_name = "agentstr-cluster"
         # Check if cluster exists
@@ -318,27 +350,7 @@ CMD [\"python\", \"/app/app.py\"]
 
         cluster_name = self._ensure_cluster(project, zone)
         self._configure_kubectl(cluster_name, project, zone)
-
-        # ------------------------------------------------------------------
-        # Authorize Cloud SQL instance networks for cluster node IPs
-        # ------------------------------------------------------------------
-        instance_id = os.getenv("DATABASE_INSTANCE_ID", "agentstr")
-        node_ips = self._get_cluster_external_ips(cluster_name, project, zone)
-        if node_ips:
-            cidrs = [f"{ip}/32" for ip in node_ips]
-            click.echo(f"Authorizing Cloud SQL instance {instance_id} for node IPs: {', '.join(cidrs)}")
-            self._run_cmd([
-                "gcloud",
-                "sql",
-                "instances",
-                "patch",
-                instance_id,
-                "--authorized-networks",
-                ",".join(cidrs),
-                "--project",
-                project,
-                "--quiet",
-            ])
+        # Using private IP connectivity – no need for authorized-networks patch.
 
         # Create/patch Kubernetes service account bound to GCP SA (Workload Identity)
         ksa_name = f"{deployment_name}-ksa"
@@ -525,13 +537,13 @@ CMD [\"python\", \"/app/app.py\"]
         """Provision a Cloud SQL Postgres instance and store DATABASE_URL secret."""
         project, region, zone = self._check_prereqs()
 
-        instance_id = os.getenv('DATABASE_INSTANCE_ID', 'agentstr')
+        instance_id = os.getenv('DATABASE_INSTANCE_ID', 'agentstr-db')
         root_pass = secrets.token_urlsafe(24)
 
         # ------------------------------------------------------------------
         # If DATABASE_URL secret already exists, assume DB is provisioned. Reuse.
         # ------------------------------------------------------------------
-        secret_name = f"agentstr-DATABASE_URL"
+        secret_name = f"agentstrdb-DATABASE_URL"
         desc_pre = subprocess.run([
             "gcloud",
             "secrets",
@@ -558,6 +570,9 @@ CMD [\"python\", \"/app/app.py\"]
         ], capture_output=True, text=True)
         if inst_check.returncode != 0:
             click.echo("Creating Cloud SQL Postgres (db-f1-micro) – may take a few minutes ...")
+            network = os.getenv("GCP_SQL_NETWORK", "default")
+            # Ensure Private Service Connection between network and Google services exists
+            self._ensure_private_vpc_connection(network, project)
             self._run_cmd([
                 "gcloud",
                 "sql",
@@ -569,6 +584,9 @@ CMD [\"python\", \"/app/app.py\"]
                 "--memory=4GiB",
                 "--region",
                 region,
+                "--network",
+                network,
+                "--no-assign-ip",  # private IP only
                 "--project",
                 project,
                 "--quiet",
@@ -605,7 +623,7 @@ CMD [\"python\", \"/app/app.py\"]
             "--project",
             project,
         ])
-        # Obtain public IP
+        # Obtain private IP
         out = subprocess.check_output([
             "gcloud",
             "sql",
@@ -617,6 +635,8 @@ CMD [\"python\", \"/app/app.py\"]
             "--format=value(ipAddresses[0].ipAddress)",
         ], text=True)
         ip = out.strip()
+        if not ip:
+            raise click.ClickException("Cloud SQL instance lacks private IP; ensure Private Service Connection is configured.")
         conn = f"postgresql://postgres:{root_pass}@{ip}:5432/postgres"
         secret_name = secret_name
         # Check if secret exists already
