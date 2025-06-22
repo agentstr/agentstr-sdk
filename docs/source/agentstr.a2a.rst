@@ -9,4 +9,3 @@ and managing agent interactions within the Nostr network.
    :members:
    :undoc-members:
    :show-inheritance:
-   :noindex:

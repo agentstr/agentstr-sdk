@@ -1,12 +1,11 @@
 import asyncio
 from collections.abc import Callable
-from imaplib import Commands
 from typing import Any
 
-from pydantic import BaseModel
 from pynostr.event import Event
 
-from agentstr.a2a import AgentCard, ChatInput, PriceHandlerResponse, PriceHandler
+from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
+from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
@@ -14,12 +13,6 @@ from agentstr.nostr_mcp_client import NostrMCPClient
 
 logger = get_logger(__name__)
 
-
-class NoteFilters(BaseModel):
-    """Filters for filtering Nostr notes/events."""
-    nostr_pubkeys: list[str] | None = None  #: Filter by specific public keys
-    nostr_tags: list[str] | None = None  #: Filter by specific tags
-    following_only: bool = False  #: Only show notes from followed users (not implemented)
 
 
 class NostrAgentServer:
@@ -44,11 +37,11 @@ class NostrAgentServer:
 
         llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
-        async def agent_callable(input: ChatInput) -> str:
+        async def agent_callable(input: ChatInput) -> ChatOutput:
             result = await llm.ainvoke(
                 {"messages": [{"role": "user", "content": input.messages[-1]}]},
             )
-            return result["messages"][-1].content
+            return ChatOutput(message=result["messages"][-1].content)
 
         server = NostrAgentServer(
             nostr_mcp_client=mcp_client,
@@ -66,7 +59,7 @@ class NostrAgentServer:
                  private_key: str | None = None,
                  nwc_str: str | None = None,
                  agent_info: AgentCard | None = None,
-                 agent_callable: Callable[[ChatInput], str] | None = None,
+                 agent_callable: Callable[[ChatInput], str | ChatOutput] | None = None,
                  note_filters: NoteFilters | None = None,
                  price_handler: PriceHandler | None = None,
                  commands: Commands | None = None):
@@ -90,7 +83,7 @@ class NostrAgentServer:
         self.price_handler = price_handler
         self.commands = commands or DefaultCommands()
 
-    async def chat(self, message: str, thread_id: str | None = None) -> Any:
+    async def chat(self, message: str, thread_id: str | None = None) -> str | ChatOutput:
         """Send a message to the agent and retrieve the response.
 
         Args:
