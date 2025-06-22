@@ -134,8 +134,8 @@ class DefaultCommands(Commands):
     async def _deposit(self, command: str, pubkey: str):
         """Create a NWC invoice and credit the user's balance after payment.
 
-        The user may optionally append an *amount in sats* to the command, e.g.
-        ``"!deposit 1000"``. If omitted, the wallet will prompt for an amount.
+        The user must append an *amount in sats* to the command, e.g.
+        ``"!deposit 1000"``.
         """
         if not self.nostr_client.nwc_str:
             await self.nostr_client.send_direct_message(pubkey, "Nostr Wallet Connect (NWC) is not configured")
@@ -148,6 +148,10 @@ class DefaultCommands(Commands):
             except ValueError:
                 pass
 
+        if not amount:
+            await self.nostr_client.send_direct_message(pubkey, "Please specify an amount in sats")
+            return
+
         logger.info(f"Creating invoice for {amount} sats")
         invoice = await self.nostr_client.nwc_relay.make_invoice(amount=amount, description="Deposit to your balance")
         logger.info(f"Invoice created: {invoice}")
@@ -158,9 +162,9 @@ class DefaultCommands(Commands):
 
         await self.nostr_client.send_direct_message(pubkey, invoice)
 
-        async def on_payment_success(amount_paid: int):
+        async def on_payment_success():
             user = await self.db.get_user(pubkey)
-            user.available_balance += amount_paid
+            user.available_balance += amount
             await self.db.upsert_user(user)
             await self.nostr_client.send_direct_message(pubkey, f"Payment successful! Your new balance is {user.available_balance} sats")
         

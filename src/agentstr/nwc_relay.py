@@ -231,19 +231,6 @@ class NWCRelay:
             return invoice_info.get("result", {}).get("settled_at") or 0 > 0
         return False
 
-    async def amount_paid(self, invoice: str) -> int:
-        """Check if a payment was successful.
-
-        Returns:
-            Amount paid in sats
-        """
-        invoice_info = await self.check_invoice(invoice=invoice)
-        if (invoice_info and "error" not in invoice_info and ("result" in invoice_info) and (
-                "preimage" in invoice_info["result"])):
-            if invoice_info.get("result", {}).get("settled_at") or 0 > 0:
-                return (invoice_info.get("result", {}).get("amount") or 0) // 1000
-        return 0
-
     async def try_pay_invoice(self, invoice: str, amount: int | None = None) -> dict | None:
         """Attempt to pay a BOLT11 invoice.
         Returns:
@@ -374,12 +361,11 @@ class NWCRelay:
         start_time = time.time()
         success = False
         while True:
-            amount_paid = await self.amount_paid(invoice)
-            if amount_paid > 0:
+            if await self.did_payment_succeed(invoice):
                 success = True
                 if callback:
                     try:
-                        await callback(amount_paid)
+                        await callback()
                     except Exception as e:
                         logger.error(f"Error in callback: {e}", exc_info=True)
                         raise e
