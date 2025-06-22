@@ -10,8 +10,7 @@ Core Modules
 The Agentstr SDK is organized into the following core modules:
 
 .. toctree::
-   :maxdepth: 2
-   :hidden:
+   :maxdepth: 1
 
    agentstr.a2a
    agentstr.commands
