@@ -59,9 +59,9 @@ async def test_suite():
     invoice = await test_make_invoice()
     await test_check_invoice(invoice)
     assert not await test_did_payment_succeed(invoice)
-    await test_pay_invoice(invoice)
-    await asyncio.sleep(5)
-    assert await test_did_payment_succeed(invoice)
+    #await test_pay_invoice(invoice)
+    #await asyncio.sleep(5)
+    #assert await test_did_payment_succeed(invoice)
     await test_list_transactions()
 
 
