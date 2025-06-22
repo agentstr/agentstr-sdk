@@ -14,16 +14,16 @@ Prerequisites
 Basic Install
 -------------
 
-Install the core SDK only:
+Install the core SDK and CLI only:
 
 .. code-block:: bash
 
-   uv add agentstr-sdk            # or: pip install agentstr-sdk
+   uv add agentstr-sdk[cli]       # or: pip install "agentstr-sdk[cli]"
 
 All-in-One Install
 ------------------
 
-To include **all** optional extras (CLI, RAG, MCP back-ends, …):
+To include **all** optional extras (CLI, RAG, AI back-ends, …):
 
 .. code-block:: bash
 

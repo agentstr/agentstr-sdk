@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import os
 import sys
+import subprocess
+import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -251,7 +253,211 @@ def logs(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D4
     provider.logs(name)
 
 
-@cli.command("put-secret")
+# ---------------------------------------------------------------------------
+# Project scaffolding helpers
+# ---------------------------------------------------------------------------
+
+@cli.command("init")
+@click.argument("project_name")
+@click.option("--force", is_flag=True, help="Overwrite PROJECT_NAME directory if it exists.")
+@click.pass_context
+def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
+    """Initialise a *new* Agentstr agent project skeleton in *PROJECT_NAME* directory.
+
+    The generated template includes a minimal `main.py` that starts an in-memory
+    agent with echo behaviour plus a `requirements.txt` file.  This aims to make
+    the :doc:`getting_started` guide work out-of-the-box::
+
+        agentstr init my_agent
+        cd my_agent
+        python -m venv .venv && source .venv/bin/activate
+        pip install -r requirements.txt
+        python main.py
+    """
+    from textwrap import dedent
+
+    project_dir = Path(project_name).resolve()
+    if project_dir.exists() and not force:
+        raise click.ClickException(
+            f"Directory '{project_dir}' already exists. Use --force to overwrite.")
+
+    if project_dir.exists() and force:
+        for p in project_dir.iterdir():
+            if p.is_file():
+                p.unlink()
+            else:
+                import shutil
+                shutil.rmtree(p)
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write template files --------------------------------------------------
+    (project_dir / "__init__.py").touch(exist_ok=True)
+
+    main_py = dedent(
+        '''\
+"""Minimal Agentstr agent – echoes incoming messages."""
+
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+import asyncio
+from agentstr import AgentCard, NostrAgentServer, ChatInput, ChatOutput
+
+
+async def echo_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
+    return chat.messages[-1]
+
+
+async def main() -> None:
+    card = AgentCard(
+        name="EchoAgent",
+        description="A minimal example that echoes messages back.",
+        nostr_pubkey=os.getenv("AGENT_PUBKEY"),
+    )
+    server = NostrAgentServer(
+        agent_info=card,
+        agent_callable=echo_agent,
+        relays=[os.getenv("RELAY_URL")], 
+        private_key=os.getenv("AGENT_NSEC"),
+    )
+    await server.start()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+'''
+    )
+    (project_dir / "main.py").write_text(main_py)
+
+    (project_dir / "requirements.txt").write_text("agentstr-sdk[cli]\n")
+
+    from pynostr.key import PrivateKey
+    key = PrivateKey()
+    nsec = key.bech32()
+    pubkey = key.public_key.bech32()
+    (project_dir / ".env").write_text(f"RELAY_URL=ws://localhost:6969\nAGENT_NSEC={nsec}\nAGENT_PUBKEY={pubkey}")
+
+    (project_dir / ".gitignore").write_text("""# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+
+# IDEs
+.idea/
+
+.DS_Store
+
+# Databases
+*.db
+*.sqlite*""")
+
+    (project_dir / "README.md").write_text("""# Agentstr Agent Skeleton
+
+This is a minimal example of an Agentstr agent that echoes messages back to the sender.
+
+#### To run it, first install the dependencies:
+
+`pip install -r requirements.txt`
+
+#### Then start the local relay:
+
+`agentstr relay run`
+
+#### Then run it:
+
+`python main.py`
+
+#### You can now test the agent with the test_client.py script:
+
+`python test_client.py`
+""")
+
+    test_client_py = """
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+from agentstr import NostrClient, PrivateKey
+
+# Get the environment variables
+relays = [os.getenv("RELAY_URL")]
+agent_pubkey = os.getenv("AGENT_PUBKEY")
+
+
+async def chat():
+    client = NostrClient(relays, PrivateKey().bech32())
+    response = await client.send_direct_message_and_receive_response(
+        agent_pubkey,
+        "Hello, how are you?",
+    )
+    print(response.message)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(chat())
+"""
+
+    (project_dir / "test_client.py").write_text(test_client_py)
+
+    click.echo(f"✅ Project skeleton created in {project_dir}")
+
+# ---------------------------------------------------------------------------
+# Local Relay helper (dev-only)
+# ---------------------------------------------------------------------------
+
+@cli.group()
+@click.pass_context
+def relay(ctx: click.Context):  # noqa: D401
+    """Utilities for running lightweight local Nostr relays."""
+
+
+@relay.command("run")
+@click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.pass_context
+def relay_run(ctx: click.Context, config: Path):  # noqa: D401
+    """Spawn a local *nostr-relay* instance using a YAML CONFIG_FILE.
+
+    The command maps directly to::
+
+        nostr-relay serve --config CONFIG_FILE
+
+    See example config at:
+    https://code.pobblelabs.org/nostr_relay/file?name=nostr_relay/config.yaml
+    """
+    # Ensure nostr-relay CLI is available
+    if shutil.which("nostr-relay") is None:  # pragma: no cover
+        click.echo(
+            "The 'nostr-relay' CLI is not installed or not on PATH. Install it via\n"
+            "\n    pip install nostr-relay\n",
+            err=True,
+        )
+        sys.exit(1)
+
+    # Build command
+    if config is None:
+        cmd = ["nostr-relay", "serve"]
+    else:
+        cmd = ["nostr-relay", "serve", "--config", str(config)]
+
+    click.echo(f"Executing: {' '.join(cmd)}")
+    # Forward control; when relay exits, we return.
+    subprocess.run(cmd, check=True)
+
+# ---------------------------------------------------------------------------
+
 @click.argument("key")
 @click.argument("value", required=False)
 @click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
@@ -262,8 +468,8 @@ def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | N
 
     VALUE may be provided directly or via --value-file.
     """
-    # just load to validate path/env
-    _ = _load_config(ctx, config)
+    # Load config (needed for provider resolution)
+    cfg = _load_config(ctx, config)
     if value_file is not None:
         value = Path(value_file).read_text()
     if value is None:

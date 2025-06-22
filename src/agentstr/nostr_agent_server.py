@@ -4,6 +4,7 @@ from typing import Any
 
 from pynostr.event import Event
 
+from agentstr.database import Database
 from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
 from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
@@ -81,7 +82,7 @@ class NostrAgentServer:
         self.agent_callable = agent_callable
         self.note_filters = note_filters
         self.price_handler = price_handler
-        self.commands = commands or DefaultCommands()
+        self.commands = commands or DefaultCommands(db=Database(), nostr_client=self.client, agent_info=agent_info)
 
     async def chat(self, message: str, thread_id: str | None = None) -> str | ChatOutput:
         """Send a message to the agent and retrieve the response.
@@ -167,7 +168,7 @@ Only use the following tools: [{skills_used}]
                     await self.client.send_direct_message(event.pubkey, response)
                     return
 
-            cost_sats = cost_sats or (self.agent_info.satoshis if self.agent_info else 0)
+            cost_sats = cost_sats or ((self.agent_info.satoshis or 0) if self.agent_info else 0)
             if cost_sats > 0:
                 invoice = await self.client.nwc_relay.make_invoice(amount=cost_sats, description=f"Payment for {self.agent_info.name}")
                 if response is not None:

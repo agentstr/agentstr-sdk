@@ -2,4 +2,30 @@
 .sidebar-logo {
     height: 80px !important;
     width: auto !important;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sidebar-brand-text {
+    margin-left: auto;
+    margin-right: auto;
+    width: auto !important;
+}
+
+.sidebar-logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1em;
+}
+
+.sidebar-project-name {
+    font-weight: bold;
+    font-size: 1.3em;
+    text-align: center;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    letter-spacing: 0.01em;
 }
