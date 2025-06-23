@@ -1,10 +1,11 @@
 import asyncio
 from collections.abc import Callable
 from typing import Any
+import uuid
 
 from pynostr.event import Event
 
-from agentstr.database.base import BaseDatabase
+from agentstr.database.base import BaseDatabase, User, Message
 from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
 from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
@@ -108,7 +109,7 @@ class NostrAgentServer:
         # TODO
         return response.message
 
-    async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, price_handler_response: PriceHandlerResponse = None, delegated_tags: dict[str, str] | None = None):
+    async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, thread_id: str, user_id: str, price_handler_response: PriceHandlerResponse = None, delegated_tags: dict[str, str] | None = None):
         """Handle a paid invoice."""
         if price_handler_response:
             skills_used = ", ".join(price_handler_response.skills_used)
@@ -129,7 +130,7 @@ Only use the following tools: [{skills_used}]
 
         async def on_success():
             logger.info(f"Payment succeeded for {self.agent_info.name}")
-            result = await self.chat(message, thread_id=event.pubkey, user_id=event.pubkey)
+            result = await self.chat(message, thread_id=thread_id, user_id=user_id)
             response = str(result)
             logger.debug(f"On success response: {response}")
             await self.client.send_direct_message(event.pubkey, response, tags=delegated_tags)
@@ -171,10 +172,15 @@ Only use the following tools: [{skills_used}]
             delegated_thread_id = tags["t"][0][1]
 
         delegated_tags = {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
+        logger.debug(f"Delegated tags: {delegated_tags}")
 
-        user = await self.db.get_user(event.pubkey)
-        if not user:
-            await self.db.upsert_user(User(user_id=event.pubkey))
+        user_id = delegated_user_id or event.pubkey
+        user = await self.db.get_user(user_id=user_id)
+        if not user.current_thread_id:
+            logger.debug("No current thread ID found for user, creating new thread (or delegating)")
+            thread_id = delegated_thread_id or uuid.uuid4().hex
+            user = await self.db.set_current_thread_id(user_id=user_id, thread_id=thread_id)
+        thread_id = user.current_thread_id
 
         message = message.strip()
         invoice = None
@@ -184,7 +190,7 @@ Only use the following tools: [{skills_used}]
             response = None
             cost_sats = None
             if self.price_handler:
-                price_handler_response = await self.price_handler.handle(message, self.agent_info, thread_id=event.pubkey)
+                price_handler_response = await self.price_handler.handle(message, self.agent_info, thread_id=thread_id)
                 response = price_handler_response.user_message
                 if price_handler_response.can_handle:
                     cost_sats = price_handler_response.cost_sats
@@ -200,7 +206,7 @@ Only use the following tools: [{skills_used}]
                 else:
                     response = invoice
             else:
-                result = await self.chat(message, thread_id=event.pubkey, user_id=event.pubkey)
+                result = await self.chat(message, thread_id=thread_id, user_id=user_id)
                 response = str(result)
         except Exception as e:
             response = f"Error in direct message callback: {e}"
@@ -209,7 +215,7 @@ Only use the following tools: [{skills_used}]
         tasks = []
         tasks.append(self.client.send_direct_message(event.pubkey, response, tags=delegated_tags))
         if invoice:
-            tasks.append(self._handle_paid_invoice(event, message, invoice, price_handler_response))
+            tasks.append(self._handle_paid_invoice(event, message, invoice, thread_id, user_id, price_handler_response))
         await asyncio.gather(*tasks)
 
 
@@ -236,7 +242,7 @@ Only use the following tools: [{skills_used}]
                 if price_handler_response.cost_sats > 0:
                     invoice = await self.client.nwc_relay.make_invoice(amount=price_handler_response.cost_sats, description=f"Payment to {self.agent_info.name}")
                     response = f"{response}\n\nPlease pay {price_handler_response.cost_sats} sats: {invoice}"
-                    tasks.append(self._handle_paid_invoice(event, content, invoice, price_handler_response))
+                    tasks.append(self._handle_paid_invoice(event, content, invoice, event.pubkey, event.pubkey, price_handler_response))
 
                 tasks.append(self.client.send_direct_message(event.pubkey, response))
                 await asyncio.gather(*tasks)

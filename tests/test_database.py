@@ -108,3 +108,42 @@ async def test_get_messages_pagination(db):
     # Combined limit + reverse
     single = await db.get_messages("thread2", limit=1, reverse=True)
     assert single[0].idx == 4
+
+
+@pytest.mark.asyncio
+async def test_current_thread_id_default_none(db):
+    user_id = "ctid1"
+    user = await db.get_user(user_id)
+    assert user.current_thread_id is None
+    ctid = await db.get_current_thread_id(user_id)
+    assert ctid is None
+
+@pytest.mark.asyncio
+async def test_set_and_get_current_thread_id(db):
+    user_id = "ctid2"
+    thread_id = "threadX"
+    await db.set_current_thread_id(user_id, thread_id)
+    ctid = await db.get_current_thread_id(user_id)
+    assert ctid == thread_id
+    # Should persist on user fetch
+    user = await db.get_user(user_id)
+    assert user.current_thread_id == thread_id
+
+@pytest.mark.asyncio
+async def test_update_current_thread_id(db):
+    user_id = "ctid3"
+    thread_id1 = "threadA"
+    thread_id2 = "threadB"
+    await db.set_current_thread_id(user_id, thread_id1)
+    assert await db.get_current_thread_id(user_id) == thread_id1
+    await db.set_current_thread_id(user_id, thread_id2)
+    assert await db.get_current_thread_id(user_id) == thread_id2
+
+@pytest.mark.asyncio
+async def test_set_current_thread_id_to_none(db):
+    user_id = "ctid4"
+    thread_id = "threadZ"
+    await db.set_current_thread_id(user_id, thread_id)
+    assert await db.get_current_thread_id(user_id) == thread_id
+    await db.set_current_thread_id(user_id, None)
+    assert await db.get_current_thread_id(user_id) is None

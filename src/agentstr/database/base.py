@@ -118,3 +118,14 @@ class BaseDatabase(abc.ABC):
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* ordered by idx."""
 
+    # ------------------------------------------------------------------
+    # Current thread ID helpers
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def get_current_thread_id(self, user_id: str) -> str | None:
+        """Return the current thread id for *user_id* within this agent scope."""
+
+    @abc.abstractmethod
+    async def set_current_thread_id(self, user_id: str, thread_id: str | None) -> None:
+        """Persist *thread_id* as the current thread for *user_id*."""
+

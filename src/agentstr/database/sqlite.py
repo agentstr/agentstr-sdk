@@ -24,6 +24,7 @@ class SQLiteDatabase(BaseDatabase):
                 agent_name TEXT NOT NULL,
                 user_id TEXT NOT NULL,
                 available_balance INTEGER NOT NULL,
+                current_thread_id TEXT,
                 PRIMARY KEY (agent_name, user_id)
             )"""
         ):
@@ -76,20 +77,32 @@ class SQLiteDatabase(BaseDatabase):
     async def get_user(self, user_id: str) -> "User":
         logger.debug("[SQLite] Getting user %s", user_id)
         async with self.conn.execute(
-            "SELECT available_balance FROM user WHERE agent_name = ? AND user_id = ?",
+            "SELECT available_balance, current_thread_id FROM user WHERE agent_name = ? AND user_id = ?",
             (self.agent_name, user_id),
         ) as cursor:
             row = await cursor.fetchone()
             if row:
-                return User(user_id=user_id, available_balance=row[0])
-            return User(user_id=user_id)  # default balance 0
+                return User(user_id=user_id, available_balance=row[0], current_thread_id=row[1])
+            return User(user_id=user_id)
+
+    async def get_current_thread_id(self, user_id: str) -> str | None:
+        """Return the current thread id for *user_id* within this agent scope."""
+        user = await self.get_user(user_id)
+        return user.current_thread_id
+
+    async def set_current_thread_id(self, user_id: str, thread_id: str | None) -> None:
+        """Persist *thread_id* as the current thread for *user_id*."""
+        user = await self.get_user(user_id)
+        user.current_thread_id = thread_id
+        await self.upsert_user(user)
+
 
     async def upsert_user(self, user: "User") -> None:
         logger.debug("[SQLite] Upserting user %s", user)
         await self.conn.execute(
-            """INSERT INTO user (agent_name, user_id, available_balance) VALUES (?, ?, ?)
-            ON CONFLICT(agent_name, user_id) DO UPDATE SET available_balance = excluded.available_balance""",
-            (self.agent_name, user.user_id, user.available_balance),
+            """INSERT INTO user (agent_name, user_id, available_balance, current_thread_id) VALUES (?, ?, ?, ?)
+            ON CONFLICT(agent_name, user_id) DO UPDATE SET available_balance = excluded.available_balance, current_thread_id = excluded.current_thread_id""",
+            (self.agent_name, user.user_id, user.available_balance, user.current_thread_id),
         )
         await self.conn.commit()
 

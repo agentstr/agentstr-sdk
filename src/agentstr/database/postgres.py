@@ -36,6 +36,7 @@ class PostgresDatabase(BaseDatabase):
                 agent_name TEXT NOT NULL,
                 user_id TEXT NOT NULL,
                 available_balance INTEGER NOT NULL,
+                current_thread_id TEXT,
                 PRIMARY KEY (agent_name, user_id)
             )"""
         )
@@ -150,22 +151,23 @@ class PostgresDatabase(BaseDatabase):
     async def get_user(self, user_id: str) -> "User":
         logger.debug("[Postgres] Getting user %s", user_id)
         row = await self.conn.fetchrow(
-            f"SELECT available_balance FROM {self._TABLE_NAME} WHERE agent_name = $1 AND user_id = $2",
+            f"SELECT available_balance, current_thread_id FROM {self._TABLE_NAME} WHERE agent_name = $1 AND user_id = $2",
             self.agent_name,
             user_id,
         )
         if row:
-            return User(user_id=user_id, available_balance=row["available_balance"])
+            return User(user_id=user_id, available_balance=row["available_balance"], current_thread_id=row["current_thread_id"])
         return User(user_id=user_id)
 
     async def upsert_user(self, user: "User") -> None:
         logger.debug("[Postgres] Upserting user %s", user)
         await self.conn.execute(
-            f"""INSERT INTO {self._TABLE_NAME} (agent_name, user_id, available_balance)
-            VALUES ($1, $2, $3)
+            f"""INSERT INTO {self._TABLE_NAME} (agent_name, user_id, available_balance, current_thread_id)
+            VALUES ($1, $2, $3, $4)
             ON CONFLICT (agent_name, user_id) DO UPDATE
-            SET available_balance = EXCLUDED.available_balance""",
+            SET available_balance = EXCLUDED.available_balance, current_thread_id = EXCLUDED.current_thread_id""",
             self.agent_name,
             user.user_id,
             user.available_balance,
+            user.current_thread_id,
         )
