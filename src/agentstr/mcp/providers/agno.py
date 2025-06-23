@@ -2,7 +2,7 @@ from typing import Any
 
 from agno.tools import Function
 
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 
 async def to_agno_tools(nostr_mcp_client: NostrMCPClient) -> list[Function]:

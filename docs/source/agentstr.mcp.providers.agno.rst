@@ -1,7 +1,7 @@
 Agno Integration
 ================
 
-.. automodule:: agentstr.mcp.agno
+.. automodule:: agentstr.mcp.providers.agno
    :members:
    :undoc-members:
    :show-inheritance:

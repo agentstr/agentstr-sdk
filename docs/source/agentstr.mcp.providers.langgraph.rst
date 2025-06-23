@@ -1,7 +1,7 @@
 LangGraph Integration
 =====================
 
-.. automodule:: agentstr.mcp.langgraph
+.. automodule:: agentstr.mcp.providers.langgraph
    :members:
    :undoc-members:
    :show-inheritance:

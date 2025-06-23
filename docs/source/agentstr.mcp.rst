@@ -12,11 +12,8 @@ Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   agentstr.mcp.agno
-   agentstr.mcp.dspy
-   agentstr.mcp.google
-   agentstr.mcp.langgraph
-   agentstr.mcp.openai
-   agentstr.mcp.pydantic
+   agentstr.mcp.nostr_mcp_client
+   agentstr.mcp.nostr_mcp_server
+   agentstr.mcp.providers

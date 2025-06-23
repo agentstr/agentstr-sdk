@@ -1,7 +1,7 @@
 Google Integration
 ==================
 
-.. automodule:: agentstr.mcp.google
+.. automodule:: agentstr.mcp.providers.google
    :members:
    :undoc-members:
    :show-inheritance:

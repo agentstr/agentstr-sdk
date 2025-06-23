@@ -1,7 +1,7 @@
 OpenAI Integration
 ==================
 
-.. automodule:: agentstr.mcp.openai
+.. automodule:: agentstr.mcp.providers.openai
    :members:
    :undoc-members:
    :show-inheritance:

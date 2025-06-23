@@ -17,10 +17,11 @@ The Agentstr SDK is organized into the following core modules:
    agentstr.database
    agentstr.models
    agentstr.mcp
+   agentstr.mcp.nostr_mcp_client
+   agentstr.mcp.nostr_mcp_server
+   agentstr.mcp.providers
    agentstr.nostr_agent_server
    agentstr.nostr_client
-   agentstr.nostr_mcp_client
-   agentstr.nostr_mcp_server
    agentstr.nostr_rag
    agentstr.nwc_relay
    agentstr.relay

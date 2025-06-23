@@ -1,7 +1,7 @@
 PydanticAI Integration
 ======================
 
-.. automodule:: agentstr.mcp.pydantic
+.. automodule:: agentstr.mcp.providers.pydantic
    :members:
    :undoc-members:
    :show-inheritance:

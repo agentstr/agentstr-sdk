@@ -1,7 +1,7 @@
 DSPy Integration
 ================
 
-.. automodule:: agentstr.mcp.dspy
+.. automodule:: agentstr.mcp.providers.dspy
    :members:
    :undoc-members:
    :show-inheritance:
