@@ -23,7 +23,7 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
    installation
    getting_started
    agentstr
-   agentstr.cli
+   cloud_cicd
 
 Indices and tables
 ==================

@@ -1,5 +1,5 @@
-Cloud Deployments & CI/CD
-=========================
+Cloud & CI/CD
+=============
 
 The ``agentstr`` command-line tool lets you deploy a single-file Python “agent” to
 AWS ECS Fargate, Google Kubernetes Engine or Azure Container Instances with **zero
