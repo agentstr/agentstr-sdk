@@ -4,7 +4,7 @@ from typing import Any
 
 from pynostr.event import Event
 
-from agentstr.database import Database
+from agentstr.database.base import BaseDatabase
 from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
 from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
@@ -61,6 +61,7 @@ class NostrAgentServer:
                  nwc_str: str | None = None,
                  agent_info: AgentCard | None = None,
                  agent_callable: Callable[[ChatInput], str | ChatOutput] | None = None,
+                 db: BaseDatabase | None = None,
                  note_filters: NoteFilters | None = None,
                  price_handler: PriceHandler | None = None,
                  commands: Commands | None = None):
@@ -74,15 +75,17 @@ class NostrAgentServer:
             nwc_str: Nostr Wallet Connect string for payments (optional).
             agent_info: Agent information (optional).
             agent_callable: Callable to handle agent responses.
+            db: Database instance (optional).
             note_filters: Filters for listening to Nostr notes (optional).
             price_handler: PriceHandler to use for determining if an agent can handle a request and calculate the cost (optional).
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.agent_info = agent_info
         self.agent_callable = agent_callable
+        self.db = db or Database()
         self.note_filters = note_filters
         self.price_handler = price_handler
-        self.commands = commands or DefaultCommands(db=Database(), nostr_client=self.client, agent_info=agent_info)
+        self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_info=agent_info)
 
     async def chat(self, message: str, thread_id: str | None = None, user_id: str | None = None) -> str:
         """Send a message to the agent and retrieve the response.
@@ -97,6 +100,7 @@ class NostrAgentServer:
         """
         # Handle saving Chat input
         # TODO
+        # Get current thread id
         response = await self.agent_callable(ChatInput(messages=[message], thread_id=thread_id, user_id=user_id))
         if isinstance(response, str):
             response = ChatOutput(message=response, thread_id=thread_id, user_id=user_id)
@@ -104,7 +108,7 @@ class NostrAgentServer:
         # TODO
         return response.message
 
-    async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, price_handler_response: PriceHandlerResponse = None):
+    async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, price_handler_response: PriceHandlerResponse = None, delegated_tags: dict[str, str] | None = None):
         """Handle a paid invoice."""
         if price_handler_response:
             skills_used = ", ".join(price_handler_response.skills_used)
@@ -128,12 +132,12 @@ Only use the following tools: [{skills_used}]
             result = await self.chat(message, thread_id=event.pubkey, user_id=event.pubkey)
             response = str(result)
             logger.debug(f"On success response: {response}")
-            await self.client.send_direct_message(event.pubkey, response)
+            await self.client.send_direct_message(event.pubkey, response, tags=delegated_tags)
 
         async def on_failure():
             response = "Payment failed. Please try again."
             logger.error(f"On failure response: {response}")
-            await self.client.send_direct_message(event.pubkey, response)
+            await self.client.send_direct_message(event.pubkey, response, tags=delegated_tags)
 
         await self.client.nwc_relay.on_payment_success(
             invoice=invoice,
@@ -160,6 +164,18 @@ Only use the following tools: [{skills_used}]
             logger.debug("Processing command: " + message.strip())
             await self.commands.run_command(message.strip(), event.pubkey)
             return
+        tags = event.get_tag_dict()
+        delegated_user_id, delegated_thread_id = None, None
+        if "t" in tags and len(tags["t"]) > 0 and len(tags["t"][0]) > 1:
+            delegated_user_id = tags["t"][0][0]
+            delegated_thread_id = tags["t"][0][1]
+
+        delegated_tags = {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
+
+        user = await self.db.get_user(event.pubkey)
+        if not user:
+            await self.db.upsert_user(User(user_id=event.pubkey))
+
         message = message.strip()
         invoice = None
         price_handler_response = None
@@ -173,7 +189,7 @@ Only use the following tools: [{skills_used}]
                 if price_handler_response.can_handle:
                     cost_sats = price_handler_response.cost_sats
                 else:
-                    await self.client.send_direct_message(event.pubkey, response)
+                    await self.client.send_direct_message(event.pubkey, response, tags=delegated_tags)
                     return
 
             cost_sats = cost_sats or ((self.agent_info.satoshis or 0) if self.agent_info else 0)
@@ -191,7 +207,7 @@ Only use the following tools: [{skills_used}]
 
         logger.debug(f"Agent response: {response}")
         tasks = []
-        tasks.append(self.client.send_direct_message(event.pubkey, response))
+        tasks.append(self.client.send_direct_message(event.pubkey, response, tags=delegated_tags))
         if invoice:
             tasks.append(self._handle_paid_invoice(event, message, invoice, price_handler_response))
         await asyncio.gather(*tasks)
