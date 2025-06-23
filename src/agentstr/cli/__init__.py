@@ -295,7 +295,7 @@ def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
 
     main_py = dedent(
         '''\
-"""Minimal Agentstr agent – echoes incoming messages."""
+"""Minimal Agentstr agent - says hello to users."""
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -305,19 +305,19 @@ import asyncio
 from agentstr import AgentCard, NostrAgentServer, ChatInput, ChatOutput
 
 
-async def echo_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
-    return chat.messages[-1]
+async def hello_world_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
+    return f"Hello {chat.user_id}!"
 
 
 async def main() -> None:
     card = AgentCard(
-        name="EchoAgent",
-        description="A minimal example that echoes messages back.",
+        name="HelloWorldAgent",
+        description="A minimal example that greets users.",
         nostr_pubkey=os.getenv("AGENT_PUBKEY"),
     )
     server = NostrAgentServer(
         agent_info=card,
-        agent_callable=echo_agent,
+        agent_callable=hello_world_agent,
         relays=[os.getenv("RELAY_URL")], 
         private_key=os.getenv("AGENT_NSEC"),
     )
@@ -362,11 +362,12 @@ wheels/
 
 # Databases
 *.db
-*.sqlite*""")
+*.sqlite3
+*.sqlite3*""")
 
     (project_dir / "README.md").write_text("""# Agentstr Agent Skeleton
 
-This is a minimal example of an Agentstr agent that echoes messages back to the sender.
+This is a minimal example of an Agentstr agent that greets users.
 
 #### To run it, first install the dependencies:
 
@@ -401,7 +402,7 @@ async def chat():
     client = NostrClient(relays, PrivateKey().bech32())
     response = await client.send_direct_message_and_receive_response(
         agent_pubkey,
-        "Hello, how are you?",
+        "Hello",
     )
     print(response.message)
 
