@@ -19,7 +19,7 @@ from typing import Optional, Protocol, runtime_checkable, Any, List, Literal
 import aiosqlite
 import asyncpg
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 from agentstr.logger import get_logger
@@ -44,7 +44,7 @@ class Message(BaseModel):
     role: Literal["user", "agent"]
     content: str
     metadata: dict[str, Any] | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @classmethod
     def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
@@ -242,6 +242,77 @@ class SQLiteDatabase(BaseDatabase):
         )
         await self.conn.commit()
 
+    async def add_message(
+            self,
+            thread_id: str,
+            user_id: str,
+            role: Literal["user", "agent"],
+            content: str,
+            metadata: dict[str, Any] | None = None,
+        ) -> "Message":
+            """Append a message to a thread and return the stored model."""
+            metadata_json = json.dumps(metadata or {}) if metadata else None
+            # Determine next index for thread
+            async with self.conn.execute(
+                "SELECT COALESCE(MAX(idx), -1) + 1 AS next_idx FROM message WHERE agent_name = ? AND thread_id = ?",
+                (self.agent_name, thread_id),
+            ) as cursor:
+                row = await cursor.fetchone()
+                next_idx = row[0]
+
+            created_at = datetime.now(timezone.utc).isoformat()
+            await self.conn.execute(
+                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, metadata, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                (
+                    self.agent_name,
+                    thread_id,
+                    next_idx,
+                    user_id,
+                    role,
+                    content,
+                    metadata_json,
+                    created_at,
+                ),
+            )
+            await self.conn.commit()
+            return Message(
+                agent_name=self.agent_name,
+                thread_id=thread_id,
+                idx=next_idx,
+                user_id=user_id,
+                role=role,
+                content=content,
+                metadata=metadata,
+                created_at=datetime.fromisoformat(created_at).astimezone(timezone.utc),
+            )
+
+    async def get_messages(
+            self,
+            thread_id: str,
+            *,
+            limit: int | None = None,
+            before_idx: int | None = None,
+            after_idx: int | None = None,
+            reverse: bool = False,
+    ) -> List["Message"]:
+        """Retrieve messages for *thread_id* with optional pagination."""
+        query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ?"
+        params: list[Any] = [self.agent_name, thread_id]
+        if after_idx is not None:
+                query += " AND idx > ?"
+                params.append(after_idx)
+        if before_idx is not None:
+                query += " AND idx < ?"
+                params.append(before_idx)
+        order = "DESC" if reverse else "ASC"
+        query += f" ORDER BY idx {order}"
+        if limit is not None:
+                query += " LIMIT ?"
+                params.append(limit)
+        async with self.conn.execute(query, tuple(params)) as cursor:
+                rows = await cursor.fetchall()
+        return [Message.from_row(dict(r)) for r in rows]
+
 
 class PostgresDatabase(BaseDatabase):
     """PostgreSQL implementation using `asyncpg`."""
@@ -277,6 +348,94 @@ class PostgresDatabase(BaseDatabase):
         await self.conn.execute(
             f"CREATE INDEX IF NOT EXISTS idx_{self._TABLE_NAME}_agent_name ON {self._TABLE_NAME} (agent_name)"
         )
+
+    async def _ensure_message_table(self) -> None:
+        """Create message table if it doesn't exist."""
+        await self.conn.execute(
+            """CREATE TABLE IF NOT EXISTS message (
+                agent_name TEXT NOT NULL,
+                thread_id  TEXT NOT NULL,
+                idx        INTEGER NOT NULL,
+                user_id    TEXT NOT NULL,
+                role       TEXT NOT NULL,
+                content    TEXT NOT NULL,
+                metadata   TEXT,
+                created_at TIMESTAMP NOT NULL,
+                PRIMARY KEY (agent_name, thread_id, idx)
+            )""",
+        )
+        await self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_message_thread ON message (agent_name, thread_id)"
+        )
+        await self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_message_user ON message (agent_name, user_id)"
+        )
+
+    async def add_message(
+        self,
+        thread_id: str,
+        user_id: str,
+        role: Literal["user", "agent"],
+        content: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> "Message":
+        metadata_json = json.dumps(metadata or {}) if metadata else None
+        next_idx: int = await self.conn.fetchval(
+            "SELECT COALESCE(MAX(idx), -1) + 1 FROM message WHERE agent_name = $1 AND thread_id = $2",
+            self.agent_name,
+            thread_id,
+        )
+        created_at = datetime.now(timezone.utc)
+        await self.conn.execute(
+            "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, metadata, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+            self.agent_name,
+            thread_id,
+            next_idx,
+            user_id,
+            role,
+            content,
+            metadata_json,
+            created_at,
+        )
+        return Message(
+            agent_name=self.agent_name,
+            thread_id=thread_id,
+            idx=next_idx,
+            user_id=user_id,
+            role=role,
+            content=content,
+            metadata=metadata,
+            created_at=created_at.astimezone(timezone.utc),
+        )
+
+    async def get_messages(
+        self,
+        thread_id: str,
+        *,
+        limit: int | None = None,
+        before_idx: int | None = None,
+        after_idx: int | None = None,
+        reverse: bool = False,
+    ) -> List["Message"]:
+        """Retrieve messages for *thread_id* ordered by idx."""
+        base_query = "SELECT * FROM message WHERE agent_name = $1 AND thread_id = $2"
+        params: list[Any] = [self.agent_name, thread_id]
+        param_pos = 3  # next positional argument index for $ placeholders
+        if after_idx is not None:
+            base_query += f" AND idx > ${param_pos}"
+            params.append(after_idx)
+            param_pos += 1
+        if before_idx is not None:
+            base_query += f" AND idx < ${param_pos}"
+            params.append(before_idx)
+            param_pos += 1
+        order = "DESC" if reverse else "ASC"
+        base_query += f" ORDER BY idx {order}"
+        if limit is not None:
+            base_query += f" LIMIT ${param_pos}"
+            params.append(limit)
+        rows = await self.conn.fetch(base_query, *params)
+        return [Message.from_row(row) for row in rows]
 
     # --------------------------- API ----------------------------------
     async def get_user(self, user_id: str) -> "User":
