@@ -22,4 +22,5 @@ wheels/
 
 # Databases
 *.db
-*.sqlite*
+*.sqlite3
+*.sqlite3*

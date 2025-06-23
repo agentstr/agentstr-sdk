@@ -362,7 +362,8 @@ wheels/
 
 # Databases
 *.db
-*.sqlite*""")
+*.sqlite3
+*.sqlite3*""")
 
     (project_dir / "README.md").write_text("""# Agentstr Agent Skeleton
 
