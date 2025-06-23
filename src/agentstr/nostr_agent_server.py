@@ -84,17 +84,25 @@ class NostrAgentServer:
         self.price_handler = price_handler
         self.commands = commands or DefaultCommands(db=Database(), nostr_client=self.client, agent_info=agent_info)
 
-    async def chat(self, message: str, thread_id: str | None = None) -> str | ChatOutput:
+    async def chat(self, message: str, thread_id: str | None = None, user_id: str | None = None) -> str:
         """Send a message to the agent and retrieve the response.
 
         Args:
             message: The message to send to the agent.
             thread_id: Optional thread ID for conversation context.
+            user_id: Optional user ID for conversation context.
 
         Returns:
             Response from the agent, or an error message.
         """
-        return await self.agent_callable(ChatInput(messages=[message], thread_id=thread_id))
+        # Handle saving Chat input
+        # TODO
+        response = await self.agent_callable(ChatInput(messages=[message], thread_id=thread_id, user_id=user_id))
+        if isinstance(response, str):
+            response = ChatOutput(message=response, thread_id=thread_id, user_id=user_id)
+        # Handle saving Chat output
+        # TODO
+        return response.message
 
     async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, price_handler_response: PriceHandlerResponse = None):
         """Handle a paid invoice."""
@@ -117,7 +125,7 @@ Only use the following tools: [{skills_used}]
 
         async def on_success():
             logger.info(f"Payment succeeded for {self.agent_info.name}")
-            result = await self.chat(message, thread_id=event.pubkey)
+            result = await self.chat(message, thread_id=event.pubkey, user_id=event.pubkey)
             response = str(result)
             logger.debug(f"On success response: {response}")
             await self.client.send_direct_message(event.pubkey, response)
@@ -176,7 +184,7 @@ Only use the following tools: [{skills_used}]
                 else:
                     response = invoice
             else:
-                result = await self.chat(message, thread_id=event.pubkey)
+                result = await self.chat(message, thread_id=event.pubkey, user_id=event.pubkey)
                 response = str(result)
         except Exception as e:
             response = f"Error in direct message callback: {e}"

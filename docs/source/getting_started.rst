@@ -4,11 +4,16 @@ Getting Started
 Welcome to Agentstr SDK! This short guide helps you spin up quickly after installation.
 
 1. Create a Python virtual environment and install the SDK (see :doc:`installation`).
+
+   .. code-block:: bash
+
+      pip install "agentstr-sdk[cli]"
+
 2. Initialise a new agent project:
 
    .. code-block:: bash
 
-      agentstr init my_agent
+      agentstr init hello_world
 
 3. Start the development relay:
 
@@ -16,17 +21,23 @@ Welcome to Agentstr SDK! This short guide helps you spin up quickly after instal
 
       agentstr relay run
 
-4. Run your agent locally:
+4. Run your agent locally (in a separate terminal):
 
    .. code-block:: bash
 
-      python my_agent/main.py
+      python hello_world/main.py
 
-5. Test your agent locally:
+5. Test your agent locally (in a separate terminal):
 
    .. code-block:: bash
 
-      python my_agent/test_client.py
+      python hello_world/test_client.py
+
+   You should see a response like:
+
+   .. code-block:: bash
+
+      Hello 183ebf080fc59c29ad9c42bff8d6c684955b25611d685df6e03d56779989f149!
 
 Next Steps
 ----------

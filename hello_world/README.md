@@ -1,6 +1,6 @@
 # Agentstr Agent Skeleton
 
-This is a minimal example of an Agentstr agent that echoes messages back to the sender.
+This is a minimal example of an Agentstr agent that greets users.
 
 #### To run it, first install the dependencies:
 

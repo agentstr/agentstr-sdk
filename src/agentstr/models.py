@@ -77,6 +77,7 @@ class ChatInput(BaseModel):
 
     messages: list[str]
     thread_id: str | None = None
+    user_id: str | None = None
     extra_inputs: dict[str, Any] = {}
 
 
@@ -91,6 +92,7 @@ class ChatOutput(BaseModel):
     """
     message: str
     thread_id: str | None = None
+    user_id: str | None = None
     satoshis_used: int | None = None
     extra_outputs: dict[str, Any] = {}
 

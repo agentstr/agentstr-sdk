@@ -14,7 +14,7 @@ async def chat():
     client = NostrClient(relays, PrivateKey().bech32())
     response = await client.send_direct_message_and_receive_response(
         agent_pubkey,
-        "Hello, how are you?",
+        "Hello",
     )
     print(response.message)
 
