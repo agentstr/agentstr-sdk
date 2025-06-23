@@ -1,17 +1,19 @@
 import asyncio
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 import uuid
+import json
 
 from pynostr.event import Event
 
+from agentstr.database import Database
 from agentstr.database.base import BaseDatabase, User, Message
 from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
 from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 logger = get_logger(__name__)
 
@@ -100,13 +102,20 @@ class NostrAgentServer:
             Response from the agent, or an error message.
         """
         # Handle saving Chat input
-        # TODO
+        if thread_id and user_id:
+            await self.db.add_message(thread_id=thread_id, user_id=user_id, role="user", content=message)
+
         # Get current thread id
         response = await self.agent_callable(ChatInput(messages=[message], thread_id=thread_id, user_id=user_id))
+        
+        # Convert to ChatOutput if necessary
         if isinstance(response, str):
             response = ChatOutput(message=response, thread_id=thread_id, user_id=user_id)
+        
         # Handle saving Chat output
-        # TODO
+        if thread_id and user_id:
+            await self.db.add_message(thread_id=thread_id, user_id=user_id, role="agent", content=response.message)
+
         return response.message
 
     async def _handle_paid_invoice(self, event: Event, message: str, invoice: str, thread_id: str, user_id: str, price_handler_response: PriceHandlerResponse = None, delegated_tags: dict[str, str] | None = None):
@@ -155,71 +164,115 @@ Only use the following tools: [{skills_used}]
             event: The Nostr event containing the message.
             message: The message content.
         """
-        if message.strip().startswith("{") or message.strip().startswith("["):
+        message = message.strip()
+        if message.startswith("{") or message.startswith("["):
+            try:
+                message_json = json.loads(message)
+                if "action" in message_json and message_json["action"] == "chat":
+                    logger.info(f"Received chat message from agent: {message_json}")
+                    raise NotImplementedError("Chat messages are not supported yet")
+            except json.JSONDecodeError:
+                logger.debug(f'Unable to parse JSON message: {message}')
+                return
             logger.debug("Ignoring JSON messages")
             return
-        elif message.strip().startswith("lnbc") and " " not in message.strip():
+        elif message.startswith("lnbc") and " " not in message:
             logger.debug("Ignoring lightning invoices")
             return
-        elif message.strip().startswith("!"):
-            logger.debug("Processing command: " + message.strip())
-            await self.commands.run_command(message.strip(), event.pubkey)
+        elif message.startswith("!"):
+            logger.debug("Processing command: " + message)
+            await self.commands.run_command(message, event.pubkey)
             return
+        elif len(message) == 0:
+            logger.debug("Ignoring empty message")
+            return
+
+        # Check for delegated thread
         tags = event.get_tag_dict()
         delegated_user_id, delegated_thread_id = None, None
+        reply_to_user_id = event.pubkey
         if "t" in tags and len(tags["t"]) > 0 and len(tags["t"][0]) > 1:
-            delegated_user_id = tags["t"][0][0]
-            delegated_thread_id = tags["t"][0][1]
+            d_user_id = tags["t"][0][0]
+            delegated_user_id = f'{event.pubkey}:{d_user_id}'  # Keep delegation threads separate from direct user threads
+            delegated_thread_id = tags["t"][0][1]            
 
         delegated_tags = {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
         logger.debug(f"Delegated tags: {delegated_tags}")
 
-        user_id = delegated_user_id or event.pubkey
-        user = await self.db.get_user(user_id=user_id)
-        if not user.current_thread_id:
-            logger.debug("No current thread ID found for user, creating new thread (or delegating)")
-            thread_id = delegated_thread_id or uuid.uuid4().hex
-            user = await self.db.set_current_thread_id(user_id=user_id, thread_id=thread_id)
-        thread_id = user.current_thread_id
+        # Get target user and thread
+        target_user_id = delegated_user_id or reply_to_user_id
+        target_user = await self.db.get_user(user_id=target_user_id)
+        if not target_user.current_thread_id:
+            logger.debug("No current thread ID found for target user, creating new thread (or delegating)")
+            target_thread_id = delegated_thread_id or uuid.uuid4().hex
+            await self.db.set_current_thread_id(user_id=target_user_id, thread_id=target_thread_id)
+        else:
+            logger.debug(f"Current thread ID found for target user: {target_user.current_thread_id}")
+            target_thread_id = target_user.current_thread_id
 
-        message = message.strip()
+        logger.debug(f"Target user: {target_user_id}, target thread: {target_thread_id}")
+        
+        # Get message history
+        history = await self.db.get_messages(thread_id=target_thread_id, user_id=target_user_id)
+        logger.debug(f"Message history: {history}")
+
+        # Figure out who's paying
+        if reply_to_user_id == target_user_id:
+            paying_user = target_user
+        else:
+            paying_user = await self.db.get_user(user_id=reply_to_user_id)
+
+        logger.debug(f"Paying user: {paying_user}")
+
+        # If paying user has a sufficient balance, proceed with request
+
+
         invoice = None
         price_handler_response = None
         logger.debug(f"Agent request: {message}")
         try:
             response = None
             cost_sats = None
+
+            # Check price handler for satoshi estimate and skill compatibility
             if self.price_handler:
-                price_handler_response = await self.price_handler.handle(message, self.agent_info, thread_id=thread_id)
+                price_handler_response = await self.price_handler.handle(message, self.agent_info)
                 response = price_handler_response.user_message
                 if price_handler_response.can_handle:
-                    cost_sats = price_handler_response.cost_sats
+                    cost_sats = price_handler_response.satoshi_estimate
                 else:
-                    await self.client.send_direct_message(event.pubkey, response, tags=delegated_tags)
+                    await self.client.send_direct_message(reply_to_user_id, response, tags=delegated_tags)
                     return
 
+            # Check if agent has a satoshi estimate
             cost_sats = cost_sats or ((self.agent_info.satoshis or 0) if self.agent_info else 0)
             if cost_sats > 0:
+                # Check if paying user has sufficient balance (if so, proceed with request, otherwise request payment)
+                if paying_user.available_balance >= cost_sats:
+                    pass  # TODO need a way to determine if user or agent is paying
+
                 invoice = await self.client.nwc_relay.make_invoice(amount=cost_sats, description=f"Payment for {self.agent_info.name}")
                 if response is not None:
                     response = f"{response}\n\nPlease pay {cost_sats} sats: {invoice}"
                 else:
                     response = invoice
             else:
-                result = await self.chat(message, thread_id=thread_id, user_id=user_id)
+                # If no satoshi estimate, proceed with request
+                result = await self.chat(message, thread_id=target_thread_id, user_id=target_user_id)
                 response = str(result)
         except Exception as e:
             response = f"Error in direct message callback: {e}"
 
         logger.debug(f"Agent response: {response}")
         tasks = []
-        tasks.append(self.client.send_direct_message(event.pubkey, response, tags=delegated_tags))
+        tasks.append(self.client.send_direct_message(reply_to_user_id, response, tags=delegated_tags))
         if invoice:
-            tasks.append(self._handle_paid_invoice(event, message, invoice, thread_id, user_id, price_handler_response))
+            tasks.append(self._handle_paid_invoice(event, message, invoice, target_thread_id, target_user_id, price_handler_response))
         await asyncio.gather(*tasks)
 
 
     async def _note_callback(self, event: Event):
+        raise NotImplementedError("Note callback not implemented")
         """Handle incoming notes that match the filters.
 
         Args:
@@ -232,16 +285,16 @@ Only use the following tools: [{skills_used}]
             content = event.content
             logger.info(f"Received note from {event.pubkey}: {content}")
 
-            price_handler_response = await self.price_handler.handle(content, self.agent_info, thread_id=event.pubkey)
+            price_handler_response = await self.price_handler.handle(content, self.agent_info)
             logger.info(f"Price handler response: {price_handler_response.model_dump()}")
 
             if price_handler_response.can_handle:
                 # Formulate and send direct message to the user
                 response = price_handler_response.user_message
                 tasks = []
-                if price_handler_response.cost_sats > 0:
-                    invoice = await self.client.nwc_relay.make_invoice(amount=price_handler_response.cost_sats, description=f"Payment to {self.agent_info.name}")
-                    response = f"{response}\n\nPlease pay {price_handler_response.cost_sats} sats: {invoice}"
+                if price_handler_response.satoshi_estimate > 0:
+                    invoice = await self.client.nwc_relay.make_invoice(amount=price_handler_response.satoshi_estimate, description=f"Payment to {self.agent_info.name}")
+                    response = f"{response}\n\nPlease pay {price_handler_response.satoshi_estimate} sats: {invoice}"
                     tasks.append(self._handle_paid_invoice(event, content, invoice, event.pubkey, event.pubkey, price_handler_response))
 
                 tasks.append(self.client.send_direct_message(event.pubkey, response))

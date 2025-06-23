@@ -3,7 +3,7 @@ from typing import Any
 
 from agents import RunContextWrapper, FunctionTool
 
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 
 async def to_openai_tools(nostr_mcp_client: NostrMCPClient) -> list[FunctionTool]:

@@ -8,7 +8,7 @@ from mcp.types import (
     TextContent,
 )
 
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 NonTextContent = ImageContent | EmbeddedResource
 

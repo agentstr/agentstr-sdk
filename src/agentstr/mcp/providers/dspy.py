@@ -1,6 +1,6 @@
 import dspy
 from typing import Any
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 
 async def to_dspy_tools(nostr_mcp_client: NostrMCPClient) -> list[dspy.Tool]:

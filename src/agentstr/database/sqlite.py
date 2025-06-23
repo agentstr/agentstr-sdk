@@ -12,10 +12,10 @@ logger = get_logger(__name__)
 class SQLiteDatabase(BaseDatabase):
     """SQLite implementation using `aiosqlite`."""
 
-    def __init__(self, connection_string: Optional[str] = None, *, agent_name: str = "default"):
-        super().__init__(connection_string or "sqlite://agentstr_local.db", agent_name)
+    def __init__(self, conn_str: Optional[str] = None, *, agent_name: str = "default"):
+        super().__init__(conn_str or "sqlite://agentstr_local.db", agent_name)
         # Strip the scheme to obtain the filesystem path.
-        self._db_path = self.connection_string.replace("sqlite://", "", 1)
+        self._db_path = self.conn_str.replace("sqlite://", "", 1)
 
     # --------------------------- helpers -------------------------------
     async def _ensure_user_table(self) -> None:
@@ -44,6 +44,7 @@ class SQLiteDatabase(BaseDatabase):
                 user_id TEXT NOT NULL,
                 role TEXT NOT NULL,
                 content TEXT NOT NULL,
+                sent BOOLEAN NOT NULL,
                 metadata TEXT,
                 created_at DATETIME NOT NULL,
                 PRIMARY KEY (agent_name, thread_id, idx)
@@ -112,6 +113,7 @@ class SQLiteDatabase(BaseDatabase):
             user_id: str,
             role: Literal["user", "agent"],
             content: str,
+            sent: bool = True,
             metadata: dict[str, Any] | None = None,
         ) -> "Message":
             """Append a message to a thread and return the stored model."""
@@ -126,7 +128,7 @@ class SQLiteDatabase(BaseDatabase):
 
             created_at = datetime.now(timezone.utc).isoformat()
             await self.conn.execute(
-                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, metadata, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, sent, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (
                     self.agent_name,
                     thread_id,
@@ -134,6 +136,7 @@ class SQLiteDatabase(BaseDatabase):
                     user_id,
                     role,
                     content,
+                    sent,
                     metadata_json,
                     created_at,
                 ),
@@ -146,6 +149,7 @@ class SQLiteDatabase(BaseDatabase):
                 user_id=user_id,
                 role=role,
                 content=content,
+                sent=sent,
                 metadata=metadata,
                 created_at=datetime.fromisoformat(created_at).astimezone(timezone.utc),
             )
@@ -153,15 +157,17 @@ class SQLiteDatabase(BaseDatabase):
     async def get_messages(
             self,
             thread_id: str,
+            user_id: str,
             *,
             limit: int | None = None,
             before_idx: int | None = None,
             after_idx: int | None = None,
             reverse: bool = False,
+            sent: bool | None = None,
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* with optional pagination."""
-        query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ?"
-        params: list[Any] = [self.agent_name, thread_id]
+        query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ? AND user_id = ?"
+        params: list[Any] = [self.agent_name, thread_id, user_id]
         if after_idx is not None:
                 query += " AND idx > ?"
                 params.append(after_idx)
@@ -173,6 +179,9 @@ class SQLiteDatabase(BaseDatabase):
         if limit is not None:
                 query += " LIMIT ?"
                 params.append(limit)
+        if sent is not None:
+                query += " AND sent = ?"
+                params.append(sent)
         async with self.conn.execute(query, tuple(params)) as cursor:
                 rows = await cursor.fetchall()
         return [Message.from_row(dict(r)) for r in rows]

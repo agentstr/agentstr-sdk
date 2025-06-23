@@ -2,7 +2,7 @@ from typing import Any, Union
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.tools import ToolDefinition
 
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 from pydantic_ai import Tool
 
 

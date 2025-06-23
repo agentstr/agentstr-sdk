@@ -7,7 +7,7 @@ from google.adk.tools.base_tool import BaseTool
 from google.adk.tools import ToolContext
 from google.adk.tools.openapi_tool.openapi_spec_parser.rest_api_tool import to_gemini_schema
 
-from agentstr.nostr_mcp_client import NostrMCPClient
+from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 
 class NostrMCPTool(BaseTool):

@@ -41,6 +41,7 @@ class Message(BaseModel):
     user_id: str
     role: Literal["user", "agent"]
     content: str
+    sent: bool = True
     metadata: dict[str, Any] | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -56,6 +57,7 @@ class Message(BaseModel):
             user_id=row["user_id"],
             role=row["role"],
             content=row["content"],
+            sent=row["sent"],
             metadata=json.loads(row["metadata"]) if row["metadata"] else None,
             created_at=row["created_at"],
         )
@@ -64,8 +66,8 @@ class Message(BaseModel):
 class BaseDatabase(abc.ABC):
     """Abstract base class for concrete database backends."""
 
-    def __init__(self, connection_string: str, agent_name: str = "default"):
-        self.connection_string = connection_string
+    def __init__(self, conn_str: str, agent_name: str = "default"):
+        self.conn_str = conn_str
         self.agent_name = agent_name
         self.conn = None  # Will be set by :py:meth:`async_init`.
 
@@ -102,6 +104,7 @@ class BaseDatabase(abc.ABC):
         user_id: str,
         role: Literal["user", "agent"],
         content: str,
+        sent: bool = True,
         metadata: dict[str, Any] | None = None,
     ) -> "Message":
         """Append a message to a thread and return the stored model."""
@@ -110,11 +113,13 @@ class BaseDatabase(abc.ABC):
     async def get_messages(
         self,
         thread_id: str,
+        user_id: str,
         *,
         limit: int | None = None,
         before_idx: int | None = None,
         after_idx: int | None = None,
         reverse: bool = False,
+        sent: bool | None = None,
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* ordered by idx."""
 

@@ -102,22 +102,11 @@ class PriceHandlerResponse(BaseModel):
 
     Attributes:
         can_handle: Whether the agent can handle the request
-        cost_sats: Total cost in satoshis (0 if free or not applicable)
+        satoshi_estimate: Total estimated cost in satoshis (0 if free or not applicable)
         user_message: Friendly message to show the user about the action to be taken
         skills_used: List of skills that would be used, if any
     """
     can_handle: bool
-    cost_sats: int = 0
+    satoshi_estimate: int = 0
     user_message: str = ""
     skills_used: list[str] = []
-
-
-class CanHandleResponse(BaseModel):
-    """Response model for the can handle handler.
-
-    Attributes:
-        can_handle: Whether the agent can handle the request
-        user_message: Friendly message to explain why the agent can or cannot handle the request
-    """
-    can_handle: bool
-    user_message: str = ""
