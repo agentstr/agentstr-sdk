@@ -6,7 +6,7 @@ communication between Nostr clients and agents. It handles message routing, even
 forwarding, and connection management to ensure reliable message delivery across
 the Nostr network.
 
-.. automodule:: agentstr.relay
+.. automodule:: agentstr.relays.relay
    :members:
    :undoc-members:
    :show-inheritance:

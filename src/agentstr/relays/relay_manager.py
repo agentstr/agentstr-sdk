@@ -10,7 +10,7 @@ from pynostr.filters import Filters
 from pynostr.utils import get_public_key
 
 from agentstr.logger import get_logger
-from agentstr.relay import DecryptedMessage, EventRelay
+from agentstr.relays.relay import DecryptedMessage, EventRelay
 
 logger = get_logger(__name__)
 

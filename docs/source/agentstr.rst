@@ -23,7 +23,5 @@ The Agentstr SDK is organized into the following core modules:
    agentstr.nostr_agent_server
    agentstr.nostr_client
    agentstr.nostr_rag
-   agentstr.nwc_relay
-   agentstr.relay
-   agentstr.relay_manager
+   agentstr.relays
    

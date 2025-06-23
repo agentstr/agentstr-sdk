@@ -9,4 +9,4 @@ from agentstr.nostr_client import NostrClient
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 from agentstr.mcp.nostr_mcp_server import NostrMCPServer, tool
 from agentstr.nostr_rag import NostrRAG
-from agentstr.nwc_relay import NWCRelay
+from agentstr.relays.nwc_relay import NWCRelay

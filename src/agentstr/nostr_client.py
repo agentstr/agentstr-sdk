@@ -9,9 +9,9 @@ from pynostr.metadata import Metadata
 from pynostr.utils import get_public_key, get_timestamp
 
 from agentstr.logger import get_logger
-from agentstr.nwc_relay import NWCRelay
-from agentstr.relay import DecryptedMessage
-from agentstr.relay_manager import RelayManager
+from agentstr.relays.nwc_relay import NWCRelay
+from agentstr.relays.relay import DecryptedMessage
+from agentstr.relays.relay_manager import RelayManager
 
 logger = get_logger(__name__)
 

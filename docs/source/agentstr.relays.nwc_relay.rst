@@ -5,7 +5,7 @@ This module implements a relay service for Nostr Wallet Connect (NWC) functional
 It facilitates secure communication between Nostr clients and wallet applications,
 handling authentication, message relaying, and payment processing within the Nostr ecosystem.
 
-.. automodule:: agentstr.nwc_relay
+.. automodule:: agentstr.relays.nwc_relay
    :members:
    :undoc-members:
    :show-inheritance:
