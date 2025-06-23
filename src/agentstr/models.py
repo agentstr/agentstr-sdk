@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel
 
 
@@ -66,6 +66,11 @@ class AgentCard(BaseModel):
     nostr_relays: list[str] = []
 
 
+class PreviousMessage(BaseModel):
+    role: Literal["user", "agent"]
+    message: str
+
+
 class ChatInput(BaseModel):
     """Represents input data for an agent-to-agent chat interaction.
 
@@ -78,6 +83,7 @@ class ChatInput(BaseModel):
     messages: list[str]
     thread_id: str | None = None
     user_id: str | None = None
+    history: list[PreviousMessage] = []
     extra_inputs: dict[str, Any] = {}
 
 

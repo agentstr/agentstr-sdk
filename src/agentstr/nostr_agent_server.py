@@ -7,8 +7,9 @@ import json
 from pynostr.event import Event
 
 from agentstr.database import Database
+from agentstr.nostr_agent import NostrAgent
 from agentstr.database.base import BaseDatabase, User, Message
-from agentstr.models import AgentCard, ChatInput, ChatOutput, PriceHandlerResponse, NoteFilters
+from agentstr.models import AgentCard, ChatInput, ChatOutput, PreviousMessage, PriceHandlerResponse, NoteFilters
 from agentstr.a2a import PriceHandler
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
@@ -57,16 +58,14 @@ class NostrAgentServer:
     Full runnable example: `nostr_langgraph_agent.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/nostr_langgraph_agent.py>`_
     """
     def __init__(self,
+                 agent: NostrAgent,
                  nostr_client: NostrClient | None = None,
                  nostr_mcp_client: NostrMCPClient | None = None,
                  relays: list[str] | None = None,
                  private_key: str | None = None,
                  nwc_str: str | None = None,
-                 agent_info: AgentCard | None = None,
-                 agent_callable: Callable[[ChatInput], str | ChatOutput] | None = None,
                  db: BaseDatabase | None = None,
                  note_filters: NoteFilters | None = None,
-                 price_handler: PriceHandler | None = None,
                  commands: Commands | None = None):
         """Initialize the agent server.
 
@@ -83,38 +82,31 @@ class NostrAgentServer:
             price_handler: PriceHandler to use for determining if an agent can handle a request and calculate the cost (optional).
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
-        self.agent_info = agent_info
-        self.agent_callable = agent_callable
+        self.agent = agent
         self.db = db or Database()
         self.note_filters = note_filters
-        self.price_handler = price_handler
-        self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_info=agent_info)
+        self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client)
 
-    async def chat(self, message: str, thread_id: str | None = None, user_id: str | None = None) -> str:
+    async def chat(self, chat_input: ChatInput) -> str:
         """Send a message to the agent and retrieve the response.
 
         Args:
-            message: The message to send to the agent.
-            thread_id: Optional thread ID for conversation context.
-            user_id: Optional user ID for conversation context.
+            chat_input: The chat input to send to the agent.
 
         Returns:
             Response from the agent, or an error message.
         """
-        # Handle saving Chat input
-        if thread_id and user_id:
-            await self.db.add_message(thread_id=thread_id, user_id=user_id, role="user", content=message)
 
         # Get current thread id
-        response = await self.agent_callable(ChatInput(messages=[message], thread_id=thread_id, user_id=user_id))
+        response = await self.agent.chat()
         
         # Convert to ChatOutput if necessary
         if isinstance(response, str):
-            response = ChatOutput(message=response, thread_id=thread_id, user_id=user_id)
+            response = ChatOutput(message=response, thread_id=chat_input.thread_id, user_id=chat_input.user_id)
         
         # Handle saving Chat output
-        if thread_id and user_id:
-            await self.db.add_message(thread_id=thread_id, user_id=user_id, role="agent", content=response.message)
+        if chat_input.thread_id and chat_input.user_id:
+            await self.db.add_message(thread_id=chat_input.thread_id, user_id=chat_input.user_id, role="agent", content=response.message)
 
         return response.message
 
@@ -225,41 +217,40 @@ Only use the following tools: [{skills_used}]
         logger.debug(f"Paying user: {paying_user}")
 
         # If paying user has a sufficient balance, proceed with request
+        if target_thread_id and target_user_id:
+            await self.db.add_message(thread_id=target_thread_id, user_id=target_user_id, role="user", content=message)
 
+        chat_input = ChatInput(messages=[message], thread_id=target_thread_id, user_id=target_user_id, history=[PreviousMessage(role=m.role, message=m.content) for m in history])
 
         invoice = None
         price_handler_response = None
         logger.debug(f"Agent request: {message}")
         try:
             response = None
-            cost_sats = None
 
             # Check price handler for satoshi estimate and skill compatibility
-            if self.price_handler:
-                price_handler_response = await self.price_handler.handle(message, self.agent_info)
-                response = price_handler_response.user_message
-                if price_handler_response.can_handle:
-                    cost_sats = price_handler_response.satoshi_estimate
-                else:
-                    await self.client.send_direct_message(reply_to_user_id, response, tags=delegated_tags)
+            price_estimate = await self.agent.estimate_price(chat_input)
+            if price_estimate:
+                if not price_estimate.can_handle:
+                    logger.info(f"Agent cannot handle request: {price_estimate.user_message}")
+                    if price_estimate.user_message and price_estimate.user_message.strip() != ""    :
+                        await self.client.send_direct_message(reply_to_user_id, price_estimate.user_message, tags=delegated_tags)
                     return
 
-            # Check if agent has a satoshi estimate
-            cost_sats = cost_sats or ((self.agent_info.satoshis or 0) if self.agent_info else 0)
-            if cost_sats > 0:
-                # Check if paying user has sufficient balance (if so, proceed with request, otherwise request payment)
-                if paying_user.available_balance >= cost_sats:
-                    pass  # TODO need a way to determine if user or agent is paying
+                if price_estimate.satoshi_estimate > 0:
+                    # Check if paying user has sufficient balance (if so, proceed with request, otherwise request payment)
+                    if paying_user.available_balance >= price_estimate.satoshi_estimate:
+                        pass  # TODO need a way to determine if user or agent is paying
 
-                invoice = await self.client.nwc_relay.make_invoice(amount=cost_sats, description=f"Payment for {self.agent_info.name}")
-                if response is not None:
-                    response = f"{response}\n\nPlease pay {cost_sats} sats: {invoice}"
+                    invoice = await self.client.nwc_relay.make_invoice(amount=price_estimate.satoshi_estimate, description=f"Payment for {self.agent_info.name}")
+                    if response is not None:
+                        response = f"{response}\n\nPlease pay {price_estimate.satoshi_estimate} sats: {invoice}"
+                    else:
+                        response = invoice
                 else:
-                    response = invoice
-            else:
-                # If no satoshi estimate, proceed with request
-                result = await self.chat(message, thread_id=target_thread_id, user_id=target_user_id)
-                response = str(result)
+                    # If no satoshi estimate, proceed with request
+                    result = await self.agent.chat(chat_input)
+                    response = str(result.message)
         except Exception as e:
             response = f"Error in direct message callback: {e}"
 
@@ -269,39 +260,6 @@ Only use the following tools: [{skills_used}]
         if invoice:
             tasks.append(self._handle_paid_invoice(event, message, invoice, target_thread_id, target_user_id, price_handler_response))
         await asyncio.gather(*tasks)
-
-
-    async def _note_callback(self, event: Event):
-        raise NotImplementedError("Note callback not implemented")
-        """Handle incoming notes that match the filters.
-
-        Args:
-            event: The Nostr event containing the note.
-        """
-        if not self.price_handler:
-            logger.warning("No price handler provided. Skipping note callback.")
-            return
-        try:
-            content = event.content
-            logger.info(f"Received note from {event.pubkey}: {content}")
-
-            price_handler_response = await self.price_handler.handle(content, self.agent_info)
-            logger.info(f"Price handler response: {price_handler_response.model_dump()}")
-
-            if price_handler_response.can_handle:
-                # Formulate and send direct message to the user
-                response = price_handler_response.user_message
-                tasks = []
-                if price_handler_response.satoshi_estimate > 0:
-                    invoice = await self.client.nwc_relay.make_invoice(amount=price_handler_response.satoshi_estimate, description=f"Payment to {self.agent_info.name}")
-                    response = f"{response}\n\nPlease pay {price_handler_response.satoshi_estimate} sats: {invoice}"
-                    tasks.append(self._handle_paid_invoice(event, content, invoice, event.pubkey, event.pubkey, price_handler_response))
-
-                tasks.append(self.client.send_direct_message(event.pubkey, response))
-                await asyncio.gather(*tasks)
-
-        except Exception as e:
-            logger.error(f"Error processing note: {e}", exc_info=True)
 
     async def start(self):
         """Start the agent server, updating metadata and listening for direct messages and notes."""
