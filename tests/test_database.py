@@ -76,7 +76,7 @@ async def test_add_and_get_messages(db):
     )
     assert m2.idx == 1
 
-    messages = await db.get_messages("thread1")
+    messages = await db.get_messages(thread_id="thread1", user_id="u1")
     assert [m.idx for m in messages] == [0, 1]
     assert messages[0].content == "Hello"
     assert messages[1].content == "Hi there!"
@@ -94,19 +94,19 @@ async def test_get_messages_pagination(db):
         )
 
     # Limit
-    latest_two = await db.get_messages("thread2", limit=2, reverse=True)
+    latest_two = await db.get_messages(thread_id="thread2", user_id="u1", limit=2, reverse=True)
     assert [m.idx for m in latest_two] == [4, 3]
 
     # after_idx
-    after1 = await db.get_messages("thread2", after_idx=1)
+    after1 = await db.get_messages(thread_id="thread2", user_id="u1", after_idx=1)
     assert [m.idx for m in after1] == [2, 3, 4]
 
     # before_idx
-    before4 = await db.get_messages("thread2", before_idx=4)
+    before4 = await db.get_messages(thread_id="thread2", user_id="u1", before_idx=4)
     assert [m.idx for m in before4] == [0, 1, 2, 3]
 
     # Combined limit + reverse
-    single = await db.get_messages("thread2", limit=1, reverse=True)
+    single = await db.get_messages(thread_id="thread2", user_id="u1", limit=1, reverse=True)
     assert single[0].idx == 4
 
 
