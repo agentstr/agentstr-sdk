@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 class BaseDatabase(abc.ABC):
     """Abstract base class for concrete database backends."""
 
-    def __init__(self, conn_str: str, agent_name: str = "default"):
+    def __init__(self, conn_str: str, agent_name: str | None = None):
         self.conn_str = conn_str
         self.agent_name = agent_name
         self.conn = None  # Will be set by :py:meth:`async_init`.

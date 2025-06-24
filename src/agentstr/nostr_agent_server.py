@@ -7,8 +7,8 @@ import json
 from pynostr.event import Event
 
 from agentstr.nostr_agent import NostrAgent
-from agentstr.database.base import BaseDatabase, User, Message
-from agentstr.models import AgentCard, ChatInput, ChatOutput, NoteFilters
+from agentstr.database.base import BaseDatabase
+from agentstr.models import AgentCard, ChatInput, Message, User, NoteFilters
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
@@ -82,7 +82,8 @@ class NostrAgentServer:
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.nostr_agent = nostr_agent
         self.db = db
-        self.note_filters = note_filters
+        if self.db and self.db.agent_name is None:
+            self.db.agent_name = self.nostr_agent.agent_card.name
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
 
     async def chat(self, chat_input: ChatInput):
@@ -221,7 +222,7 @@ class NostrAgentServer:
         #if db_thread_id and db_user_id:
         #    await self.db.add_message(thread_id=db_thread_id, user_id=db_user_id, role="user", content=message)
 
-        chat_input = ChatInput(messages=[message], thread_id=db_thread_id, user_id=db_user_id, history=[PreviousMessage(role=m.role, message=m.content) for m in history])
+        chat_input = ChatInput(messages=[message], thread_id=db_thread_id, user_id=db_user_id, history=history)
 
         await self.chat(chat_input)
 

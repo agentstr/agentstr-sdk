@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 class SQLiteDatabase(BaseDatabase):
     """SQLite implementation using `aiosqlite`."""
 
-    def __init__(self, conn_str: Optional[str] = None, *, agent_name: str = "default"):
+    def __init__(self, conn_str: Optional[str] = None, *, agent_name: str | None = None):
         super().__init__(conn_str or "sqlite://agentstr_local.db", agent_name)
         # Strip the scheme to obtain the filesystem path.
         self._db_path = self.conn_str.replace("sqlite://", "", 1)

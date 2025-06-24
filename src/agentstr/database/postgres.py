@@ -15,7 +15,7 @@ class PostgresDatabase(BaseDatabase):
     USER_TABLE_NAME = "agent_user"
     MESSAGE_TABLE_NAME = "message"
 
-    def __init__(self, conn_str: str, *, agent_name: str = "default"):
+    def __init__(self, conn_str: str, *, agent_name: str | None = None):
         super().__init__(conn_str, agent_name)
 
     async def async_init(self) -> "PostgresDatabase":

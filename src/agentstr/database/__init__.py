@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 # Public factory
 # ---------------------------------------------------------------------
 
-def Database(conn_str: Optional[str] = None, *, agent_name: str = "default") -> BaseDatabase:
+def Database(conn_str: Optional[str] = None, *, agent_name: str | None = None) -> BaseDatabase:
     """Factory returning an appropriate database backend instance.
 
     Examples
