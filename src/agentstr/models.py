@@ -92,21 +92,37 @@ class Message(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     @classmethod
-    def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
+    def from_row(cls, row: Any) -> "Message":
         if row is None:
             raise ValueError("Row cannot be None")
-        # Both sqlite and pg rows behave like dicts with keys
+        def parse_json_field(val):
+            if val is None or val == "":
+                return {}
+            if isinstance(val, dict):
+                return val
+            try:
+                return json.loads(val)
+            except Exception:
+                return {}
+        created_at = row["created_at"]
+        if isinstance(created_at, str):
+            try:
+                created_at = datetime.fromisoformat(created_at)
+            except Exception:
+                created_at = datetime.now(timezone.utc)
         return cls(
             agent_name=row["agent_name"],
             thread_id=row["thread_id"],
             idx=row["idx"],
             user_id=row["user_id"],
             role=row["role"],
-            message=row["message"],
-            content=row["content"],
-            sent=row["sent"],
-            metadata=json.loads(row["metadata"]) if row["metadata"] else None,
-            created_at=row["created_at"],
+            message=row.get("message", ""),
+            content=row.get("content", ""),
+            kind=row.get("kind", "request"),
+            satoshis=row.get("satoshis"),
+            extra_inputs=parse_json_field(row.get("extra_inputs")),
+            extra_outputs=parse_json_field(row.get("extra_outputs")),
+            created_at=created_at.astimezone(timezone.utc) if hasattr(created_at, "astimezone") else created_at,
         )
 
 

@@ -8,7 +8,7 @@ from pynostr.event import Event
 
 from agentstr.nostr_agent import NostrAgent
 from agentstr.database.base import BaseDatabase, User, Message
-from agentstr.models import AgentCard, ChatInput, ChatOutput, PreviousMessage, NoteFilters
+from agentstr.models import AgentCard, ChatInput, ChatOutput, NoteFilters
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient

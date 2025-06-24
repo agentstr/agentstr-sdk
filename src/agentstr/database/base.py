@@ -63,10 +63,13 @@ class BaseDatabase(abc.ABC):
         self,
         thread_id: str,
         user_id: str,
-        role: Literal["user", "agent"],
-        content: str,
-        sent: bool = True,
-        metadata: dict[str, Any] | None = None,
+        role: Literal["user", "agent", "tool"],
+        message: str = "",
+        content: str = "",
+        kind: str = "request",
+        satoshis: int | None = None,
+        extra_inputs: dict[str, Any] = {},
+        extra_outputs: dict[str, Any] = {},
     ) -> "Message":
         """Append a message to a thread and return the stored model."""
 
@@ -80,7 +83,6 @@ class BaseDatabase(abc.ABC):
         before_idx: int | None = None,
         after_idx: int | None = None,
         reverse: bool = False,
-        sent: bool | None = None,
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* ordered by idx."""
 

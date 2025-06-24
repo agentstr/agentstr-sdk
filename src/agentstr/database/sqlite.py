@@ -43,11 +43,15 @@ class SQLiteDatabase(BaseDatabase):
                 idx INTEGER NOT NULL,
                 user_id TEXT NOT NULL,
                 role TEXT NOT NULL,
+                message TEXT,
                 content TEXT NOT NULL,
-                sent BOOLEAN NOT NULL,
-                metadata TEXT,
+                kind TEXT,
+                satoshis INTEGER,
+                extra_inputs TEXT,
+                extra_outputs TEXT,
+
                 created_at DATETIME NOT NULL,
-                PRIMARY KEY (agent_name, thread_id, idx)
+                PRIMARY KEY (agent_name, thread_id, idx, user_id)
             )"""
         ):
             pass
@@ -111,13 +115,15 @@ class SQLiteDatabase(BaseDatabase):
             self,
             thread_id: str,
             user_id: str,
-            role: Literal["user", "agent"],
-            content: str,
-            sent: bool = True,
-            metadata: dict[str, Any] | None = None,
+            role: Literal["user", "agent", "tool"],
+            message: str = "",
+            content: str = "",
+            kind: str = "request",
+            satoshis: int | None = None,
+            extra_inputs: dict[str, Any] = {},
+            extra_outputs: dict[str, Any] = {},
         ) -> "Message":
             """Append a message to a thread and return the stored model."""
-            metadata_json = json.dumps(metadata or {}) if metadata else None
             # Determine next index for thread
             async with self.conn.execute(
                 "SELECT COALESCE(MAX(idx), -1) + 1 AS next_idx FROM message WHERE agent_name = ? AND thread_id = ?",
@@ -128,16 +134,19 @@ class SQLiteDatabase(BaseDatabase):
 
             created_at = datetime.now(timezone.utc).isoformat()
             await self.conn.execute(
-                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, sent, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, message, content, kind, satoshis, extra_inputs, extra_outputs, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     self.agent_name,
                     thread_id,
                     next_idx,
                     user_id,
                     role,
+                    message,
                     content,
-                    sent,
-                    metadata_json,
+                    kind,
+                    satoshis,
+                    json.dumps(extra_inputs) if extra_inputs else None,
+                    json.dumps(extra_outputs) if extra_outputs else None,
                     created_at,
                 ),
             )
@@ -148,9 +157,12 @@ class SQLiteDatabase(BaseDatabase):
                 idx=next_idx,
                 user_id=user_id,
                 role=role,
+                message=message,
                 content=content,
-                sent=sent,
-                metadata=metadata,
+                kind=kind,
+                satoshis=satoshis,
+                extra_inputs=extra_inputs,
+                extra_outputs=extra_outputs,
                 created_at=datetime.fromisoformat(created_at).astimezone(timezone.utc),
             )
 
@@ -163,7 +175,6 @@ class SQLiteDatabase(BaseDatabase):
             before_idx: int | None = None,
             after_idx: int | None = None,
             reverse: bool = False,
-            sent: bool | None = None,
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* with optional pagination."""
         query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ? AND user_id = ?"
@@ -179,9 +190,6 @@ class SQLiteDatabase(BaseDatabase):
         if limit is not None:
                 query += " LIMIT ?"
                 params.append(limit)
-        if sent is not None:
-                query += " AND sent = ?"
-                params.append(sent)
         async with self.conn.execute(query, tuple(params)) as cursor:
                 rows = await cursor.fetchall()
         return [Message.from_row(dict(r)) for r in rows]

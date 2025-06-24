@@ -61,20 +61,35 @@ async def test_add_and_get_messages(db):
         thread_id="thread1",
         user_id="u1",
         role="user",
+        message="msg1",
         content="Hello",
-        metadata={"foo": "bar"},
+        kind="request",
+        satoshis=123,
+        extra_inputs={"foo": "bar"},
+        extra_outputs={"baz": 42},
     )
     assert isinstance(m1, Message)
     assert m1.idx == 0
-    assert m1.metadata == {"foo": "bar"}
+    assert m1.message == "msg1"
+    assert m1.kind == "request"
+    assert m1.satoshis == 123
+    assert m1.extra_inputs == {"foo": "bar"}
+    assert m1.extra_outputs == {"baz": 42}
 
     m2 = await db.add_message(
         thread_id="thread1",
         user_id="u1",
         role="agent",
+        message="msg2",
         content="Hi there!",
+        kind="final_response",
+        satoshis=None,
+        extra_inputs={},
+        extra_outputs={},
     )
     assert m2.idx == 1
+    assert m2.message == "msg2"
+    assert m2.kind == "final_response"
 
     messages = await db.get_messages(thread_id="thread1", user_id="u1")
     assert [m.idx for m in messages] == [0, 1]

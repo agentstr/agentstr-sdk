@@ -55,11 +55,15 @@ class PostgresDatabase(BaseDatabase):
                 idx        INTEGER NOT NULL,
                 user_id    TEXT NOT NULL,
                 role       TEXT NOT NULL,
+                message    TEXT,
                 content    TEXT NOT NULL,
-                sent       BOOLEAN NOT NULL,
-                metadata   TEXT,
+                kind       TEXT,
+                satoshis   INTEGER,
+                extra_inputs   TEXT,
+                extra_outputs  TEXT,
+
                 created_at TIMESTAMP NOT NULL,
-                PRIMARY KEY (agent_name, thread_id, idx)
+                PRIMARY KEY (agent_name, thread_id, idx, user_id)
             )""",
         )
         await self.conn.execute(
@@ -73,12 +77,14 @@ class PostgresDatabase(BaseDatabase):
         self,
         thread_id: str,
         user_id: str,
-        role: Literal["user", "agent"],
-        content: str,
-        sent: bool = True,
-        metadata: dict[str, Any] | None = None,
+        role: Literal["user", "agent", "tool"],
+        message: str = "",
+        content: str = "",
+        kind: str = "request",
+        satoshis: int | None = None,
+        extra_inputs: dict[str, Any] = {},
+        extra_outputs: dict[str, Any] = {},
     ) -> "Message":
-        metadata_json = json.dumps(metadata or {}) if metadata else None
         next_idx: int = await self.conn.fetchval(
             f"SELECT COALESCE(MAX(idx), -1) + 1 FROM {self.MESSAGE_TABLE_NAME} WHERE agent_name = $1 AND thread_id = $2",
             self.agent_name,
@@ -86,15 +92,18 @@ class PostgresDatabase(BaseDatabase):
         )
         created_at = datetime.now(timezone.utc)
         await self.conn.execute(
-            f"INSERT INTO {self.MESSAGE_TABLE_NAME} (agent_name, thread_id, idx, user_id, role, content, sent, metadata, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+            f"INSERT INTO {self.MESSAGE_TABLE_NAME} (agent_name, thread_id, idx, user_id, role, message, content, kind, satoshis, extra_inputs, extra_outputs, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
             self.agent_name,
             thread_id,
             next_idx,
             user_id,
             role,
+            message,
             content,
-            sent,
-            metadata_json,
+            kind,
+            satoshis,
+            json.dumps(extra_inputs) if extra_inputs else None,
+            json.dumps(extra_outputs) if extra_outputs else None,
             created_at,
         )
         return Message(
@@ -103,9 +112,12 @@ class PostgresDatabase(BaseDatabase):
             idx=next_idx,
             user_id=user_id,
             role=role,
+            message=message,
             content=content,
-            sent=sent,
-            metadata=metadata,
+            kind=kind,
+            satoshis=satoshis,
+            extra_inputs=extra_inputs,
+            extra_outputs=extra_outputs,
             created_at=created_at.astimezone(timezone.utc),
         )
 
@@ -118,7 +130,6 @@ class PostgresDatabase(BaseDatabase):
         before_idx: int | None = None,
         after_idx: int | None = None,
         reverse: bool = False,
-        sent: bool | None = None,
     ) -> List["Message"]:
         """Retrieve messages for *thread_id* ordered by idx."""
         base_query = f"SELECT * FROM {self.MESSAGE_TABLE_NAME} WHERE agent_name = $1 AND thread_id = $2 AND user_id = $3"
@@ -137,9 +148,6 @@ class PostgresDatabase(BaseDatabase):
         if limit is not None:
             base_query += f" LIMIT ${param_pos}"
             params.append(limit)
-        if sent is not None:
-            base_query += f" AND sent = ${param_pos}"
-            params.append(sent)
         rows = await self.conn.fetch(base_query, *params)
         return [Message.from_row(row) for row in rows]
 
