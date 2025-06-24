@@ -73,7 +73,7 @@ class EventRelay:
         t0 = time.time()
         time_remaining = timeout
         logger.debug(f"Connecting to relay: {self.relay}")
-        async with connect(self.relay) as ws:
+        async with connect(self.relay,) as ws:
             logger.debug(f"Sending subscription: {json.dumps(subscription)}")
             await ws.send(json.dumps(subscription))
             t0 = time.time()

@@ -24,3 +24,5 @@ wheels/
 *.db
 *.sqlite3
 *.sqlite3*
+
+*.code-workspace

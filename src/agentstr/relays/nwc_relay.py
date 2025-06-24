@@ -139,7 +139,8 @@ class NWCRelay:
             limit=1,
         )
         for _ in range(10):
-            event = await self.event_relay.get_event(filters=filters, timeout=10, close_on_eose=False)
+            event = asyncio.create_task(self.event_relay.get_event(filters=filters, timeout=10, close_on_eose=False))
+            event = await event
             if event:
                 return event
             await asyncio.sleep(0)
@@ -341,6 +342,33 @@ class NWCRelay:
         drsp = decrypt(self.nwc_info["app_privkey"], self.nwc_info["wallet_pubkey"], ersp)
         dobj = json.loads(drsp)
         return dobj.get("result", {}).get("balance")
+
+    async def wait_for_payment_success(self, invoice: str, timeout: int = 300, interval: int = 2):
+        """Wait for payment success for a given invoice.
+
+        This method continuously checks for payment success until either the payment
+        is confirmed or the timeout is reached.
+
+        Args:
+            invoice (str): The BOLT11 invoice string to listen for.
+            timeout (int, optional): Maximum time to wait in seconds (default: 300).
+            interval (int, optional): Time between checks in seconds (default: 2).
+
+        Returns:
+            bool: True if payment was successful, False otherwise.
+        """
+        start_time = time.time()
+        success = False
+        while True:
+            if await self.did_payment_succeed(invoice):
+                success = True
+                break
+            if time.time() - start_time > timeout:
+                break
+            await asyncio.sleep(interval)
+        if not success:
+            return False
+        return True
 
     async def on_payment_success(self, invoice: str, callback=None, unsuccess_callback=None, timeout: int = 300, interval: int = 2):
         """Listen for payment success for a given invoice.

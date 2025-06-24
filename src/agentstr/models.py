@@ -1,5 +1,6 @@
 from typing import Any, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime, timezone
 
 
 class NoteFilters(BaseModel):
@@ -66,24 +67,61 @@ class AgentCard(BaseModel):
     nostr_relays: list[str] = []
 
 
-class PreviousMessage(BaseModel):
-    role: Literal["user", "agent"]
+class User(BaseModel):
+    """Simple user model persisted by the database layer."""
+
+    user_id: str
+    available_balance: int = 0
+    current_thread_id: str | None = None
+
+
+class Message(BaseModel):
+    """Represents a message in a chat interaction."""
+
+    agent_name: str
+    thread_id: str
+    user_id: str
+    idx: int
     message: str
+    content: str
+    role: Literal["user", "agent", "tool"]
+    kind: Literal["request", "requires_payment", "tool_message", "requires_input", "final_response", "error"]
+    satoshis: int | None = None
+    extra_inputs: dict[str, Any] = {}
+    extra_outputs: dict[str, Any] = {}
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    @classmethod
+    def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
+        if row is None:
+            raise ValueError("Row cannot be None")
+        # Both sqlite and pg rows behave like dicts with keys
+        return cls(
+            agent_name=row["agent_name"],
+            thread_id=row["thread_id"],
+            idx=row["idx"],
+            user_id=row["user_id"],
+            role=row["role"],
+            message=row["message"],
+            content=row["content"],
+            sent=row["sent"],
+            metadata=json.loads(row["metadata"]) if row["metadata"] else None,
+            created_at=row["created_at"],
+        )
 
 
 class ChatInput(BaseModel):
-    """Represents input data for an agent-to-agent chat interaction.
+    """Represents input data for an agent chat interaction.
 
     Attributes:
-        messages (list[str]): A list of messages in the conversation.
+        message (str): The message to send to the agent.
         thread_id (str, optional): The ID of the conversation thread. Defaults to None.
         extra_inputs (dict[str, Any]): Additional metadata or parameters for the chat.
     """
 
-    messages: list[str]
+    message: str
     thread_id: str | None = None
     user_id: str | None = None
-    history: list[PreviousMessage] = []
     extra_inputs: dict[str, Any] = {}
 
 
@@ -92,27 +130,18 @@ class ChatOutput(BaseModel):
     
     Attributes:
         message (str): The message to send to the user.
+        content (str): Full JSON content of the output.
         thread_id (str, optional): The ID of the conversation thread. Defaults to None.
-        satoshis_used: (int, optional): The amount of satoshis used for the request. Defaults to None.
+        user_id: (str, optional): The ID of the user. Defaults to None.
+        kind: (str, optional): The output type. Defaults to "final_response"
+        satoshis: (int, optional): The amount of satoshis used for the request. Defaults to None.
         extra_outputs (dict[str, Any]): Additional metadata or parameters for the chat.
     """
     message: str
+    content: str
     thread_id: str | None = None
     user_id: str | None = None
-    satoshis_used: int | None = None
+    role: Literal["agent", "tool"] = "agent"
+    kind: Literal["requires_payment", "tool_message", "requires_input", "final_response", "error"] = "final_response"
+    satoshis: int | None = None
     extra_outputs: dict[str, Any] = {}
-
-
-class PriceHandlerResponse(BaseModel):
-    """Response model for the price handler.
-
-    Attributes:
-        can_handle: Whether the agent can handle the request
-        satoshi_estimate: Total estimated cost in satoshis (0 if free or not applicable)
-        user_message: Friendly message to show the user about the action to be taken
-        skills_used: List of skills that would be used, if any
-    """
-    can_handle: bool
-    satoshi_estimate: int = 0
-    user_message: str = ""
-    skills_used: list[str] = []

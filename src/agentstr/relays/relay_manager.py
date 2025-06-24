@@ -114,7 +114,7 @@ class RelayManager:
     async def send_message(self, message: str | dict, recipient_pubkey: str, tags: dict[str, str] | None = None) -> Event:
         """Send an encrypted message to a recipient through all connected relays."""
         logger.info(f"Sending message to {recipient_pubkey[:10]}: {message}")
-
+        await asyncio.sleep(0)
         try:
             event = self.encrypt_message(message, recipient_pubkey, tags=tags)
             logger.debug(f"Encrypted message event: {event.id}")
@@ -144,6 +144,7 @@ class RelayManager:
 
         try:
             # Start receive tasks for all relays
+            await asyncio.sleep(0)
             for relay in self.relays:
                 logger.debug(f"Starting receive task for relay: {relay.relay}")
                 task = asyncio.create_task(relay.receive_message(author_pubkey, timestamp, timeout))
@@ -180,6 +181,7 @@ class RelayManager:
         """
         dm_event = await self.send_message(message, recipient_pubkey, tags)
         timestamp = dm_event.created_at
+        await asyncio.sleep(0)
         logger.debug(f"Sent receive DM event: {dm_event.to_dict()}")
         return await self.receive_message(recipient_pubkey, timestamp, timeout)
 

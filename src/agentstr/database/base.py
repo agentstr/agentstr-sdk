@@ -17,50 +17,11 @@ import os
 from typing import Optional, Any, List, Literal
 import json
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from agentstr.models import Message, User
 
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-class User(BaseModel):
-    """Simple user model persisted by the database layer."""
-
-    user_id: str
-    available_balance: int = 0
-    current_thread_id: str | None = None
-
-
-class Message(BaseModel):
-    """Chat/message row stored per agent/thread."""
-
-    agent_name: str
-    thread_id: str
-    idx: int
-    user_id: str
-    role: Literal["user", "agent"]
-    content: str
-    sent: bool = True
-    metadata: dict[str, Any] | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    @classmethod
-    def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
-        if row is None:
-            raise ValueError("Row cannot be None")
-        # Both sqlite and pg rows behave like dicts with keys
-        return cls(
-            agent_name=row["agent_name"],
-            thread_id=row["thread_id"],
-            idx=row["idx"],
-            user_id=row["user_id"],
-            role=row["role"],
-            content=row["content"],
-            sent=row["sent"],
-            metadata=json.loads(row["metadata"]) if row["metadata"] else None,
-            created_at=row["created_at"],
-        )
 
 
 class BaseDatabase(abc.ABC):

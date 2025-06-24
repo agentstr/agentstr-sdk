@@ -23,12 +23,12 @@ agents:
 Examples
 --------
 
->>> cmds = DefaultCommands(db, nostr_client, agent_info)
+>>> cmds = DefaultCommands(db, nostr_client, agent_card)
 >>> await cmds.run_command("!help", pubkey)
 
 """
 from typing import Callable
-from agentstr.database import Database
+from agentstr.database import BaseDatabase
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
@@ -94,13 +94,13 @@ class DefaultCommands(Commands):
         Persistent storage used for reading/updating a user's balance.
     nostr_client : NostrClient
         Active client connection for sending replies and NWC invoices.
-    agent_info : AgentCard
+    agent_card : AgentCard
         Metadata about the running agent (name, description, …) used by
         ``!describe``.
     """
-    def __init__(self, db: Database, nostr_client: 'NostrClient', agent_info: 'AgentCard'):
+    def __init__(self, db: BaseDatabase, nostr_client: 'NostrClient', agent_card: 'AgentCard'):
         self.db = db
-        self.agent_info = agent_info
+        self.agent_card = agent_card
         self.nostr_client = nostr_client
         super().__init__(
             nostr_client=nostr_client,
@@ -122,8 +122,8 @@ class DefaultCommands(Commands):
 
     async def _describe(self, command: str, pubkey: str):
         """Send the agent's name and description back to the user."""
-        agent_info = self.agent_info
-        description = "I am " + agent_info.name + "\n\nThis is my description:\n\n" + agent_info.description
+        agent_card = self.agent_card
+        description = "I am " + agent_card.name + "\n\nThis is my description:\n\n" + agent_card.description
         await self.nostr_client.send_direct_message(pubkey, description)
 
     async def _balance(self, command: str, pubkey: str):

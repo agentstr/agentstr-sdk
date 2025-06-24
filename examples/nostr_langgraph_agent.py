@@ -3,12 +3,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
+from typing import AsyncGenerator
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
-from agentstr import NostrAgentServer, NostrMCPClient, ChatInput
-from agentstr.mcp.langgraph import to_langgraph_tools
+from agentstr import NostrAgentServer, NostrMCPClient, ChatInput, Database, ChatOutput, NostrAgent, AgentCard, Skill
+from agentstr.mcp.providers.langgraph import to_langgraph_tools
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -34,15 +34,62 @@ async def agent_server():
     )
 
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> str:
-        result = await agent.ainvoke(
+    async def chat_generator(input: ChatInput) -> AsyncGenerator[ChatOutput, None]:
+        async for chunk in agent.astream(
             {"messages": [{"role": "user", "content": input.messages[-1]}]},
-        )
-        return result["messages"][-1].content
+            stream_mode="updates"
+        ):
+            print(f'Chunk: {chunk}')
+            if 'agent' in chunk:
+                update = chunk['agent']['messages'][-1]
+                if update.tool_calls:
+                    print(f'Tool calls: {update.tool_calls}')
+                    total_satoshis = 0
+                    for tool_call in update.tool_calls:
+                        satoshis = nostr_mcp_client.tool_to_sats_map.get(tool_call['name'], 0)
+                        total_satoshis += satoshis
+                    print(f'Total satoshis: {total_satoshis}')
+                    yield ChatOutput(
+                        message=update.content,
+                        thread_id=input.thread_id,
+                        kind="requires_payment",
+                        user_id=input.user_id,
+                        satoshis=total_satoshis
+                    )
+                else:
+                    yield ChatOutput(
+                        message=update.content,
+                        thread_id=input.thread_id,
+                        kind="final_response",
+                        user_id=input.user_id
+                    )
+            elif 'tools' in chunk:
+                for message in chunk['tools']['messages']:
+                    yield ChatOutput(
+                        message=message.content,
+                        thread_id=input.thread_id,
+                        kind="tool_message",
+                        user_id=input.user_id,
+                        role="tool"
+                    )
+
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="LangGraph Agent", 
+            description="A helpful assistant", 
+            skills=[Skill(name=tool.name, description=tool.description) for tool in langgraph_tools], 
+            nostr_pubkey=nostr_mcp_client.client.private_key.public_key.bech32(), 
+            nostr_relays=nostr_mcp_client.client.relays,
+            satoshis=2), 
+        chat_generator=chat_generator)
+
+    db = Database()
+    await db.async_init()   
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent,
+                              db=db)
 
     # Start server
     await server.start()
