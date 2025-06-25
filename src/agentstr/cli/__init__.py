@@ -304,26 +304,30 @@ import os
 import asyncio
 from agentstr import AgentCard, NostrAgentServer, ChatInput, ChatOutput
 
-
+# Define an agent callable
 async def hello_world_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
     return f"Hello {chat.user_id}!"
 
+# Define the Nostr Agent
+nostr_agent = NostrAgent(
+    agent_card=AgentCard(
+        name="HelloWorldAgent", 
+        description="A minimal example that greets users.", 
+    ),
+    agent_callable=hello_world_agent
+)
 
+# Define the Nostr Agent Server
 async def main() -> None:
-    card = AgentCard(
-        name="HelloWorldAgent",
-        description="A minimal example that greets users.",
-        nostr_pubkey=os.getenv("AGENT_PUBKEY"),
-    )
     server = NostrAgentServer(
-        agent_info=card,
-        agent_callable=hello_world_agent,
+        nostr_agent=nostr_agent,
         relays=[os.getenv("RELAY_URL")], 
         private_key=os.getenv("AGENT_NSEC"),
     )
     await server.start()
 
 
+# Run the server
 if __name__ == "__main__":
     asyncio.run(main())
 '''
