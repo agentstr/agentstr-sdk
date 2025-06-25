@@ -4,7 +4,7 @@ from agentstr.database import Database, User
 
 @pytest_asyncio.fixture
 async def db():
-    database = Database('sqlite://:memory:')
+    database = Database('sqlite://:memory:', agent_name='test')
     await database.async_init()
     yield database
     await database.close()
