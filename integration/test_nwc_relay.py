@@ -4,7 +4,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
-from agentstr.nwc_relay import NWCRelay
+from agentstr.relays import NWCRelay
 
 nwc_relay = NWCRelay(os.getenv("TEST_NWC_CONN_STR"))
 nwc_relay2 = NWCRelay(os.getenv("TEST_NWC_CONN_STR2"))

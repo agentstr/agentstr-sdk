@@ -18,10 +18,8 @@ async def test_send_receive_message():
     manager2 = RelayManager(relays, private_key2)
 
     timestamp = int(time.time())
-    event = await manager.send_message("hello", private_key2.public_key.hex())
-    print(event)
+    await manager.send_message("hello", private_key2.public_key.hex())
 
     dm_event = await manager2.receive_message(private_key1.public_key.hex(), timestamp)
-    print(dm_event)
 
     assert dm_event.message == "hello"

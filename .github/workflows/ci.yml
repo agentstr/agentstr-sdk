@@ -41,6 +41,8 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest tests/
+        env:
+          TEST_NWC_CONN_STR: ${{ secrets.TEST_NWC_CONN_STR }}
 
       - name: Stop agentstr relay
         if: always()
