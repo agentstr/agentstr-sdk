@@ -8,7 +8,7 @@ from pynostr.event import Event
 
 from agentstr.nostr_agent import NostrAgent
 from agentstr.database.base import BaseDatabase
-from agentstr.models import AgentCard, ChatInput, Message, User, NoteFilters
+from agentstr.models import AgentCard, ChatInput, ChatOutput, Message, User, NoteFilters
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
@@ -86,7 +86,46 @@ class NostrAgentServer:
             self.db.agent_name = self.nostr_agent.agent_card.name
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
 
-    async def chat(self, chat_input: ChatInput):
+    async def _save_input(self, chat_input: ChatInput):
+        logger.debug(f"Saving input: {chat_input.model_dump_json()}")
+        await self.db.add_message(
+            thread_id=chat_input.thread_id, 
+            user_id=chat_input.user_id, 
+            role="user",
+            message=chat_input.message,
+            content=chat_input.message,
+            kind="request",
+            satoshis=0,
+            extra_inputs=chat_input.extra_inputs or {},
+            extra_outputs={}
+        )
+
+    async def _save_output(self, chat_output: ChatOutput):
+        logger.debug(f"Saving output: {chat_output.model_dump_json()}")
+        await self.db.add_message(
+            thread_id=chat_output.thread_id, 
+            user_id=chat_output.user_id, 
+            role=chat_output.role,
+            message=chat_output.message,
+            content=chat_output.message,
+            kind=chat_output.kind,
+            satoshis=chat_output.satoshis,
+            extra_inputs={},
+            extra_outputs=chat_output.extra_outputs or {}
+        )
+
+    async def _handle_payment(self, user: User, satoshis: int):
+        logger.info(f"Checking payment: {user.available_balance} >= {satoshis}")
+        if user.available_balance >= satoshis:
+            logger.info(f"Auto payment successful: {user.available_balance} >= {satoshis}")
+            user.available_balance -= satoshis
+            await self.db.upsert_user(user)
+            return True
+        logger.info(f"Auto payment failed: {user.available_balance} < {satoshis}")
+        return False
+
+
+    async def chat(self, chat_input: ChatInput, event: Event,delegation_tags: dict[str, str], history: list[Message]):
         """Send a message to the agent and retrieve the response.
 
         Args:
@@ -95,32 +134,45 @@ class NostrAgentServer:
         Returns:
             Response from the agent, or an error message.
         """
+        recipient_pubkey = event.pubkey
 
+        # Paying user is always the recipient of the message
+        paying_user = await self.db.get_user(user_id=recipient_pubkey)
+
+        # Save user message to db
+        await self._save_input(chat_input)
+        
         # Handle base agent payments
         if self.nostr_agent.agent_card.satoshis or 0 > 0:
-            invoice = await self.client.nwc_relay.make_invoice(amount=self.nostr_agent.agent_card.satoshis or 0, description="Agenstr tool call")
-            message = f"Pay {self.nostr_agent.agent_card.satoshis or 0} sats to use this agent.\n\n{invoice}"
-            await self.client.send_direct_message(chat_input.user_id, message)
-            if not await self.client.nwc_relay.wait_for_payment_success(invoice):
-                message = "Payment failed. Please try again."
-                await self.client.send_direct_message(chat_input.user_id, message)
-                return
+            if not await self._handle_payment(paying_user, self.nostr_agent.agent_card.satoshis):
+                invoice = await self.client.nwc_relay.make_invoice(amount=self.nostr_agent.agent_card.satoshis or 0, description="Agenstr tool call")
+                message = f"Pay {self.nostr_agent.agent_card.satoshis} sats to use this agent.\n\n{invoice}"
+                await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
+                if not await self.client.nwc_relay.wait_for_payment_success(invoice):
+                    message = "Payment failed. Please try again."
+                    await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
+                    return
 
         # Handle tool payments
         async for chunk in self.nostr_agent.chat_stream(chat_input):
             try:
+                # Save output
+                await self._save_output(chunk)
+
+                # Handle response kinds (payments, user input, etc.)
                 if chunk.kind == "requires_payment" and (chunk.satoshis or 0) > 0:
-                    logger.info(f"Requires payment: {chunk}")
-                    invoice = await self.client.nwc_relay.make_invoice(amount=chunk.satoshis, description="Agenstr tool call")
-                    logger.info(f"Invoice: {invoice}")
-                    message = f'{chunk.message}\n\nJust pay {chunk.satoshis} sats.\n\n{invoice}'
-                    await self.client.send_direct_message(chat_input.user_id, message)
-                    if await self.client.nwc_relay.wait_for_payment_success(invoice):
-                        continue
-                    else:
-                        message = "Payment failed. Please try again."
-                        await self.client.send_direct_message(chat_input.user_id, message)
-                        break
+                    logger.info(f"Tool call requires payment: {chunk}")
+                    if not await self._handle_payment(paying_user, chunk.satoshis):
+                        invoice = await self.client.nwc_relay.make_invoice(amount=chunk.satoshis, description="Agenstr tool call")
+                        logger.info(f"Invoice: {invoice}")
+                        message = f'{chunk.message}\n\nJust pay {chunk.satoshis} sats.\n\n{invoice}'
+                        await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
+                        if await self.client.nwc_relay.wait_for_payment_success(invoice):
+                            continue
+                        else:
+                            message = "Payment failed. Please try again."
+                            await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
+                            break
                 elif chunk.kind == 'requires_input':
                     logger.info(f"Requires input: {chunk}")
                     raise NotImplementedError("requires_input not implemented")
@@ -130,29 +182,18 @@ class NostrAgentServer:
                 else:
                     logger.info(f"Final response: {chunk}")
                     message = chunk.message
-                    await self.client.send_direct_message(chat_input.user_id, message)     
+                    await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)     
                     
-                # Handle saving Chat output
-                #if chat_input.thread_id and chat_input.user_id:
-                #    await self.db.add_message(thread_id=chat_input.thread_id, user_id=chat_input.user_id, role="agent", content=message)
             except Exception as e:
                 logger.error(f"Error in chat: {e}")
                 message = "An error occurred. Please try again."
-                await self.client.send_direct_message(chat_input.user_id, message)
+                await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                 break
 
     async def _parse_message(self, event: Event, message: str) -> str | None:
         message = message.strip()
         if message.startswith("{") or message.startswith("["):
-            try:
-                message_json = json.loads(message)
-                if "action" in message_json and message_json["action"] == "chat":
-                    logger.info(f"Received chat message from agent: {message_json}")
-                    raise NotImplementedError("Chat messages are not supported yet")
-            except json.JSONDecodeError:
-                logger.debug(f'Unable to parse JSON message: {message}')
-                return None
-            logger.debug("Ignoring JSON messages")
+            logger.debug("Skipping JSON message")
             return None
         elif message.startswith("lnbc") and " " not in message:
             logger.debug("Ignoring lightning invoices")
@@ -166,44 +207,33 @@ class NostrAgentServer:
             return None
         return message
 
-    async def _handle_delegated_thread(self, event: Event) -> tuple[str | None, str | None, str | None, dict[str, str] | None, list[Message]]:
-        # Check for delegated thread
+    def _check_delegation(self, event: Event) -> dict[str, str] | None:
         tags = event.get_tag_dict()
         delegated_user_id, delegated_thread_id = None, None
-        reply_to_user_id = event.pubkey
         if "t" in tags and len(tags["t"]) > 0 and len(tags["t"][0]) > 1:
             d_user_id = tags["t"][0][0]
             delegated_user_id = f'{event.pubkey}:{d_user_id}'  # Keep delegation threads separate from direct user threads
-            delegated_thread_id = tags["t"][0][1]            
+            delegated_thread_id = tags["t"][0][1]           
+        return {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
 
-        delegated_tags = {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
-        logger.debug(f"Delegated tags: {delegated_tags}")
+    async def _get_user_and_thread_ids(self, event: Event) -> tuple[str | None, str | None, dict[str, str] | None]:
+        # Check for delegated thread
+        delegation_tags = self._check_delegation(event)
+        logger.debug(f"Delegation tags: {delegation_tags}")
 
-        # Get target user and thread
-        db_user_id = delegated_user_id or reply_to_user_id
-        db_user = await self.db.get_user(user_id=db_user_id)
-        if not db_user.current_thread_id:
-            logger.debug("No current thread ID found for target user, creating new thread (or delegating)")
-            db_thread_id = delegated_thread_id or uuid.uuid4().hex
-            await self.db.set_current_thread_id(user_id=db_user_id, thread_id=db_thread_id)
+        if delegation_tags:
+            user_id = delegation_tags["t"][0][0]
+            thread_id = delegation_tags["t"][0][1]
         else:
-            logger.debug(f"Current thread ID found for target user: {db_user.current_thread_id}")
-            db_thread_id = db_user.current_thread_id
+            user_id = event.pubkey
+            user = await self.db.get_user(user_id=user_id)
+            thread_id = user.current_thread_id or uuid.uuid4().hex
 
-        logger.debug(f"Target user: {db_user_id}, target thread: {db_thread_id}")
-        
-        # Get message history
-        history = await self.db.get_messages(thread_id=db_thread_id, user_id=db_user_id)
-        logger.debug(f"Message history: {history}")
+        # Set active thread
+        logger.debug(f"Setting active thread for user {user_id}: {thread_id}")
+        await self.db.set_current_thread_id(user_id=user_id, thread_id=thread_id)
 
-        # Figure out who's paying
-        if reply_to_user_id == db_user_id:
-            paying_user = db_user
-        else:
-            paying_user = await self.db.get_user(user_id=reply_to_user_id)
-
-        logger.debug(f"Paying user: {paying_user}")
-        return db_thread_id, db_user_id, reply_to_user_id, delegated_tags, history
+        return user_id, thread_id, delegation_tags
 
     async def _direct_message_callback(self, event: Event, message: str):
         """Handle incoming direct messages for agent interaction.
@@ -212,19 +242,28 @@ class NostrAgentServer:
             event: The Nostr event containing the message.
             message: The message content.
         """
+        # Parse message
         message = await self._parse_message(event, message)
         if not message:
             return
 
-        db_thread_id, db_user_id, reply_to_user_id, delegated_tags, history = await self._handle_delegated_thread(event)
+        # Get user and thread IDs
+        user_id, thread_id, delegation_tags = await self._get_user_and_thread_ids(event)
 
-        # If paying user has a sufficient balance, proceed with request
-        #if db_thread_id and db_user_id:
-        #    await self.db.add_message(thread_id=db_thread_id, user_id=db_user_id, role="user", content=message)
+        # Get message history
+        history = await self.db.get_messages(thread_id=thread_id, user_id=user_id)
+        logger.debug(f"Message history: {history}")
 
-        chat_input = ChatInput(messages=[message], thread_id=db_thread_id, user_id=db_user_id, history=history)
+        # Create chat input
+        chat_input = ChatInput(
+            messages=[message], 
+            thread_id=thread_id, 
+            user_id=user_id, 
+            extra_inputs=delegation_tags or {}
+        )
 
-        await self.chat(chat_input)
+        # Chat with agent
+        await self.chat(chat_input, event=event, delegation_tags=delegation_tags, history=history)
 
 
     async def start(self):
@@ -233,8 +272,10 @@ class NostrAgentServer:
         if self.nostr_agent.agent_card:
             await self.client.update_metadata(
                 name="agent_server",
+                username=self.nostr_agent.agent_card.name,
                 display_name=self.nostr_agent.agent_card.name,
                 about=self.nostr_agent.agent_card.model_dump_json(),
+                nostr_metadata=self.nostr_agent.nostr_metadata,
             )
 
         # Start direct message listener

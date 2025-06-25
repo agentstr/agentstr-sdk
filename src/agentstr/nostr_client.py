@@ -159,7 +159,8 @@ class NostrClient:
                        nip05: str | None = None, picture: str | None = None,
                        banner: str | None = None, lud16: str | None = None,
                        lud06: str | None = None, username: str | None = None,
-                       display_name: str | None = None, website: str | None = None):
+                       display_name: str | None = None, website: str | None = None,
+                       nostr_metadata: Metadata | None = None):
         """Update the client's metadata on Nostr relays.
 
         Args:
@@ -198,6 +199,9 @@ class NostrClient:
             metadata.display_name = display_name
         if website:
             metadata.website = website
+        if nostr_metadata:  # Overrides other fields
+            metadata.set_metadata(nostr_metadata.metadata_to_dict())
+
         metadata.created_at = int(time.time())
         metadata.update()
         if previous_metadata and previous_metadata.content == metadata.content:

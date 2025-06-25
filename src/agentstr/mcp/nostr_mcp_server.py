@@ -5,11 +5,12 @@ from typing import Any
 
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.fastmcp.tools.tool_manager import ToolManager
-from pydantic import BaseModel
 from pynostr.event import Event
+from pynostr.metadata import Metadata
 
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
+from agentstr.utils import stringify_result
 
 logger = get_logger(__name__)
 
@@ -27,20 +28,6 @@ def tool(**kwargs):
         setattr(fn, "__tool_params__", kwargs)
         return fn
     return decorator
-
-
-def stringify_result(result: Any) -> str:
-    """Convert a result to a string."""
-    logger.debug(f"Stringifying result: {result}")
-    if isinstance(result, dict) or isinstance(result, list):
-        logger.debug("Result is dict or list")
-        return json.dumps(result)
-    elif isinstance(result, BaseModel):
-        logger.debug("Result is BaseModel")
-        return result.model_dump_json()
-    else:
-        logger.debug(f"Result is other type ({type(result)}): {result}")
-        return str(result)
 
 
 class NostrMCPServer:
@@ -71,9 +58,9 @@ class NostrMCPServer:
 
     Full runnable script: `mcp_server.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/mcp_server.py>`_
     """
-    def __init__(self, display_name: str, nostr_client: NostrClient | None = None,
+    def __init__(self, display_name: str | None = None, nostr_client: NostrClient | None = None,
                  relays: list[str] | None = None, private_key: str | None = None, nwc_str: str | None = None,
-                 tools: list[Callable[..., Any]] = []):
+                 tools: list[Callable[..., Any]] = [], nostr_metadata: Metadata | None = None):
         """Initialize the MCP server.
 
         Args:
@@ -83,9 +70,11 @@ class NostrMCPServer:
             private_key: Nostr private key (if no client provided).
             nwc_str: Nostr Wallet Connect string for payments (optional).
             tools: List of tools to register (optional).
+            nostr_metadata: Nostr metadata for the server (optional).
         """
         self.client = nostr_client or NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str)
         self.display_name = display_name
+        self.nostr_metadata = nostr_metadata
         self.tool_to_sats_map = {}
         self.tool_manager = ToolManager()
         for tool in tools:
@@ -212,6 +201,7 @@ class NostrMCPServer:
             name="mcp_server",
             display_name=self.display_name,
             about=json.dumps(await self.list_tools()),
+            nostr_metadata=self.nostr_metadata,
         )
         logger.info(f"Starting message listener for {self.client.public_key.bech32()}")
         await self.client.direct_message_listener(callback=self._direct_message_callback)

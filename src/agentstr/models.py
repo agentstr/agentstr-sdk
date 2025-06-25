@@ -1,4 +1,5 @@
 from typing import Any, Literal
+import json
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
@@ -76,7 +77,7 @@ class User(BaseModel):
 
 
 class Message(BaseModel):
-    """Represents a message in a chat interaction."""
+    """Represents a message in a chat interaction. This should only be retrieved from the Database, not created manually."""
 
     agent_name: str
     thread_id: str
@@ -132,13 +133,16 @@ class ChatInput(BaseModel):
     Attributes:
         message (str): The message to send to the agent.
         thread_id (str, optional): The ID of the conversation thread. Defaults to None.
+        user_id (str, optional): The ID of the user. Defaults to None.
         extra_inputs (dict[str, Any]): Additional metadata or parameters for the chat.
+        history (list[Message]): The message history for the conversation.
     """
 
     message: str
     thread_id: str | None = None
     user_id: str | None = None
     extra_inputs: dict[str, Any] = {}
+    history: list[Message] = []
 
 
 class ChatOutput(BaseModel):
