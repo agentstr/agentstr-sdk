@@ -1,4 +1,9 @@
+"""
+Agent-Nostr integration layer.
 
+Defines the NostrAgent class, which adapts an agent (such as an LLM or other callable)
+to the Nostr chat protocol, supporting both streaming and non-streaming interfaces.
+"""
 
 from pynostr.metadata import Metadata
 from agentstr.models import AgentCard, ChatInput, ChatOutput
@@ -8,11 +13,37 @@ from agentstr.logger import get_logger
 logger = get_logger(__name__)
 
 class NostrAgent:
+    """
+    Adapter that exposes an agent as a Nostr-compatible chat interface.
+
+    The NostrAgent class wraps an agent (either as a streaming generator or a callable)
+    and exposes a unified streaming chat interface for use in the Nostr protocol.
+
+    Attributes:
+        agent_card (AgentCard): The agent's public profile and capabilities.
+        nostr_metadata (Metadata, optional): Additional Nostr metadata for the agent.
+        chat_generator (Callable[[ChatInput], AsyncGenerator[ChatOutput, None]], optional):
+            Async generator function for streaming agent responses.
+        agent_callable (Callable[[ChatInput], ChatOutput | str], optional):
+            Callable for non-streaming agent responses.
+    """
     def __init__(self, 
                  agent_card: AgentCard,
                  nostr_metadata: Metadata | None = None,
                  chat_generator: Callable[[ChatInput], AsyncGenerator[ChatOutput, None]] = None,
                  agent_callable: Callable[[ChatInput], ChatOutput | str] = None):
+        """
+        Initialize a NostrAgent.
+
+        Args:
+            agent_card (AgentCard): The agent's public profile and capabilities.
+            nostr_metadata (Metadata, optional): Additional Nostr metadata for the agent.
+            chat_generator (Callable, optional): Async generator for streaming responses.
+            agent_callable (Callable, optional): Callable for non-streaming responses.
+
+        Raises:
+            ValueError: If neither chat_generator nor agent_callable is provided.
+        """
         if chat_generator is None and agent_callable is None:
             raise ValueError("Must provide either chat_generator or agent_callable")
         self.agent_card = agent_card
@@ -21,7 +52,15 @@ class NostrAgent:
         self.agent_callable = agent_callable
 
     async def chat_stream(self, message: ChatInput) -> AsyncGenerator[ChatOutput, None]:
-        """Send a message to the agent and retrieve the response as a stream."""
+        """
+        Send a message to the agent and retrieve the response as a stream.
+
+        Args:
+            message (ChatInput): The chat input to send to the agent.
+
+        Yields:
+            ChatOutput: Each chunk of the agent's response.
+        """
         if self.chat_generator:
             logger.info(f"Received input: {message.model_dump()}")
             async for chunk in self.chat_generator(message):
