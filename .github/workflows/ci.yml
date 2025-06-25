@@ -30,9 +30,6 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Build
-        run: uv build
-
       - name: Start agentstr relay
         run: |
           uv run agentstr relay run &
@@ -48,6 +45,9 @@ jobs:
       - name: Stop agentstr relay
         if: always()
         run: kill $(cat relay.pid)
+
+      - name: Build
+        run: uv build
 
       - name: Commit bumped version
         if: github.ref == 'refs/heads/main'
