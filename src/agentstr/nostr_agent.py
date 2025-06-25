@@ -18,14 +18,6 @@ class NostrAgent:
 
     The NostrAgent class wraps an agent (either as a streaming generator or a callable)
     and exposes a unified streaming chat interface for use in the Nostr protocol.
-
-    Attributes:
-        agent_card (AgentCard): The agent's public profile and capabilities.
-        nostr_metadata (Metadata, optional): Additional Nostr metadata for the agent.
-        chat_generator (Callable[[ChatInput], AsyncGenerator[ChatOutput, None]], optional):
-            Async generator function for streaming agent responses.
-        agent_callable (Callable[[ChatInput], ChatOutput | str], optional):
-            Callable for non-streaming agent responses.
     """
     def __init__(self, 
                  agent_card: AgentCard,

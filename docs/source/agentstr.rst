@@ -12,7 +12,6 @@ The Agentstr SDK is organized into the following core modules:
 .. toctree::
    :maxdepth: 1
 
-   agentstr.a2a
    agentstr.commands
    agentstr.database
    agentstr.models

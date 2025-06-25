@@ -111,12 +111,6 @@ examples = [
     "yfinance>=0.2.61",
     "python-dotenv>=1.1.0",
 ]
-aws = [
-    "boto3>=1.38.36",
-]
-gcp = [
-    "google-cloud-run>=0.10.18",
-]
 cli = [
     "click>=8.1.7",
     "boto3>=1.38.36",

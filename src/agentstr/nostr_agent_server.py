@@ -19,41 +19,22 @@ logger = get_logger(__name__)
 
 
 class NostrAgentServer:
-    """Server that integrates an external agent with the Nostr network.
+    """
+    Server that exposes an agent as a Nostr-compatible chat endpoint with payment and delegation support.
 
-    Handles direct messages and optional payments, routing them to an external agent.
+    The NostrAgentServer handles:
+      - Receiving and parsing direct messages and delegated messages from Nostr clients
+      - Routing messages to an underlying agent (streaming or callable)
+      - Managing payments for agent and tool calls via Nostr Wallet Connect (NWC)
+      - Handling user and thread state, including delegated threads
+      - Persisting chat history via a database
+      - Sending responses, tool messages, and payment requests back to users
 
-    Examples
-    --------
-    Minimal server wiring an LLM agent (see full script)::
+    Supports both streaming and non-streaming agent interfaces, and can require payment for agent or tool usage.
 
-        import asyncio
-        from langchain_openai import ChatOpenAI
-        from agentstr import NostrAgentServer, NostrMCPClient, ChatInput
-
-        relays = ["wss://relay.damus.io"]
-        mcp_client = NostrMCPClient(
-            mcp_pubkey="npub1example...",
-            relays=relays,
-            private_key="nsec1example...",
-        )
-
-        llm = ChatOpenAI(model_name="gpt-3.5-turbo")
-
-        async def agent_callable(input: ChatInput) -> ChatOutput:
-            result = await llm.ainvoke(
-                {"messages": [{"role": "user", "content": input.messages[-1]}]},
-            )
-            return ChatOutput(message=result["messages"][-1].content)
-
-        server = NostrAgentServer(
-            nostr_mcp_client=mcp_client,
-            agent_callable=agent_callable,
-        )
-
-        asyncio.run(server.start())
-
-    Full runnable example: `nostr_langgraph_agent.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/nostr_langgraph_agent.py>`_
+    .. literalinclude:: ../../examples/nostr_langgraph_agent.py
+       :language: python
+       :linenos:
     """
     def __init__(self,
                  nostr_agent: NostrAgent,
@@ -65,19 +46,19 @@ class NostrAgentServer:
                  db: BaseDatabase | None = None,
                  note_filters: NoteFilters | None = None,
                  commands: Commands | None = None):
-        """Initialize the agent server.
+        """
+        Initialize a NostrAgentServer.
 
         Args:
-            nostr_client: Existing NostrClient instance (optional).
-            nostr_mcp_client: Existing NostrMCPClient instance (optional).
-            relays: List of Nostr relay URLs (if no client provided).
-            private_key: Nostr private key (if no client provided).
-            nwc_str: Nostr Wallet Connect string for payments (optional).
-            agent_info: Agent information (optional).
-            agent_callable: Callable to handle agent responses.
-            db: Database instance (optional).
-            note_filters: Filters for listening to Nostr notes (optional).
-            price_handler: PriceHandler to use for determining if an agent can handle a request and calculate the cost (optional).
+            nostr_agent (NostrAgent): The agent interface to expose over Nostr.
+            nostr_client (NostrClient, optional): Pre-initialized Nostr client. If not provided, will be constructed from relays/private_key.
+            nostr_mcp_client (NostrMCPClient, optional): MCP client for tool calls. Used to extract client if nostr_client not provided.
+            relays (list[str], optional): List of relay URLs to connect to if no client provided.
+            private_key (str, optional): Nostr private key (nsec format) for signing events and payments.
+            nwc_str (str, optional): Nostr Wallet Connect string for enabling payment support.
+            db (BaseDatabase, optional): Database for persisting messages and user state.
+            note_filters (NoteFilters, optional): Filters for subscribing to specific Nostr notes/events.
+            commands (Commands, optional): Custom command handler. If not provided, uses DefaultCommands.
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.nostr_agent = nostr_agent
@@ -87,6 +68,12 @@ class NostrAgentServer:
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
 
     async def _save_input(self, chat_input: ChatInput):
+        """
+        Persist an incoming user chat input to the database.
+
+        Args:
+            chat_input (ChatInput): The input message and metadata from the user.
+        """
         logger.debug(f"Saving input: {chat_input.model_dump_json()}")
         await self.db.add_message(
             thread_id=chat_input.thread_id, 
@@ -101,6 +88,12 @@ class NostrAgentServer:
         )
 
     async def _save_output(self, chat_output: ChatOutput):
+        """
+        Persist an outgoing agent/tool chat output to the database.
+
+        Args:
+            chat_output (ChatOutput): The agent or tool's output message and metadata.
+        """
         logger.debug(f"Saving output: {chat_output.model_dump_json()}")
         await self.db.add_message(
             thread_id=chat_output.thread_id, 
@@ -115,6 +108,16 @@ class NostrAgentServer:
         )
 
     async def _handle_payment(self, user: User, satoshis: int):
+        """
+        Attempt to deduct the required satoshis from the user's balance for a request.
+
+        Args:
+            user (User): The user making the request.
+            satoshis (int): The required payment amount.
+
+        Returns:
+            bool: True if payment was successful or not required, False if insufficient balance.
+        """
         logger.info(f"Checking payment: {user.available_balance} >= {satoshis}")
         if user.available_balance >= satoshis:
             logger.info(f"Auto payment successful: {user.available_balance} >= {satoshis}")
@@ -125,14 +128,18 @@ class NostrAgentServer:
         return False
 
 
-    async def chat(self, chat_input: ChatInput, event: Event,delegation_tags: dict[str, str], history: list[Message]):
-        """Send a message to the agent and retrieve the response.
+    async def chat(self, chat_input: ChatInput, event: Event, delegation_tags: dict[str, str], history: list[Message]):
+        """
+        Send a message to the agent and stream responses, handling payments and tool calls.
 
         Args:
-            chat_input: The chat input to send to the agent.
+            chat_input (ChatInput): The user's message and context.
+            event (Event): The original Nostr event from the user.
+            delegation_tags (dict[str, str]): Delegation tags for thread/user context (if present).
+            history (list[Message]): Message history for the thread/user.
 
-        Returns:
-            Response from the agent, or an error message.
+        Yields:
+            Streams agent/tool responses, sending each to the user and handling payment/tool logic.
         """
         recipient_pubkey = event.pubkey
 
@@ -191,6 +198,16 @@ class NostrAgentServer:
                 break
 
     async def _parse_message(self, event: Event, message: str) -> str | None:
+        """
+        Parse and preprocess an incoming message, handling commands and filtering noise.
+
+        Args:
+            event (Event): The Nostr event containing the message.
+            message (str): The raw message content.
+
+        Returns:
+            str | None: The cleaned message, or None if it should be ignored/handled elsewhere.
+        """
         message = message.strip()
         if message.startswith("{") or message.startswith("["):
             logger.debug("Skipping JSON message")
@@ -208,6 +225,15 @@ class NostrAgentServer:
         return message
 
     def _check_delegation(self, event: Event) -> dict[str, str] | None:
+        """
+        Check for delegation tags in a Nostr event to determine delegated user/thread context.
+
+        Args:
+            event (Event): The incoming Nostr event.
+
+        Returns:
+            dict[str, str] | None: Delegation tag mapping, or None if not delegated.
+        """
         tags = event.get_tag_dict()
         delegated_user_id, delegated_thread_id = None, None
         if "t" in tags and len(tags["t"]) > 0 and len(tags["t"][0]) > 1:
@@ -217,6 +243,15 @@ class NostrAgentServer:
         return {"t": [delegated_user_id, delegated_thread_id]} if delegated_user_id and delegated_thread_id else None
 
     async def _get_user_and_thread_ids(self, event: Event) -> tuple[str | None, str | None, dict[str, str] | None]:
+        """
+        Resolve the user and thread IDs for a given event, handling delegation if present.
+
+        Args:
+            event (Event): The incoming Nostr event.
+
+        Returns:
+            tuple: (user_id, thread_id, delegation_tags)
+        """
         # Check for delegated thread
         delegation_tags = self._check_delegation(event)
         logger.debug(f"Delegation tags: {delegation_tags}")
@@ -236,11 +271,12 @@ class NostrAgentServer:
         return user_id, thread_id, delegation_tags
 
     async def _direct_message_callback(self, event: Event, message: str):
-        """Handle incoming direct messages for agent interaction.
+        """
+        Callback for direct messages: parses, resolves context, and triggers agent chat.
 
         Args:
-            event: The Nostr event containing the message.
-            message: The message content.
+            event (Event): The Nostr event containing the message.
+            message (str): The message content.
         """
         # Parse message
         message = await self._parse_message(event, message)
@@ -267,7 +303,14 @@ class NostrAgentServer:
 
 
     async def start(self):
-        """Start the agent server, updating metadata and listening for direct messages and notes."""
+        """
+        Start the agent server: update metadata and begin listening for direct messages and notes.
+
+        This will:
+            - Update the agent's Nostr metadata/profile
+            - Start the direct message listener
+            - Run the event loop for handling all incoming messages
+        """
         logger.info(f"Updating metadata for {self.client.public_key.bech32()}")
         if self.nostr_agent.agent_card:
             await self.client.update_metadata(

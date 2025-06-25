@@ -50,9 +50,6 @@ all = [
     { name = "pyyaml" },
     { name = "yfinance" },
 ]
-aws = [
-    { name = "boto3" },
-]
 cli = [
     { name = "azure-identity" },
     { name = "azure-mgmt-containerinstance" },
@@ -69,9 +66,6 @@ dspy = [
 examples = [
     { name = "python-dotenv" },
     { name = "yfinance" },
-]
-gcp = [
-    { name = "google-cloud-run" },
 ]
 google = [
     { name = "google-adk" },
@@ -116,7 +110,6 @@ requires-dist = [
     { name = "azure-mgmt-containerinstance", marker = "extra == 'cli'", specifier = ">=10.1.0" },
     { name = "bolt11", specifier = ">=2.1.1" },
     { name = "boto3", marker = "extra == 'all'", specifier = ">=1.38.36" },
-    { name = "boto3", marker = "extra == 'aws'", specifier = ">=1.38.36" },
     { name = "boto3", marker = "extra == 'cli'", specifier = ">=1.38.36" },
     { name = "click", marker = "extra == 'all'", specifier = ">=8.1.7" },
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.1.7" },
@@ -128,7 +121,6 @@ requires-dist = [
     { name = "google-adk", marker = "extra == 'google'", specifier = ">=1.1.1" },
     { name = "google-cloud-run", marker = "extra == 'all'", specifier = ">=0.10.18" },
     { name = "google-cloud-run", marker = "extra == 'cli'", specifier = ">=0.10.18" },
-    { name = "google-cloud-run", marker = "extra == 'gcp'", specifier = ">=0.10.18" },
     { name = "langchain", marker = "extra == 'all'", specifier = ">=0.3.25" },
     { name = "langchain", marker = "extra == 'rag'", specifier = ">=0.3.25" },
     { name = "langchain-community", marker = "extra == 'all'", specifier = ">=0.3.24" },
@@ -158,7 +150,7 @@ requires-dist = [
     { name = "yfinance", marker = "extra == 'all'", specifier = ">=0.2.61" },
     { name = "yfinance", marker = "extra == 'examples'", specifier = ">=0.2.61" },
 ]
-provides-extras = ["rag", "langgraph", "dspy", "agno", "pydantic", "openai", "google", "examples", "aws", "gcp", "cli", "all"]
+provides-extras = ["rag", "langgraph", "dspy", "agno", "pydantic", "openai", "google", "examples", "cli", "all"]
 
 [package.metadata.requires-dev]
 dev = [

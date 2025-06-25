@@ -174,6 +174,7 @@ class NostrClient:
             username: Username.
             display_name: Display name.
             website: Website URL.
+            nostr_metadata: Nostr metadata for the server (will override other fields).
         """
         previous_metadata = await self.get_metadata_for_pubkey(self.public_key)
         metadata = Metadata()
