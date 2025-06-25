@@ -11,7 +11,7 @@ This module provides integration with DSPy tools, enabling conversion between MC
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_dspy_agent.py
+.. literalinclude:: ../../examples/dspy_agent.py
    :language: python
    :linenos:
 

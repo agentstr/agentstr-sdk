@@ -11,7 +11,7 @@ This module provides integration with Agno tools, allowing conversion between MC
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_agno_agent.py
+.. literalinclude:: ../../examples/agno_agent.py
    :language: python
    :linenos:
 

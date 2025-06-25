@@ -11,6 +11,6 @@ This module provides integration with PydanticAI tools, enabling conversion betw
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_pydantic_agent.py
+.. literalinclude:: ../../examples/pydantic_agent.py
    :language: python
    :linenos:

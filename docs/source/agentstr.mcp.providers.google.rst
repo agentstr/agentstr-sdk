@@ -11,6 +11,6 @@ This module provides integration with Google tools, such as those used with Gemi
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_google_agent.py
+.. literalinclude:: ../../examples/google_agent.py
    :language: python
    :linenos:

@@ -11,6 +11,6 @@ This module provides integration with OpenAI tools, enabling conversion between 
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_openai_agent.py
+.. literalinclude:: ../../examples/openai_agent.py
    :language: python
    :linenos:

@@ -11,6 +11,6 @@ This module provides integration with LangGraph tools, enabling conversion betwe
 Usage Example
 -------------
 
-.. literalinclude:: ../../examples/nostr_langgraph_agent.py
+.. literalinclude:: ../../examples/langgraph_agent.py
    :language: python
    :linenos:
