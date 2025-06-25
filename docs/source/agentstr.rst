@@ -12,6 +12,7 @@ The Agentstr SDK is organized into the following core modules:
 .. toctree::
    :maxdepth: 1
 
+   agentstr.agents
    agentstr.commands
    agentstr.database
    agentstr.models
@@ -19,8 +20,6 @@ The Agentstr SDK is organized into the following core modules:
    agentstr.mcp.nostr_mcp_client
    agentstr.mcp.nostr_mcp_server
    agentstr.mcp.providers
-   agentstr.nostr_agent_server
    agentstr.nostr_client
-   agentstr.nostr_rag
    agentstr.relays
    

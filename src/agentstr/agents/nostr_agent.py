@@ -35,7 +35,10 @@ class NostrAgent:
 
         Raises:
             ValueError: If neither chat_generator nor agent_callable is provided.
+            ValueError: If agent_card is None.
         """
+        if agent_card is None:
+            raise ValueError("Must provide agent_card")
         if chat_generator is None and agent_callable is None:
             raise ValueError("Must provide either chat_generator or agent_callable")
         self.agent_card = agent_card

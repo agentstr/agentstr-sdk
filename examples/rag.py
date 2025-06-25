@@ -7,7 +7,7 @@ import os
 from langchain_openai import ChatOpenAI
 
 from agentstr import NostrRAG
-from agentstr.nostr_rag import Author
+from agentstr.agents.nostr_rag import Author
 
 # Define relays
 relays   = os.getenv("NOSTR_RELAYS").split(",")

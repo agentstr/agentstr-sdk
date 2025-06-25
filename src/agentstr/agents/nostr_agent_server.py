@@ -6,8 +6,8 @@ import json
 
 from pynostr.event import Event
 
-from agentstr.nostr_agent import NostrAgent
-from agentstr.database.base import BaseDatabase
+from agentstr.agents.nostr_agent import NostrAgent
+from agentstr.database import Database, BaseDatabase
 from agentstr.models import AgentCard, ChatInput, ChatOutput, Message, User, NoteFilters
 from agentstr.commands import Commands, DefaultCommands
 from agentstr.logger import get_logger
@@ -15,7 +15,6 @@ from agentstr.nostr_client import NostrClient
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 
 logger = get_logger(__name__)
-
 
 
 class NostrAgentServer:
@@ -31,10 +30,6 @@ class NostrAgentServer:
       - Sending responses, tool messages, and payment requests back to users
 
     Supports both streaming and non-streaming agent interfaces, and can require payment for agent or tool usage.
-
-    .. literalinclude:: ../../examples/nostr_langgraph_agent.py
-       :language: python
-       :linenos:
     """
     def __init__(self,
                  nostr_agent: NostrAgent,
@@ -62,9 +57,13 @@ class NostrAgentServer:
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.nostr_agent = nostr_agent
-        self.db = db
+        self.db = db or Database()
         if self.db and self.db.agent_name is None:
             self.db.agent_name = self.nostr_agent.agent_card.name
+        if self.nostr_agent.agent_card.nostr_pubkey is None:
+            self.nostr_agent.agent_card.nostr_pubkey = self.client.private_key.public_key.bech32()
+        if self.nostr_agent.agent_card.nostr_relays is None:
+            self.nostr_agent.agent_card.nostr_relays = self.client.relays
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
 
     async def _save_input(self, chat_input: ChatInput):
@@ -307,10 +306,16 @@ class NostrAgentServer:
         Start the agent server: update metadata and begin listening for direct messages and notes.
 
         This will:
+            - Make sure the database is initialized
             - Update the agent's Nostr metadata/profile
             - Start the direct message listener
             - Run the event loop for handling all incoming messages
         """
+        # Make sure db is init
+        if not self.db.conn:
+            await self.db.async_init()
+
+        # Update metadata
         logger.info(f"Updating metadata for {self.client.public_key.bech32()}")
         if self.nostr_agent.agent_card:
             await self.client.update_metadata(

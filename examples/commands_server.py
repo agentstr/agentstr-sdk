@@ -5,8 +5,7 @@ load_dotenv()
 import os
 from agentstr.database import Database
 from agentstr.commands import DefaultCommands
-from agentstr.nostr_agent_server import NostrAgentServer
-from agentstr import AgentCard, NostrClient
+from agentstr import AgentCard, NostrClient, NostrAgentServer
 
 
 relays   = os.getenv("NOSTR_RELAYS").split(",")

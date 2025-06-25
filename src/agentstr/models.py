@@ -54,7 +54,7 @@ class AgentCard(BaseModel):
             Each skill is represented by a Skill model.
         satoshis (int, optional): The base price in satoshis for interacting with the agent.
             If None, the agent may have free services or use skill-specific pricing.
-        nostr_pubkey (str): The agent's Nostr public key. This is used for identifying
+        nostr_pubkey (str, optional): The agent's Nostr public key. This is used for identifying
             and communicating with the agent on the Nostr network.
         nostr_relays (list[str]): A list of Nostr relay URLs that the agent uses for
             communication. These relays are where the agent publishes and receives messages.
@@ -64,7 +64,7 @@ class AgentCard(BaseModel):
     description: str
     skills: list[Skill] = []
     satoshis: int | None = None
-    nostr_pubkey: str
+    nostr_pubkey: str | None = None
     nostr_relays: list[str] = []
 
 
