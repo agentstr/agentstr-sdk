@@ -38,7 +38,7 @@ jobs:
 
       - name: Start agentstr relay
         run: |
-          agentstr relay run &
+          uv run agentstr relay run &
           echo $! > relay.pid
         shell: bash
 
@@ -46,7 +46,7 @@ jobs:
         run: sleep 5
 
       - name: Run unit tests
-        run: pytest
+        run: uv run pytest
 
       - name: Stop agentstr relay
         if: always()
