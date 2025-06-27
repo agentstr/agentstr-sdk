@@ -23,7 +23,7 @@ class NostrAgent:
                  agent_card: AgentCard,
                  nostr_metadata: Metadata | None = None,
                  chat_generator: Callable[[ChatInput], AsyncGenerator[ChatOutput, None]] = None,
-                 agent_callable: Callable[[ChatInput], ChatOutput | str] = None):
+                 agent_callable: Callable[[ChatInput | str], ChatOutput | str] = None):
         """
         Initialize a NostrAgent.
 
@@ -63,16 +63,19 @@ class NostrAgent:
                 yield chunk
         elif self.agent_callable:
             logger.info(f"Received input: {message.model_dump()}")
-            response = self.agent_callable(message)
+            response = await self.agent_callable(message)
             if isinstance(response, str):
                 response = ChatOutput(
                     message=response, 
+                    content=response,
                     thread_id=message.thread_id, 
                     user_id=message.user_id,
                     role="agent",
                     satoshis=0,
                     kind="final_response",
-                    agent_name=self.agent_card.name
+                    extra_outputs={}
                 )
+            elif not isinstance(response, ChatOutput):
+                raise ValueError(f"Response must be ChatOutput or str, got {type(response)}")
             logger.info(f"Response: {response}")
             yield response

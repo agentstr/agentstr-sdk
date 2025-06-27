@@ -100,7 +100,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agno", marker = "extra == 'agno'", specifier = ">=1.5.6" },
+    { name = "agno", marker = "extra == 'agno'", specifier = ">=1.6.4" },
     { name = "agno", marker = "extra == 'all'", specifier = ">=1.5.6" },
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
@@ -164,7 +164,7 @@ dev = [
 
 [[package]]
 name = "agno"
-version = "1.5.6"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -180,9 +180,9 @@ dependencies = [
     { name = "typer" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/81/8e915bf8a54202c019aa01e3cc5b3db723dd9b00db3fdab5b86b9739cdcb/agno-1.5.6.tar.gz", hash = "sha256:169404b5ab6cd683e4f8ab1d95ab76eff627121d5aa736ef91c32962d42ea436", size = 605177, upload-time = "2025-05-29T18:50:23.624Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/9b/55cf2f1b983a46e885abd685c9c22d4e23a5b607d8b0d63e9b41e9dcf5f2/agno-1.7.0.tar.gz", hash = "sha256:52bfe110c43cac6902b0493e902e7e6ad3aa0890263640b9fbf98567b77866e4", size = 650032, upload-time = "2025-06-26T18:26:51.907Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/21/33/070220d86051d53fb8e0bd5559ca5874cfef3eb4a4fca1073a82dd058e15/agno-1.5.6-py3-none-any.whl", hash = "sha256:36c48f3f69e287b6a78745280abd5a28530abedf8755f22eed95499451bc82f4", size = 802829, upload-time = "2025-05-29T18:50:21.76Z" },
+    { url = "https://files.pythonhosted.org/packages/25/91/a1a719caf50fdec33bdfa5106906da158c0b204871f6f041be052a626baf/agno-1.7.0-py3-none-any.whl", hash = "sha256:473bd8f67c8084a45c7f98f4c98fe372d58934dfaa21966b71624e62c1dd7010", size = 870576, upload-time = "2025-06-26T18:26:50.078Z" },
 ]
 
 [[package]]

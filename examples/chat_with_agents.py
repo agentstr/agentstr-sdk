@@ -47,6 +47,16 @@ async def ask_agno_agent():
         "What's the weather in San Francisco?",
     )
     print(response.message)
+    response = await client.receive_direct_message(
+        private_to_public_key(langgraph_agent_private_key),
+        timeout=900,
+    )
+    print(response.message)
+    response = await client.receive_direct_message(
+        private_to_public_key(langgraph_agent_private_key),
+        timeout=900,
+    )
+    print(response.message)
 
 async def ask_dspy_agent():
     client = NostrClient(relays, PrivateKey().bech32())
@@ -82,10 +92,10 @@ async def ask_google_agent():
 
 
 if __name__ == "__main__":
-    #asyncio.run(ask_agno_agent())
+    asyncio.run(ask_agno_agent())
     #asyncio.run(ask_dspy_agent())
     #asyncio.run(ask_google_agent())
-    asyncio.run(ask_langgraph_agent())
+    #asyncio.run(ask_langgraph_agent())
     #asyncio.run(ask_openai_agent())
     #asyncio.run(ask_pydantic_agent())
     

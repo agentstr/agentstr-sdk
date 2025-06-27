@@ -33,6 +33,7 @@ async def agent_server():
     # Create chat generator
     chat_generator = langgraph_chat_generator(agent, [nostr_mcp_client])
 
+    # Create Nostr Agent
     nostr_agent = NostrAgent(
         agent_card=AgentCard(
             name="LangGraph Agent", 

@@ -291,7 +291,7 @@ class NostrAgentServer:
 
         # Create chat input
         chat_input = ChatInput(
-            messages=[message], 
+            message=message, 
             thread_id=thread_id, 
             user_id=user_id, 
             extra_inputs=delegation_tags or {}

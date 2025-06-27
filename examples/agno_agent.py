@@ -1,3 +1,4 @@
+from typing import AsyncGenerator, Callable
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,8 +8,8 @@ import os
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 
-from agentstr import ChatInput, NostrAgentServer, NostrMCPClient
-from agentstr.mcp.agno import to_agno_tools
+from agentstr.mcp.providers.agno import to_agno_tools
+from agentstr import NostrAgent, AgentCard, Skill, ChatOutput, ChatInput, NostrAgentServer, NostrMCPClient
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -19,9 +20,6 @@ nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
 async def agent_server():
     # Define tools
     agno_tools = await to_agno_tools(nostr_mcp_client)
-
-    for tool in agno_tools:
-        print(f'Found {tool.name}: {tool.description}')
 
     # Define Agno agent
     agent = Agent(
@@ -35,13 +33,25 @@ async def agent_server():
     )
 
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> str:
-        result = await agent.arun(message=input.messages[-1], session_id=input.thread_id)
-        return result.content
+    async def agent_callable(input: ChatInput) -> ChatOutput | str:
+        return (await agent.arun(
+            message=input.message,
+            session_id=input.thread_id,
+            user_id=input.user_id,
+        )).content
+
+    # Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="Agno Agent", 
+            description="A helpful assistant", 
+            skills=[Skill(name=tool.name, description=tool.description) for tool in agno_tools], 
+            satoshis=2), 
+        agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent)
 
     # Start server
     await server.start()

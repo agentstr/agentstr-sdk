@@ -95,7 +95,7 @@ dspy = [
 ]
 agno = [
     "langchain-openai>=0.3.18",
-    "agno>=1.5.6",
+    "agno>=1.6.4",
 ]
 pydantic = [
     "pydantic-ai-slim[openai]>=0.2.9",
