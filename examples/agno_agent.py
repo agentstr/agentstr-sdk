@@ -1,4 +1,3 @@
-from typing import AsyncGenerator, Callable
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,7 +8,8 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 
 from agentstr.mcp.providers.agno import to_agno_tools
-from agentstr import NostrAgent, AgentCard, Skill, ChatOutput, ChatInput, NostrAgentServer, NostrMCPClient
+from agentstr.agents.providers.agno import agno_agent_callable
+from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -33,12 +33,7 @@ async def agent_server():
     )
 
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> ChatOutput | str:
-        return (await agent.arun(
-            message=input.message,
-            session_id=input.thread_id,
-            user_id=input.user_id,
-        )).content
+    agent_callable = agno_agent_callable(agent)
 
     # Create Nostr Agent
     nostr_agent = NostrAgent(
