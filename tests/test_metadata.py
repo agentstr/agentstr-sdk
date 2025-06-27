@@ -76,7 +76,7 @@ async def test_update_and_get_metadata():
 
     # Update metadata, change only 'about' and add 'banner'
     await client.update_metadata(about="Updated bio", banner="https://example.com/banner.png")
-    time.sleep(0.5)
+    await asyncio.sleep(0.5)
     meta2 = await client.get_metadata_for_pubkey()
     assert meta2 is not None
     assert meta2.name == "Alice"  # unchanged
