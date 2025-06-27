@@ -224,8 +224,8 @@ class RelayManager:
         tags = []
         pubkey = get_public_key(pubkey).hex() if pubkey else self.public_key.hex()
         for f in following or []:
-            tags.append(["p", f])
-
+            tags.append(["p", f, "", ""])
+        logger.info(f"Setting following for {pubkey[:10]}: {tags}")
         event = Event(
             content="",
             kind=3,

@@ -16,8 +16,11 @@ async def test_set_and_get_following():
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
 
+    pubkeyA = PrivateKey().public_key.hex()
+    pubkeyB = PrivateKey().public_key.hex()
+
     # Set following to a known list
-    following_list = ['pubkey1', 'pubkey2']
+    following_list = [pubkeyA, pubkeyB]
     await manager.set_following(pubkey, following_list)
     # Give relay time to process
     await asyncio.sleep(0.5)
@@ -31,19 +34,21 @@ async def test_add_following():
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
 
+    pubkeyA = PrivateKey().public_key.hex()
+    pubkeyB = PrivateKey().public_key.hex()
     # Start with empty following
     await manager.set_following(pubkey, [])
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0)
     # Add one
-    await manager.add_following(pubkey, ['pubkeyA'])
-    await asyncio.sleep(0.5)
+    await manager.add_following(pubkey, [pubkeyA])
+    await asyncio.sleep(0)
     result = await manager.get_following(pubkey)
-    assert 'pubkeyA' in result
+    assert pubkeyA in result
     # Add another, ensure both present
-    await manager.add_following(pubkey, ['pubkeyB'])
-    await asyncio.sleep(0.5)
+    await manager.add_following(pubkey, [pubkeyB])
+    await asyncio.sleep(0)
     result = await manager.get_following(pubkey)
-    assert set(result) == {'pubkeyA', 'pubkeyB'}
+    assert set(result) == {pubkeyA, pubkeyB}
 
 @pytest.mark.asyncio
 async def test_add_following_no_duplicates():
@@ -52,12 +57,15 @@ async def test_add_following_no_duplicates():
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
 
-    await manager.set_following(pubkey, ['pubkeyX'])
-    await asyncio.sleep(0.5)
-    await manager.add_following(pubkey, ['pubkeyX', 'pubkeyY'])
-    await asyncio.sleep(0.5)
+    pubkeyX = PrivateKey().public_key.hex()
+    pubkeyY = PrivateKey().public_key.hex()
+
+    await manager.set_following(pubkey, [pubkeyX])
+    await asyncio.sleep(0)
+    await manager.add_following(pubkey, [pubkeyX, pubkeyY])
+    await asyncio.sleep(0)
     result = await manager.get_following(pubkey)
-    assert set(result) == {'pubkeyX', 'pubkeyY'}
+    assert set(result) == {pubkeyX, pubkeyY}
 
 @pytest.mark.asyncio
 async def test_update_and_get_metadata():
@@ -67,7 +75,7 @@ async def test_update_and_get_metadata():
 
     # Set initial metadata
     await client.update_metadata(name="Alice", about="Test user", picture="https://example.com/alice.png")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0)
     meta = await client.get_metadata_for_pubkey()
     assert meta is not None
     assert meta.name == "Alice"
@@ -76,7 +84,7 @@ async def test_update_and_get_metadata():
 
     # Update metadata, change only 'about' and add 'banner'
     await client.update_metadata(about="Updated bio", banner="https://example.com/banner.png")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0)
     meta2 = await client.get_metadata_for_pubkey()
     assert meta2 is not None
     assert meta2.name == "Alice"  # unchanged
@@ -95,7 +103,7 @@ async def test_update_metadata_with_metadata_obj():
     meta_obj.about = "Bio for Bob"
     meta_obj.picture = "https://example.com/bob.jpg"
     await client.update_metadata(nostr_metadata=meta_obj)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0)
     meta = await client.get_metadata_for_pubkey()
     assert meta is not None
     assert meta.name == "Bob"
