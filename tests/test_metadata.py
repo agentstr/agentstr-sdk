@@ -11,7 +11,7 @@ load_dotenv()
 
 @pytest.mark.asyncio
 async def test_set_and_get_following():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
     private_key = PrivateKey()
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
@@ -26,7 +26,7 @@ async def test_set_and_get_following():
 
 @pytest.mark.asyncio
 async def test_add_following():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
     private_key = PrivateKey()
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
@@ -47,7 +47,7 @@ async def test_add_following():
 
 @pytest.mark.asyncio
 async def test_add_following_no_duplicates():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
     private_key = PrivateKey()
     manager = RelayManager(relays, private_key)
     pubkey = private_key.public_key.hex()
@@ -61,7 +61,7 @@ async def test_add_following_no_duplicates():
 
 @pytest.mark.asyncio
 async def test_update_and_get_metadata():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
     private_key = PrivateKey()
     client = NostrClient(relays, private_key.bech32())
 
@@ -85,7 +85,7 @@ async def test_update_and_get_metadata():
 
 @pytest.mark.asyncio
 async def test_update_metadata_with_metadata_obj():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
     private_key = PrivateKey()
     client = NostrClient(relays, private_key.bech32())
 

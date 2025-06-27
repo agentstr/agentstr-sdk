@@ -8,8 +8,9 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from agentstr import ChatInput, NostrAgentServer, NostrMCPClient
-from agentstr.mcp.pydantic import to_pydantic_tools
+from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
+from agentstr.mcp.providers.pydantic import to_pydantic_tools
+from agentstr.agents.providers.pydantic import pydantic_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -20,9 +21,6 @@ nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
 async def agent_server():
     # Define tools
     pydantic_tools = await to_pydantic_tools(nostr_mcp_client)
-
-    for tool in pydantic_tools:
-        print(f'Found {tool.name}: {tool.description}')
 
     # Define Pydantic agent
     agent = Agent(
@@ -38,13 +36,20 @@ async def agent_server():
     )
 
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> str:
-        result = await agent.run(input.messages[-1])
-        return result.output
+    agent_callable = pydantic_agent_callable(agent)
+
+    # Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="Pydantic Agent", 
+            description="A helpful assistant", 
+            skills=await nostr_mcp_client.get_skills(), 
+            satoshis=2), 
+        agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent)
 
     # Start server
     await server.start()

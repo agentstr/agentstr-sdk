@@ -4,9 +4,10 @@ load_dotenv()
 
 import os
 
-from agents import Runner, Agent, AsyncOpenAI, OpenAIChatCompletionsModel
-from agentstr import ChatInput, NostrAgentServer, NostrMCPClient
-from agentstr.mcp.openai import to_openai_tools
+from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel
+from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
+from agentstr.mcp.providers.openai import to_openai_tools
+from agentstr.agents.providers.openai import openai_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -17,10 +18,7 @@ nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
 async def agent_server():
     # Define tools
     openai_tools = await to_openai_tools(nostr_mcp_client)
-
-    for tool in openai_tools:
-        print(f'Found {tool.name}: {tool.description}')
-
+    
     # Define OpenAI agent
     agent = Agent(
         name="OpenAI Agent",
@@ -36,13 +34,20 @@ async def agent_server():
     )
 
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> str:
-        result = await Runner.run(agent, input=input.messages[-1])
-        return result.final_output
+    agent_callable = openai_agent_callable(agent)
+
+    # Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="OpenAI Agent", 
+            description="A helpful assistant", 
+            skills=await nostr_mcp_client.get_skills(), 
+            satoshis=2), 
+        agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent)
 
     # Start server
     await server.start()

@@ -6,12 +6,9 @@ import os
 
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-from google.genai import types
-
-from agentstr import ChatInput, NostrAgentServer, NostrMCPClient
-from agentstr.mcp.google import to_google_tools
+from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
+from agentstr.mcp.providers.google import to_google_tools
+from agentstr.agents.providers.google import google_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -22,9 +19,6 @@ nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
 async def agent_server():
     # Define tools
     google_tools = await to_google_tools(nostr_mcp_client)
-
-    for tool in google_tools:
-        print(f'Found {tool.name}: {tool.description}')
 
     # Define Google agent
     agent = Agent(
@@ -38,28 +32,21 @@ async def agent_server():
         tools=google_tools,
     )
 
-    # Session and Runner
-    session_service = InMemorySessionService()
-    runner = Runner(agent=agent, app_name='nostr_example', session_service=session_service)
-
     # Define agent callable
-    async def agent_callable(input: ChatInput) -> str:
-        content = types.Content(role='user', parts=[types.Part(text=input.messages[-1])])
-        await session_service.create_session(app_name='nostr_example', user_id=input.thread_id, session_id=input.thread_id)
-        events_async = runner.run_async(user_id=input.thread_id,
-                                        session_id=input.thread_id,
-                                        new_message=content)
-        async for event in events_async:
-            print(f'Received event: {event}')
-            if event.is_final_response():
-                final_response = event.content.parts[0].text
-                print("Agent Response: ", final_response)
-                return final_response
-        return None
+    agent_callable = google_agent_callable(agent)
+
+    # Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="Google Agent", 
+            description="A helpful assistant", 
+            skills=await nostr_mcp_client.get_skills(), 
+            satoshis=2), 
+        agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent)
 
     # Start server
     await server.start()

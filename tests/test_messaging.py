@@ -9,7 +9,7 @@ load_dotenv()
 
 @pytest.mark.asyncio
 async def test_send_receive_message():
-    relays = ['ws://localhost:6969']
+    relays = [os.getenv("NOSTR_RELAYS", "ws://localhost:6969").split(",")[0]]
 
     private_key1 = PrivateKey()
     private_key2 = PrivateKey()

@@ -206,7 +206,7 @@ class NostrClient:
         metadata.created_at = int(time.time())
         metadata.update()
         if previous_metadata and previous_metadata.content == metadata.content:
-            print("No changes in metadata, skipping update.")
+            logger.info("No changes in metadata, skipping update.")
             return
 
         await self.relay_manager.send_event(metadata.to_event())
