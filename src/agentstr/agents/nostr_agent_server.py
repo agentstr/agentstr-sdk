@@ -146,15 +146,20 @@ class NostrAgentServer:
         paying_user = await self.db.get_user(user_id=recipient_pubkey)
 
         # Save user message to db
+        logger.info(f"Saving input: {chat_input.model_dump_json()}")
         await self._save_input(chat_input)
         
         # Handle base agent payments
         if self.nostr_agent.agent_card.satoshis or 0 > 0:
+            logger.info(f"Checking payment: {paying_user.available_balance} >= {self.nostr_agent.agent_card.satoshis}")
             if not await self._handle_payment(paying_user, self.nostr_agent.agent_card.satoshis):
+                logger.info(f"Auto payment failed: {paying_user.available_balance} < {self.nostr_agent.agent_card.satoshis}")
                 invoice = await self.client.nwc_relay.make_invoice(amount=self.nostr_agent.agent_card.satoshis or 0, description="Agenstr tool call")
+                logger.info(f"Invoice: {invoice}")
                 message = f"Pay {self.nostr_agent.agent_card.satoshis} sats to use this agent.\n\n{invoice}"
                 await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                 if not await self.client.nwc_relay.wait_for_payment_success(invoice):
+                    logger.info(f"Payment failed: {invoice}")
                     message = "Payment failed. Please try again."
                     await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                     return
@@ -169,13 +174,16 @@ class NostrAgentServer:
                 if chunk.kind == "requires_payment" and (chunk.satoshis or 0) > 0:
                     logger.info(f"Tool call requires payment: {chunk}")
                     if not await self._handle_payment(paying_user, chunk.satoshis):
+                        logger.info(f"Auto-payment failed: {chunk}")
                         invoice = await self.client.nwc_relay.make_invoice(amount=chunk.satoshis, description="Agenstr tool call")
                         logger.info(f"Invoice: {invoice}")
                         message = f'{chunk.message}\n\nJust pay {chunk.satoshis} sats.\n\n{invoice}'
                         await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                         if await self.client.nwc_relay.wait_for_payment_success(invoice):
+                            logger.info(f"Payment succeeded: {invoice}")
                             continue
                         else:
+                            logger.info(f"Payment failed: {invoice}")
                             message = "Payment failed. Please try again."
                             await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                             break

@@ -6,8 +6,9 @@ import os
 
 import dspy
 
-from agentstr import NostrAgentServer, NostrMCPClient, ChatInput
-from agentstr.mcp.dspy import to_dspy_tools
+from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard, Skill
+from agentstr.mcp.providers.dspy import to_dspy_tools
+from agentstr.agents.providers.dspy import dspy_chat_generator
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -19,11 +20,8 @@ async def agent_server():
     # Convert tools to DSPy tools
     dspy_tools = await to_dspy_tools(nostr_mcp_client)
 
-    for tool in dspy_tools:
-        print(f'Found {tool.name}: {tool.desc}')
-
     # Create ReAct agent
-    react = dspy.ReAct("question -> answer: str", tools=dspy_tools)
+    agent = dspy.ReAct("question -> answer: str", tools=dspy_tools)
 
     # Configure DSPy
     dspy.configure(lm=dspy.LM(model=os.getenv("LLM_MODEL_NAME"), 
@@ -32,13 +30,21 @@ async def agent_server():
                               model_type="chat",
                               temperature=0))
 
-    # Define agent callable
-    async def agent_callable(chat_input: ChatInput) -> str:
-        return (await react.acall(question=chat_input.messages[-1])).answer
+    # Create chat generator
+    chat_generator = dspy_chat_generator(agent, [nostr_mcp_client])
+
+    # Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(
+            name="DSPy Agent", 
+            description="A helpful assistant", 
+            skills=await nostr_mcp_client.get_skills(), 
+            satoshis=2), 
+        chat_generator=chat_generator)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
-                              agent_callable=agent_callable)
+                              nostr_agent=nostr_agent)
 
     # Start server
     await server.start()

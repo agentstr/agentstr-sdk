@@ -31,6 +31,7 @@ def langgraph_chat_generator(graph: CompiledGraph, mcp_clients: list[NostrMCPCli
                         total_satoshis += satoshis
                     yield ChatOutput(
                         message=update.content,
+                        content=update.content.model_dump_json(),
                         thread_id=input.thread_id,
                         kind="requires_payment",
                         user_id=input.user_id,
@@ -39,6 +40,7 @@ def langgraph_chat_generator(graph: CompiledGraph, mcp_clients: list[NostrMCPCli
                 else:
                     yield ChatOutput(
                         message=update.content,
+                        content=update.content.model_dump_json(),
                         thread_id=input.thread_id,
                         kind="final_response",
                         user_id=input.user_id
@@ -47,6 +49,7 @@ def langgraph_chat_generator(graph: CompiledGraph, mcp_clients: list[NostrMCPCli
                 for message in chunk['tools']['messages']:
                     yield ChatOutput(
                         message=message.content,
+                        content=update.content.model_dump_json(),
                         thread_id=input.thread_id,
                         kind="tool_message",
                         user_id=input.user_id,

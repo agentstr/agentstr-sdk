@@ -5,6 +5,7 @@ from typing import Any
 from pynostr.utils import get_public_key
 
 from agentstr.logger import get_logger
+from agentstr.models import Skill
 from agentstr.nostr_client import NostrClient
 
 logger = get_logger(__name__)
@@ -65,6 +66,14 @@ class NostrMCPClient:
         for tool in tools["tools"]:
             self.tool_to_sats_map[tool["name"]] = tool["satoshis"]
         return tools
+
+    async def get_skills(self) -> list[Skill]:
+        """Retrieve the list of available skills from the MCP server.
+
+        Returns:
+            List of skills with their metadata.
+        """
+        return [Skill(name=tool["name"], description=tool["description"]) for tool in (await self.list_tools())["tools"]]
 
     async def call_tool(self, name: str, arguments: dict[str, Any], timeout: int = 60) -> dict[str, Any] | None:
         """Call a tool on the MCP server with provided arguments.

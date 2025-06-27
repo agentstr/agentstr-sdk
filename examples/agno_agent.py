@@ -45,7 +45,7 @@ async def agent_server():
         agent_card=AgentCard(
             name="Agno Agent", 
             description="A helpful assistant", 
-            skills=[Skill(name=tool.name, description=tool.description) for tool in agno_tools], 
+            skills=await nostr_mcp_client.get_skills(), 
             satoshis=2), 
         agent_callable=agent_callable)
 
