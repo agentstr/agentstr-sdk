@@ -177,6 +177,8 @@ class NostrClient:
             nostr_metadata: Nostr metadata for the server (will override other fields).
         """
         previous_metadata = await self.get_metadata_for_pubkey(self.public_key)
+        if previous_metadata:
+            logger.info(f"Previous metadata for {self.public_key.bech32()}: {previous_metadata.metadata_to_dict()}")
         metadata = Metadata()
         if previous_metadata:
             metadata.set_metadata(previous_metadata.metadata_to_dict())
@@ -202,7 +204,7 @@ class NostrClient:
             metadata.website = website
         if nostr_metadata:  # Overrides other fields
             metadata.set_metadata(nostr_metadata.metadata_to_dict())
-
+        logger.info(f"Updating metadata for {self.public_key.bech32()}: {metadata.metadata_to_dict()}")
         metadata.created_at = int(time.time())
         metadata.update()
         if previous_metadata and previous_metadata.content == metadata.content:

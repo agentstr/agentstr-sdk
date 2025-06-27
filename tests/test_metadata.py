@@ -38,15 +38,15 @@ async def test_add_following():
     pubkeyB = PrivateKey().public_key.hex()
     # Start with empty following
     await manager.set_following(pubkey, [])
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     # Add one
     await manager.add_following(pubkey, [pubkeyA])
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     result = await manager.get_following(pubkey)
     assert pubkeyA in result
     # Add another, ensure both present
     await manager.add_following(pubkey, [pubkeyB])
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     result = await manager.get_following(pubkey)
     assert set(result) == {pubkeyA, pubkeyB}
 
@@ -61,9 +61,9 @@ async def test_add_following_no_duplicates():
     pubkeyY = PrivateKey().public_key.hex()
 
     await manager.set_following(pubkey, [pubkeyX])
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     await manager.add_following(pubkey, [pubkeyX, pubkeyY])
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     result = await manager.get_following(pubkey)
     assert set(result) == {pubkeyX, pubkeyY}
 
@@ -75,7 +75,7 @@ async def test_update_and_get_metadata():
 
     # Set initial metadata
     await client.update_metadata(name="Alice", about="Test user", picture="https://example.com/alice.png")
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     meta = await client.get_metadata_for_pubkey()
     assert meta is not None
     assert meta.name == "Alice"
@@ -83,8 +83,9 @@ async def test_update_and_get_metadata():
     assert meta.picture == "https://example.com/alice.png"
 
     # Update metadata, change only 'about' and add 'banner'
+    await asyncio.sleep(1)
     await client.update_metadata(about="Updated bio", banner="https://example.com/banner.png")
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     meta2 = await client.get_metadata_for_pubkey()
     assert meta2 is not None
     assert meta2.name == "Alice"  # unchanged
