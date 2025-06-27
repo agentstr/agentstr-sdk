@@ -8,7 +8,7 @@ from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
 from agentstr.mcp.providers.google import to_google_tools
-from agentstr.agents.providers.google import google_agent_callable
+from agentstr.agents.providers.google import google_agent_callable, google_chat_generator
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -33,7 +33,8 @@ async def agent_server():
     )
 
     # Define agent callable
-    agent_callable = google_agent_callable(agent)
+    #agent_callable = google_agent_callable(agent)
+    chat_generator = google_chat_generator(agent, [nostr_mcp_client])
 
     # Create Nostr Agent
     nostr_agent = NostrAgent(
@@ -42,7 +43,8 @@ async def agent_server():
             description="A helpful assistant", 
             skills=await nostr_mcp_client.get_skills(), 
             satoshis=2), 
-        agent_callable=agent_callable)
+        chat_generator=chat_generator)
+        #agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,

@@ -20,7 +20,7 @@ def langgraph_agent_callable(agent: CompiledGraph) -> Callable[[ChatInput], Chat
     return agent_callable
 
 
-def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPClient]) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
+def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
     """Create a chat generator from a LangGraph graph."""
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:

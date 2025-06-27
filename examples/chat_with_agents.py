@@ -99,13 +99,22 @@ async def ask_google_agent():
         "What's the weather in San Francisco?",
     )
     print(response.message)
-
+    response = await client.receive_direct_message(
+        private_to_public_key(google_agent_private_key),
+        timeout=900,
+    )
+    print(response.message)
+    response = await client.receive_direct_message(
+        private_to_public_key(google_agent_private_key),
+        timeout=900,
+    )
+    print(response.message)
 
 if __name__ == "__main__":
     #asyncio.run(ask_agno_agent())
     #asyncio.run(ask_dspy_agent())
-    #asyncio.run(ask_google_agent())
-    asyncio.run(ask_langgraph_agent())
+    asyncio.run(ask_google_agent())
+    #asyncio.run(ask_langgraph_agent())
     #asyncio.run(ask_openai_agent())
     #asyncio.run(ask_pydantic_agent())
     

@@ -42,7 +42,7 @@ def dspy_agent_callable(agent: dspy.Module, input_field: str = 'question', outpu
     return agent_callable
 
 
-def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient], input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
+def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient] | None = None, input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
     """Create a chat generator from a LangGraph graph."""
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
