@@ -145,7 +145,7 @@ class RelayManager:
 
         try:
             # Start receive tasks for all relays
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.5)
             for relay in self.relays:
                 logger.debug(f"Starting receive task for relay: {relay.relay}")
                 task = asyncio.create_task(relay.receive_message(author_pubkey, timestamp, timeout))

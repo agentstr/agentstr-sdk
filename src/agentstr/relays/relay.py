@@ -3,6 +3,7 @@ import json
 import time
 import uuid
 from collections.abc import Callable
+import traceback
 
 from expiringdict import ExpiringDict
 from pydantic import BaseModel
@@ -12,7 +13,6 @@ from pynostr.filters import Filters
 from pynostr.key import PrivateKey, PublicKey
 from pynostr.utils import get_public_key, get_timestamp
 from websockets.asyncio.client import connect
-from websockets.exceptions import ConnectionClosedError
 
 from agentstr.logger import get_logger
 
@@ -188,6 +188,7 @@ class EventRelay:
                                 await callback(event)
                             except Exception as e:
                                 logger.error(f"Error in event_listener callback: {e}")
+                                logger.error(traceback.format_exc())
                         await asyncio.sleep(0)
             except Exception as e:
                 logger.warning(f"Connection closed in event_listener at {int(time.time())} trying again: {e}")
@@ -224,6 +225,7 @@ class EventRelay:
                                     await callback(dm.event, dm.message)
                                 except Exception as e:
                                     logger.error(f"Error in direct_message_listener callback: {e}")
+                                    logger.error(traceback.format_exc())
                         await asyncio.sleep(0)
             except Exception as e:
                 logger.warning(f"Connection closed in direct_message_listener at {int(time.time())} trying again: {e}")

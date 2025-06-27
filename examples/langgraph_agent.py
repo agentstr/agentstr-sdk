@@ -6,9 +6,9 @@ import os
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
-from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard, Skill
+from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard
 from agentstr.mcp.providers.langgraph import to_langgraph_tools
-from agentstr.agents.providers.langgraph import langgraph_chat_generator
+from agentstr.agents.providers.langgraph import langgraph_chat_generator, langgraph_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -32,6 +32,7 @@ async def agent_server():
 
     # Create chat generator
     chat_generator = langgraph_chat_generator(agent, [nostr_mcp_client])
+    #agent_callable = langgraph_agent_callable(agent)  # No streaming support
 
     # Create Nostr Agent
     nostr_agent = NostrAgent(
@@ -39,7 +40,8 @@ async def agent_server():
             name="LangGraph Agent", 
             description="A helpful assistant", 
             skills=await nostr_mcp_client.get_skills(), 
-            satoshis=2), 
+            satoshis=2),
+        #agent_callable=agent_callable) 
         chat_generator=chat_generator)
 
     # Create Nostr Agent Server

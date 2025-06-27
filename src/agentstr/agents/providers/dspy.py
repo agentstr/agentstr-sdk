@@ -1,26 +1,48 @@
 import json
 import dspy
+import asyncio
 from typing import AsyncGenerator, Callable
 from agentstr.models import ChatInput, ChatOutput
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
+from threading import RLock
 
 from agentstr.logger import get_logger
 logger = get_logger(__name__)
 
 
 class MyStatusMessageProvider(dspy.streaming.StatusMessageProvider):
+    lock = RLock()
+
     def module_end_status_message(self, outputs):
         logger.info(f"module_end_status_message Type of outputs: {type(outputs)}")
-        response = {}
-        for item in outputs:
-            if item == "next_tool_name":
-                response[item] = outputs.get(item)
-            elif item == "next_tool_args":
-                response[item] = outputs.get(item)
-            logger.info(f"module_end_status_message Item: {item}: {outputs.get(item)}")
-        return json.dumps(response)
+        with self.lock:
+            response = {}
+            for item in outputs:
+                if item == "next_tool_name":
+                    response[item] = outputs.get(item)
+                elif item == "next_tool_args":
+                    response[item] = outputs.get(item)
+                logger.info(f"module_end_status_message Item: {item}: {outputs.get(item)}")
+            return json.dumps(response)
 
-def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient], input_field: str = 'question',output_field: str = 'answer') -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
+    def tool_start_status_message(self, instance, inputs):
+        logger.info(f"tool_start_status_message Type of inputs: {type(inputs)}")
+        with self.lock:
+            response = {}
+            for item in inputs:
+                logger.info(f"tool_start_status_message Item: {item}: {inputs.get(item)}")
+            return json.dumps(response)
+
+
+def dspy_agent_callable(agent: dspy.Module, input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], ChatOutput | str]:
+    async def agent_callable(input: ChatInput):
+        result = await agent.acall(**{input_field: input.message})
+        logger.info(f'DSPY callable result: {result}')
+        return getattr(result, output_field)
+    return agent_callable
+
+
+def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient], input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
     """Create a chat generator from a LangGraph graph."""
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
@@ -30,10 +52,10 @@ def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient], i
     agent_stream = dspy.streamify(agent, status_message_provider=MyStatusMessageProvider(), is_async_program=True)
     async def chat_generator(input: ChatInput) -> AsyncGenerator[ChatOutput, None]:
         async for chunk in agent_stream(**{input_field: input.message}):
-            logger.info(f'Chunk: {chunk}')
             if isinstance(chunk, dspy.streaming.StreamResponse):
                 pass
             elif isinstance(chunk, dspy.Prediction):
+                logger.info(f'DSPY prediction: {chunk}')
                 return_value = getattr(chunk, output_field)
                 yield ChatOutput(
                     message=return_value,
@@ -43,6 +65,7 @@ def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient], i
                     user_id=input.user_id
                 )
             elif isinstance(chunk, dspy.streaming.StatusMessage):
+                logger.info(f'DSPY status message: {chunk}')
                 if chunk.message:
                     try:
                         content = json.loads(chunk.message)

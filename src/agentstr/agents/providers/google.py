@@ -20,10 +20,10 @@ def google_agent_callable(agent: Agent) -> Callable[[ChatInput], ChatOutput | st
                                         session_id=input.thread_id,
                                         new_message=content)
         async for event in events_async:
-            logger.debug(f'Received event: {event}')
+            logger.info(f'Received event: {event}')
             if event.is_final_response():
                 final_response = event.content.parts[0].text
-                logger.debug("Agent Response: %s", final_response)
+                logger.info(f"Google agent callable response: {final_response}")
                 return final_response
         return None
     return agent_callable

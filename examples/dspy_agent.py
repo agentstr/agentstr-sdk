@@ -6,9 +6,9 @@ import os
 
 import dspy
 
-from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard, Skill
+from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard
 from agentstr.mcp.providers.dspy import to_dspy_tools
-from agentstr.agents.providers.dspy import dspy_chat_generator
+from agentstr.agents.providers.dspy import dspy_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
@@ -31,7 +31,7 @@ async def agent_server():
                               temperature=0))
 
     # Create chat generator
-    chat_generator = dspy_chat_generator(agent, [nostr_mcp_client])
+    agent_callable = dspy_agent_callable(agent)
 
     # Create Nostr Agent
     nostr_agent = NostrAgent(
@@ -40,7 +40,7 @@ async def agent_server():
             description="A helpful assistant", 
             skills=await nostr_mcp_client.get_skills(), 
             satoshis=2), 
-        chat_generator=chat_generator)
+        agent_callable=agent_callable)
 
     # Create Nostr Agent Server
     server = NostrAgentServer(nostr_mcp_client=nostr_mcp_client,
