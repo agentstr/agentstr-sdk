@@ -1,9 +1,17 @@
 import json
+import yaml
 from pydantic import BaseModel
 from agentstr.logger import get_logger
+from pynostr.metadata import Metadata
 from typing import Any
 
 logger = get_logger(__name__)
+
+
+def to_metadata_yaml(path: str) -> Metadata:
+    """Utility function to convert a metadata file to a Metadata object."""
+    with open(path, 'r') as f:
+        return Metadata.from_dict(yaml.safe_load(f))
 
 
 def stringify_result(result: Any) -> str:

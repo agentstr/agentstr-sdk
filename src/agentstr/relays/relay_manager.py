@@ -7,6 +7,7 @@ from expiringdict import ExpiringDict
 from pynostr.encrypted_dm import EncryptedDirectMessage
 from pynostr.event import Event
 from pynostr.filters import Filters
+from pynostr.key import PrivateKey
 from pynostr.utils import get_public_key
 
 from agentstr.logger import get_logger
@@ -22,7 +23,7 @@ class RelayManager:
         relays: List of relay URLs to connect to.
         private_key: Optional private key for signing events.
     """
-    def __init__(self, relays: list[str], private_key: str | None = None):
+    def __init__(self, relays: list[str], private_key: PrivateKey | None = None):
         logger.debug(f"Initializing RelayManager with {len(relays)} relays")
         self._relays = relays
         self.private_key = private_key
@@ -217,3 +218,29 @@ class RelayManager:
         if event:
             return [tag[1] for tag in event.tags if tag[0] == "p"]
         return []
+
+    async def set_following(self, pubkey: str | None = None, following: list[str] | None = None):
+        """Set the list of public keys that the specified user follows."""
+        tags = []
+        pubkey = get_public_key(pubkey).hex() if pubkey else self.public_key.hex()
+        for f in following or []:
+            tags.append(["p", f])
+
+        event = Event(
+            content="",
+            kind=3,
+            tags=tags
+        )
+        logger.info(f"Setting following for {pubkey[:10]}: {following}")
+        await self.send_event(event)
+        logger.info(f"Successfully set following for {pubkey[:10]} with event id: {event.id[:10]}")
+
+    async def add_following(self, pubkey: str | None = None, following: list[str] | None = None):
+        """Add a list of public keys to the specified user's following list."""
+        following = following or []
+        current_following = await self.get_following(pubkey)
+        for f in following:
+            if f not in current_following:
+                current_following.append(f)
+        await self.set_following(pubkey, current_following)
+        logger.info(f"Successfully added following for {pubkey[:10]}: {following}")
