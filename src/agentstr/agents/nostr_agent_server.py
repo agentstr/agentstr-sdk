@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any, Literal
 import uuid
 import json
+import time
 
 from pynostr.event import Event
 
@@ -106,7 +107,7 @@ class NostrAgentServer:
             extra_outputs=chat_output.extra_outputs or {}
         )
 
-    async def _handle_payment(self, user: User, satoshis: int):
+    async def _check_balance_and_deduct(self, user: User, satoshis: int):
         """
         Attempt to deduct the required satoshis from the user's balance for a request.
 
@@ -126,6 +127,39 @@ class NostrAgentServer:
         logger.info(f"Auto payment failed: {user.available_balance} < {satoshis}")
         return False
 
+    async def _wait_for_payment(self, user: User, satoshis: int, invoice: str, timeout: int = 900, interval: int = 2):
+        """
+        Wait for payment to be made for a request or a deposit added to the user's balance.
+
+        Args:
+            user (User): The user making the request.
+            satoshis (int): The required payment amount.
+            invoice (str): The BOLT11 invoice to listen for.
+            timeout (int, optional): Maximum time to wait in seconds (default: 300).
+            interval (int, optional): Time between checks in seconds (default: 2).
+
+        Returns:
+            bool: True if payment was successful, False if payment failed.
+        """
+        logger.info(f"Waiting for payment: {user.available_balance} >= {satoshis} (timeout: {timeout}, interval: {interval})")
+        start_time = time.time()
+        success = False
+        while True:
+            if await self.client.nwc_relay.did_payment_succeed(invoice):
+                logger.info(f"Payment succeeded: {invoice}")
+                success = True
+                break
+            if self._check_balance_and_deduct(user, satoshis):
+                logger.info(f"Payment succeeded from deposit.")
+                success = True
+                break
+            if time.time() - start_time > timeout:
+                logger.info(f"Payment failed: {invoice}")
+                break
+            await asyncio.sleep(interval)
+        if not success:
+            return False
+        return True
 
     async def chat(self, chat_input: ChatInput, event: Event, delegation_tags: dict[str, str], history: list[Message]):
         """
@@ -152,13 +186,13 @@ class NostrAgentServer:
         # Handle base agent payments
         if self.nostr_agent.agent_card.satoshis or 0 > 0:
             logger.info(f"Checking payment: {paying_user.available_balance} >= {self.nostr_agent.agent_card.satoshis}")
-            if not await self._handle_payment(paying_user, self.nostr_agent.agent_card.satoshis):
+            if not await self._check_balance_and_deduct(paying_user, self.nostr_agent.agent_card.satoshis):
                 logger.info(f"Auto payment failed: {paying_user.available_balance} < {self.nostr_agent.agent_card.satoshis}")
                 invoice = await self.client.nwc_relay.make_invoice(amount=self.nostr_agent.agent_card.satoshis or 0, description="Agenstr tool call")
                 logger.info(f"Invoice: {invoice}")
                 message = f"Pay {self.nostr_agent.agent_card.satoshis} sats to use this agent.\n\n{invoice}"
                 await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
-                if not await self.client.nwc_relay.wait_for_payment_success(invoice):
+                if not await self._wait_for_payment(paying_user, self.nostr_agent.agent_card.satoshis, invoice):
                     logger.info(f"Payment failed: {invoice}")
                     message = "Payment failed. Please try again."
                     await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
@@ -173,13 +207,13 @@ class NostrAgentServer:
                 # Handle response kinds (payments, user input, etc.)
                 if chunk.kind == "requires_payment" and (chunk.satoshis or 0) > 0:
                     logger.info(f"Tool call requires payment: {chunk}")
-                    if not await self._handle_payment(paying_user, chunk.satoshis):
+                    if not await self._check_balance_and_deduct(paying_user, chunk.satoshis):
                         logger.info(f"Auto-payment failed: {chunk}")
                         invoice = await self.client.nwc_relay.make_invoice(amount=chunk.satoshis, description="Agenstr tool call")
                         logger.info(f"Invoice: {invoice}")
                         message = f'{chunk.message}\n\nJust pay {chunk.satoshis} sats.\n\n{invoice}'
                         await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
-                        if await self.client.nwc_relay.wait_for_payment_success(invoice):
+                        if await self._wait_for_payment(paying_user, chunk.satoshis, invoice):
                             logger.info(f"Payment succeeded: {invoice}")
                             continue
                         else:
@@ -204,7 +238,7 @@ class NostrAgentServer:
                 await self.client.send_direct_message(recipient_pubkey, message, tags=delegation_tags)
                 break
 
-    async def _parse_message(self, event: Event, message: str) -> str | None:
+    async def _parse_message(self, event: Event, message: str) -> str | ChatInput | None:
         """
         Parse and preprocess an incoming message, handling commands and filtering noise.
 
@@ -218,7 +252,15 @@ class NostrAgentServer:
         message = message.strip()
         if message.startswith("{") or message.startswith("["):
             logger.debug("Skipping JSON message")
-            return None
+            # Check if it's a valid ChatInput
+            try:
+                logger.debug("Checking for ChatInput")
+                chat_input = ChatInput.model_validate_json(message)
+                logger.debug("Valid ChatInput")
+                return chat_input
+            except Exception as e:
+                logger.debug("Invalid ChatInput: " + str(e))
+                return None
         elif message.startswith("lnbc") and " " not in message:
             logger.debug("Ignoring lightning invoices")
             return None
@@ -290,8 +332,13 @@ class NostrAgentServer:
         if not message:
             return
 
-        # Get user and thread IDs
-        user_id, thread_id, delegation_tags = await self._get_user_and_thread_ids(event)
+        if isinstance(message, ChatInput):
+            logger.debug(f"Received ChatInput: {message}")
+            user_id = message.user_id
+            thread_id = message.thread_id
+            delegation_tags = None
+        else:
+            user_id, thread_id, delegation_tags = await self._get_user_and_thread_ids(event)
 
         # Get message history
         history = await self.db.get_messages(thread_id=thread_id, user_id=user_id)
