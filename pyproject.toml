@@ -21,6 +21,7 @@ dependencies = [
     "websockets>=15.0.1",
     "dspy>=2.6.27",
     "asyncpg>=0.30.0",
+    "apscheduler>=3.11.0",
 ]
 readme = "README.md"
 [build-system]
