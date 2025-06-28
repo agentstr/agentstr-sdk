@@ -10,3 +10,4 @@ from agentstr.nostr_client import NostrClient
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 from agentstr.mcp.nostr_mcp_server import NostrMCPServer, tool
 from agentstr.relays.nwc_relay import NWCRelay
+from agentstr.scheduler import Scheduler

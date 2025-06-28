@@ -3,7 +3,7 @@ import os
 
 
 class Logger:
-    """Cache and configure :pyclass:`logging.Logger` instances by *name*."""
+    """Cache and configure :py:class:`logging.Logger` instances by *name*."""
 
     _instances: dict[str, "Logger"] = {}
 
