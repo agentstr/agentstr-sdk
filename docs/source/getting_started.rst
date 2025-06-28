@@ -1,47 +1,65 @@
 Getting Started
 ===============
 
-Welcome to Agentstr SDK! This short guide helps you spin up quickly after installation.
+Welcome to the Agentstr SDK! This guide will walk you through setting up your first agent project.
 
-1. Create a Python virtual environment and install the SDK (see :doc:`installation`).
+.. tip::
+   Before you begin, make sure you have installed the SDK. If not, please see the :doc:`installation` guide.
 
-   .. code-block:: bash
+Step 1: Initialize Your Project
+-------------------------------
 
-      pip install "agentstr-sdk[cli]"
+First, let's create a new project. The ``agentstr init`` command sets up a boilerplate agent for you.
 
-2. Initialise a new agent project:
+.. code-block:: bash
 
-   .. code-block:: bash
+   agentstr init hello_world
 
-      agentstr init hello_world
+This will create a new directory called ``hello_world`` with a basic agent structure.
 
-3. Start the development relay:
+Step 2: Start the Development Relay
+-----------------------------------
 
-   .. code-block:: bash
+The Agentstr SDK includes a local development relay for testing. To start it, run:
 
-      agentstr relay run
+.. code-block:: bash
 
-4. Run your agent locally (in a separate terminal):
+   agentstr relay run
 
-   .. code-block:: bash
+.. note::
+   Keep this relay running in a separate terminal window. Your agent will connect to it to send and receive messages.
 
-      python hello_world/main.py
+Step 3: Run Your Agent
+----------------------
 
-5. Test your agent locally (in a separate terminal):
+Now it's time to bring your agent to life. In another terminal, navigate to your project directory and run the main script:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      python hello_world/test_client.py
+   python hello_world/main.py
 
-   You should see a response like:
+Your agent is now running and listening for events from the relay.
 
-   .. code-block:: bash
+Step 4: Test Your Agent
+-----------------------
 
-      Hello 183ebf080fc59c29ad9c42bff8d6c684955b25611d685df6e03d56779989f149!
+To test that everything is working, you can use the provided test client. In a third terminal, run:
+
+.. code-block:: bash
+
+   python hello_world/test_client.py
+
+You should see a "Hello" message from your agent, confirming that it received and responded to the test event.
+
+.. code-block:: text
+
+   Hello <your-agent-pubkey>!
 
 Next Steps
 ----------
 
-* Browse the :doc:`Core Modules <agentstr>` for in-depth API details.
-* Check out the `Examples <https://github.com/agentstr/agentstr-sdk/tree/main/examples>`_ directory for more in-depth examples.
-* Deploy your agent to the cloud with :doc:`Cloud CI/CD <cloud_cicd>`.
+Congratulations on setting up your first agent! Here's what you can do next:
+
+*   **Explore the API:** Dive into the :doc:`Core Modules <agentstr>` for in-depth API details.
+*   **See More Examples:** Check out the `Examples <https://github.com/agentstr/agentstr-sdk/tree/main/examples>`_ directory for more advanced use cases.
+*   **Deploy to the Cloud:** Learn how to deploy your agent with our :doc:`Cloud CI/CD <cloud_cicd>` guide.

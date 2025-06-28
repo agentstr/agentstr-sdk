@@ -17,7 +17,4 @@ The package offers a simple factory that selects the appropriate backend based o
    agentstr.database.sqlite
    agentstr.database.postgres
 
-.. automodule:: agentstr.database
-   :members:
-   :undoc-members:
-   :show-inheritance:
+

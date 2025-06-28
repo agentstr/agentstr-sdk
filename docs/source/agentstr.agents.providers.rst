@@ -7,4 +7,10 @@ The ``agentstr.agents.providers`` submodule contains provider integrations for a
    :maxdepth: 1
    :caption: Available Providers
 
+   agentstr.agents.providers.agno
+   agentstr.agents.providers.dspy
+   agentstr.agents.providers.google
    agentstr.agents.providers.langgraph
+   agentstr.agents.providers.openai
+   agentstr.agents.providers.pydantic
+
