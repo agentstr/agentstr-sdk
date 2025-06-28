@@ -113,8 +113,8 @@ async def ask_google_agent():
 if __name__ == "__main__":
     #asyncio.run(ask_agno_agent())
     #asyncio.run(ask_dspy_agent())
-    asyncio.run(ask_google_agent())
+    #asyncio.run(ask_google_agent())
     #asyncio.run(ask_langgraph_agent())
-    #asyncio.run(ask_openai_agent())
+    asyncio.run(ask_openai_agent())
     #asyncio.run(ask_pydantic_agent())
     

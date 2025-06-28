@@ -13,7 +13,14 @@ logger = get_logger(__name__)
 def langgraph_agent_callable(agent: CompiledGraph) -> Callable[[ChatInput], ChatOutput | str]:
     async def agent_callable(input: ChatInput) -> ChatOutput | str:
         result = await agent.ainvoke(
-            {"messages": [{"role": "user", "content": input.message}]}
+            input={"messages": [{"role": "user", "content": input.message}]},
+            config={
+                "configurable": {
+                    "thread_id": input.thread_id,
+                    "user_id": input.user_id,
+                    "checkpoint_ns": agent.name,
+                }
+            },
         )
         logger.info(f'Langgraph callable result: {result}')
         return result['messages'][-1].content
@@ -28,7 +35,14 @@ def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPCli
             tool_to_sats_map.update(mcp_client.tool_to_sats_map)
     async def chat_generator(input: ChatInput) -> AsyncGenerator[ChatOutput, None]:
         async for chunk in agent.astream(
-            {"messages": [{"role": "user", "content": input.message}]},
+            input={"messages": [{"role": "user", "content": input.message}]},
+            config={
+                "configurable": {
+                    "thread_id": input.thread_id,
+                    "user_id": input.user_id,
+                    "checkpoint_ns": agent.name,
+                }
+            },
             stream_mode="updates"
         ):
             logger.info(f'Chunk: {chunk}')

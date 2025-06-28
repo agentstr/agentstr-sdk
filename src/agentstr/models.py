@@ -2,6 +2,7 @@ from typing import Any, Literal
 import json
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
+from pynostr.metadata import Metadata
 
 
 class NoteFilters(BaseModel):
