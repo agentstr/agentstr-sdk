@@ -11,7 +11,7 @@ Overview
 .. code-block:: python
 
    import asyncio
-   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput, Metadata
+   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput
 
    # Define a simple agent callable
    async def simple_chat(input: ChatInput):

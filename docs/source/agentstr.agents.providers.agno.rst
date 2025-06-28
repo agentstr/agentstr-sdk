@@ -13,19 +13,25 @@ The main component is the ``agno_agent_callable`` function, which wraps an ``agn
 .. code-block:: python
 
    from agentstr.agents.providers.agno import agno_agent_callable
-   from agentstr import NostrAgent
+   from agentstr import NostrAgent, AgentCard
    from agno.agent import Agent
    from agno.models.openai import OpenAIChat
 
-   # Assume 'my_agno_agent' is an initialized Agno agent
+   # 1. Initialize an Agno agent (requires configuration, e.g., API keys)
    my_agno_agent = Agent(model=OpenAIChat())
 
+   # 2. Wrap the Agno agent to create a callable compatible with Agentstr
    agent_callable = agno_agent_callable(my_agno_agent)
 
+   # 3. Create the NostrAgent, providing the callable and an AgentCard
+   agent_card = AgentCard(name="AgnoBot", description="An agent powered by Agno.")
    nostr_agent = NostrAgent(
+       agent_card=agent_card,
        agent_callable=agent_callable,
-       # ... other NostrAgent config
    )
+
+   # This `nostr_agent` can now be used with a NostrAgentServer to expose
+   # the Agno agent over the Nostr protocol.
 
 Reference
 ---------

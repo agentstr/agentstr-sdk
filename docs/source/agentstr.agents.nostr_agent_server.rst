@@ -24,7 +24,7 @@ Overview
    server = NostrAgentServer(nostr_agent=nostr_agent)
 
    async def main():
-       await server.run()
+       await server.start()
 
    if __name__ == "__main__":
        asyncio.run(main())

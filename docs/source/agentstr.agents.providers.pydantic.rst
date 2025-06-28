@@ -13,19 +13,30 @@ The main component is the ``pydantic_agent_callable`` function, which wraps a ``
 .. code-block:: python
 
    from agentstr.agents.providers.pydantic import pydantic_agent_callable
-   from agentstr import NostrAgent
+   from agentstr import NostrAgent, AgentCard
    from pydantic_ai import Agent
-   from pydantic_ai.models.openai import OpenAIModel
+   from pydantic_ai.llm.openai import OpenAI
 
-   # Assume 'my_pydantic_agent' is an initialized PydanticAI agent
-   my_pydantic_agent = Agent(model=OpenAIModel("gpt-4-turbo"))
+   # Note: To run this example, you need pydantic-ai and its dependencies installed.
+   # You also need an OPENAI_API_KEY set in your environment.
+   # pip install pydantic-ai
 
+   # 1. Initialize a PydanticAI agent with an LLM
+   # This example uses the OpenAI LLM.
+   llm = OpenAI()
+   my_pydantic_agent = Agent(llm=llm)
+
+   # 2. Wrap the agent to create a callable for Agentstr
    agent_callable = pydantic_agent_callable(my_pydantic_agent)
 
+   # 3. Create the NostrAgent, providing the callable and an AgentCard
+   agent_card = AgentCard(name="PydanticBot", description="An agent powered by PydanticAI.")
    nostr_agent = NostrAgent(
+       agent_card=agent_card,
        agent_callable=agent_callable,
-       # ... other NostrAgent config
    )
+
+   # This `nostr_agent` can now be used with a NostrAgentServer.
 
 Reference
 ---------

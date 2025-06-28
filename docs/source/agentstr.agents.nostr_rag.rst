@@ -11,22 +11,25 @@ Overview
 .. code-block:: python
 
    import asyncio
-   from agentstr import NostrRAG, NostrDB
+   from agentstr import NostrRAG
+   # Note: To use NostrRAG, you must install the required dependencies:
+   # pip install "agentstr-sdk[rag]"
+   # You will also need an OpenAI API key or another LangChain-compatible LLM.
+   from langchain_openai import ChatOpenAI
 
-   # Initialize a Nostr database
-   nostr_db = NostrDB()
-
-   # Create a RAG agent
-   rag_agent = NostrRAG(nostr_db=nostr_db)
+   # Create a RAG agent, connecting to Nostr relays and using an LLM.
+   rag_agent = NostrRAG(
+       relays=["wss://relay.damus.io"],
+       llm=ChatOpenAI(model_name="gpt-3.5-turbo")
+   )
 
    async def main():
-       # Store a note
-       await rag_agent.add_note("My first note")
-
-       # Retrieve notes
-       results = await rag_agent.query("first note")
-       for result in results:
-           print(result)
+       # Ask a question. The agent will build a knowledge base from
+       # recent Nostr posts related to the query and generate an answer.
+       question = "What are people saying about the bitcoin price?"
+       answer = await rag_agent.query(question, limit=10)
+       print(f"Question: {question}")
+       print(f"Answer: {answer}")
 
    if __name__ == "__main__":
        asyncio.run(main())

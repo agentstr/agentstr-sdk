@@ -41,7 +41,7 @@ class Scheduler:
 
         Args:
             func: The asynchronous function to run.
-            cron_tab: The cron tab string (e.g., "* * * * *").
+            cron_tab: The cron tab string.
         """
         self.scheduler.add_job(job_func(func, *args, **kwargs), CronTrigger.from_crontab(cron_tab))
 

@@ -6,11 +6,11 @@ This module defines the abstract base classes (ABCs) and shared data models for 
 Overview
 --------
 
-The central component is the ``NostrDB`` abstract base class, which outlines the required methods for any database backend, such as connecting, disconnecting, and performing CRUD operations on Nostr-related data. This ensures that different backends can be used interchangeably.
+The central component is the ``BaseDatabase`` abstract base class, which outlines the required methods for any database backend, such as connecting, disconnecting, and performing CRUD operations on Nostr-related data. This ensures that different backends can be used interchangeably.
 
 **Key Components:**
 
-- ``NostrDB``: The abstract base class for all database implementations.
+- ``BaseDatabase``: The abstract base class for all database implementations.
 - Shared Pydantic models for data consistency across backends.
 
 Reference
