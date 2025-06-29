@@ -209,6 +209,11 @@ def deploy(
     env_dict: dict[str, str] = dict(cfg.get("env", {}))
     _parse_kv(env, "env", env_dict)
 
+    # Remove secrets if present in env_dict
+    for key in env_dict:
+        if key in secrets_dict:
+            del secrets_dict[key]
+
     # Resolve dependencies: CLI + config
     deps = list(cfg.get("extra_pip_deps", []))
     deps.extend(dependency)

@@ -55,8 +55,20 @@ Here is an example of a complete configuration file:
    secrets:
      MY_SECRET: arn:aws:secretsmanager:us-west-2:123456789012:secret:my-secret-AbCdEf
 
+   # Path to a .env file for loading secrets (optional)
+   env_file: .env
+
 .. tip::
    You can pass the configuration file to any command using the ``-f`` or ``--config`` flag. Alternatively, set the ``AGENTSTR_CONFIG`` environment variable.
+
+.. note::
+   Configuration values are resolved with the following precedence (highest to lowest). If a variable is specified in multiple locations, the one with the highest precedence is used.
+
+   1.  Direct command-line flags (e.g., ``--env`` or ``--secret``)
+   2.  The ``env`` or ``secrets`` maps in the YAML configuration file
+   3.  Variables defined in the ``env_file``
+
+   Variables from the ``env_file`` and the ``secrets`` map are always treated as secrets and are uploaded to your cloud provider's secret manager. Variables from the ``env`` map and the ``--env`` flag are passed as plaintext environment variables.
 
 CLI Commands
 ------------
