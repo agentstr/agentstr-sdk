@@ -140,19 +140,34 @@ def cli(ctx: click.Context, provider: Optional[str]):  # noqa: D401
     help="Additional Python package (pip install) to include in the container. Repeatable.",
 )
 @click.option(
+    "--env-file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Load environment variables from a .env file. Overridden by --secret flags.",
+)
+@click.option("--cpu", type=int, help="Number of CPU units to allocate.")
+@click.option("--memory", type=int, default=512, help="Amount of memory (in MB) to allocate.")
+@click.option(
     "--database/--no-database",
     default=None,
-    help="Provision a managed Postgres database and inject DATABASE_URL secret.",
+    help="Provision a managed serverless Postgres database.",
 )
-@click.option("--cpu", type=int, default=None, show_default=True, help="Cloud provider vCPU units (e.g. 256=0.25 vCPU).")
-@click.option("--memory", type=int, default=512, show_default=True, help="Cloud provider memory (MiB).")
 @click.pass_context
-def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optional[str], secret: tuple[str, ...], env: tuple[str, ...], dependency: tuple[str, ...], cpu: int | None, memory: int, database: bool | None):  # noqa: D401
+def deploy(
+    ctx: click.Context,
+    file_path: Path | None,
+    config: Path | None,
+    name: str | None,
+    secret: tuple[str, ...],
+    env: tuple[str, ...],
+    dependency: tuple[str, ...],
+    env_file: Path | None,
+    cpu: int | None,
+    memory: int,
+    database: bool | None,
+):
     """Deploy an application file (server or agent) to the chosen provider."""
     cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
-    secrets_dict: dict[str, str] = dict(cfg.get("secrets", {}))
-    env_dict: dict[str, str] = dict(cfg.get("env", {}))
 
     def _parse_kv(entries: tuple[str, ...], label: str, target: dict[str, str]):
         for ent in entries:
@@ -162,28 +177,57 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
             k, v = ent.split("=", 1)
             target[k] = v
 
-    _parse_kv(secret, "--secret", secrets_dict)
-    _parse_kv(env, "--env", env_dict)
+    # Resolve secrets, with a clear precedence: CLI > config > env_file
+    secrets_dict: dict[str, str] = {}
 
+    # 1. Load from env_file (from config or CLI)
+    env_file_path = env_file or cfg.get("env_file")
+    if env_file_path:
+        env_file_path = Path(env_file_path)
+        if not env_file_path.exists():
+            raise click.ClickException(f"env_file path '{env_file_path}' does not exist.")
+        click.echo(f"Loading secrets from {env_file_path}...")
+        for raw_line in env_file_path.read_text().splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                click.echo(f"Skipping invalid line in {env_file_path}: {raw_line}", err=True)
+                continue
+            key, val = line.split("=", 1)
+            secrets_dict[key.strip()] = provider.put_secret(key.strip(), val.strip())
+
+    # 2. Load from config 'secrets', overwriting env_file
+    config_secrets = cfg.get("secrets", {})
+    if config_secrets:
+        secrets_dict.update(config_secrets)
+
+    # 3. Load from CLI '--secret', overwriting all others
+    _parse_kv(secret, "secret", secrets_dict)
+
+    # Resolve environment variables: CLI > config
+    env_dict: dict[str, str] = dict(cfg.get("env", {}))
+    _parse_kv(env, "env", env_dict)
+
+    # Resolve dependencies: CLI + config
     deps = list(cfg.get("extra_pip_deps", []))
-    if dependency:
-        deps.extend(dependency)
+    deps.extend(dependency)
 
+    # Resolve CPU and Memory: CLI > config > provider default
     if cpu is None:
         cpu = cfg.get("cpu")
     if cpu is None:
         if provider.name == "aws":
-            cpu = 256
+            cpu = 256  # AWS uses integer units
         else:
-            cpu = 0.25
-    # For gcp/azure convert millicore if user provided int >=100
+            cpu = 0.25  # GCP/Azure use fractional vCPU
     if provider.name in {"gcp", "azure"} and isinstance(cpu, int) and cpu > 4:
         cpu = cpu / 1000
 
-    if memory == 512:  # default flag value, check config override
-        memory = cfg.get("memory", memory)
+    if memory == 512:  # default flag value, so check config
+        memory = cfg.get("memory", 512)
 
-    # file_path argument is optional; fallback to config
+    # Resolve file_path: CLI > config
     if file_path is None:
         file_path = cfg.get("file_path")
         if not file_path:
@@ -192,9 +236,10 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
         if not file_path.exists():
             raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
 
+    # Resolve deployment_name: CLI > config > file_path stem
     deployment_name = name or cfg.get("name") or file_path.stem
 
-    # Handle database provisioning ------------------------------------
+    # Handle database provisioning
     cfg_db = cfg.get("database")
     if database is None:
         database = bool(cfg_db)
@@ -202,11 +247,10 @@ def deploy(ctx: click.Context, file_path: Path, config: Path | None, name: Optio
         click.echo("Provisioning managed Postgres database ...")
         env_key, secret_ref = provider.provision_database(deployment_name)
         secrets_dict[env_key] = secret_ref
-        if provider.name == "aws":
+        if provider.name == "aws" and secret_ref.endswith("-??????"):
             secrets_dict["DATABASE_URL"] = secret_ref[:-7]
 
-
-    # Continue with normal deploy -------------------------------------
+    # Deploy
     provider.deploy(
         file_path,
         deployment_name,
