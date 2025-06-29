@@ -9,13 +9,13 @@ from agentstr import NostrMCPClient
 
 # Define relays and private key
 relays   = os.getenv("NOSTR_RELAYS").split(",")
-private_key = os.getenv("EXAMPLE_MCP_CLIENT_NSEC")
+private_key = os.getenv("MCP_CLIENT_NSEC")
 
 # To enable Nostr Wallet Connect
 nwc_str = os.getenv("MCP_CLIENT_NWC_CONN_STR")
 
 # Define MCP server public key
-server_public_key = os.getenv("EXAMPLE_MCP_SERVER_PUBKEY")
+server_public_key = os.getenv("MCP_SERVER_PUBKEY")
 
 
 async def run()   :

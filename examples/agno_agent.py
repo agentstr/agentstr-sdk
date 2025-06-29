@@ -13,8 +13,8 @@ from agentstr import NostrAgent, AgentCard, NostrAgentServer, NostrMCPClient
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
-                                  private_key=os.getenv("EXAMPLE_AGNO_AGENT_NSEC"),
-                                  mcp_pubkey=os.getenv("EXAMPLE_MCP_SERVER_PUBKEY"),
+                                  private_key=os.getenv("AGNO_AGENT_NSEC"),
+                                  mcp_pubkey=os.getenv("MCP_SERVER_PUBKEY"),
                                   nwc_str=os.getenv("MCP_CLIENT_NWC_CONN_STR"))
 
 async def agent_server():

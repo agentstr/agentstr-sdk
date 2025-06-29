@@ -321,7 +321,7 @@ nostr_agent = NostrAgent(
 async def main() -> None:
     server = NostrAgentServer(
         nostr_agent=nostr_agent,
-        relays=[os.getenv("RELAY_URL")], 
+        relays=os.getenv("NOSTR_RELAYS").split(","), 
         private_key=os.getenv("AGENT_NSEC"),
     )
     await server.start()
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     key = PrivateKey()
     nsec = key.bech32()
     pubkey = key.public_key.bech32()
-    (project_dir / ".env").write_text(f"RELAY_URL=ws://localhost:6969\nAGENT_NSEC={nsec}\nAGENT_PUBKEY={pubkey}")
+    (project_dir / ".env").write_text(f"NOSTR_RELAYS=ws://localhost:6969\nAGENT_NSEC={nsec}\nAGENT_PUBKEY={pubkey}")
 
     (project_dir / ".gitignore").write_text("""# Python-generated files
 __pycache__/
@@ -416,6 +416,66 @@ if __name__ == "__main__":
 """
 
     (project_dir / "test_client.py").write_text(test_client_py)
+
+    # Create cloud deployment configs
+    os.makedirs(project_dir / "deploy", exist_ok=True)
+
+    aws_config = f"""
+# Sample AWS configuration for agentstr CLI (ECS Fargate)
+provider: aws
+
+file_path: {project_dir}/main.py
+
+database: true  # Provision postgres database
+
+extra_pip_deps:  # Additional Python deps installed in image
+  - agentstr-sdk
+
+env:  # Environment Variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+env_file: .env
+"""
+
+    (project_dir / "deploy" / "aws.yml").write_text(aws_config)
+
+    gcp_config = f"""
+# Sample GCP configuration for agentstr CLI (GKE)
+provider: gcp
+
+file_path: {project_dir}/main.py
+
+database: true  # Provision postgres database
+
+extra_pip_deps:  # Additional Python deps installed in image
+  - agentstr-sdk
+
+env:  # Environment Variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+env_file: .env
+"""
+
+    (project_dir / "deploy" / "gcp.yml").write_text(gcp_config)
+
+    azure_config = f"""
+# Sample Azure configuration for agentstr CLI (Azure Container Instances)
+provider: azure
+
+file_path: {project_dir}/main.py
+
+database: true  # Provision postgres database
+
+extra_pip_deps:  # Additional Python deps installed in image
+  - agentstr-sdk
+
+env:  # Environment Variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+env_file: .env
+"""
+
+    (project_dir / "deploy" / "azure.yml").write_text(azure_config)
 
     click.echo(f"✅ Project skeleton created in {project_dir}")
 

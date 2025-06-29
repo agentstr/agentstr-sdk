@@ -8,7 +8,7 @@ from agentstr import NostrMCPServer, tool
 
 # Define relays and private key
 relays   = os.getenv("NOSTR_RELAYS").split(",")
-private_key = os.getenv("EXAMPLE_MCP_SERVER_NSEC")
+private_key = os.getenv("MCP_SERVER_NSEC")
 
 # To enable Nostr Wallet Connect
 nwc_str = os.getenv("MCP_SERVER_NWC_CONN_STR")

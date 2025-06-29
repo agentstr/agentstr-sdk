@@ -12,8 +12,8 @@ from agentstr.agents.providers.google import google_agent_callable, google_chat_
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
-                                  private_key=os.getenv("EXAMPLE_GOOGLE_AGENT_NSEC"),
-                                  mcp_pubkey=os.getenv("EXAMPLE_MCP_SERVER_PUBKEY"),
+                                  private_key=os.getenv("GOOGLE_AGENT_NSEC"),
+                                  mcp_pubkey=os.getenv("MCP_SERVER_PUBKEY"),
                                   nwc_str=os.getenv("MCP_CLIENT_NWC_CONN_STR"))
 
 async def agent_server():

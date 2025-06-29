@@ -12,8 +12,8 @@ from agentstr.agents.providers.dspy import dspy_agent_callable
 
 # Create Nostr MCP client
 nostr_mcp_client = NostrMCPClient(relays=os.getenv("NOSTR_RELAYS").split(","),
-                                  private_key=os.getenv("EXAMPLE_DSPY_AGENT_NSEC"),
-                                  mcp_pubkey=os.getenv("EXAMPLE_MCP_SERVER_PUBKEY"),
+                                  private_key=os.getenv("DSPY_AGENT_NSEC"),
+                                  mcp_pubkey=os.getenv("MCP_SERVER_PUBKEY"),
                                   nwc_str=os.getenv("MCP_CLIENT_NWC_CONN_STR"))
 
 async def agent_server():    

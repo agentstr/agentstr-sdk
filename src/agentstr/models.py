@@ -1,8 +1,17 @@
-from typing import Any, Literal
+from typing import Any, Literal, Callable
 import json
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
-from pynostr.metadata import Metadata
+from pynostr.metadata import Metadata  # noqa: F401
+
+
+class Tool(BaseModel):
+    """Represents a tool that an agent can use to perform a specific action."""
+    fn: Callable[..., Any]
+    name: str
+    description: str
+    input_schema: dict[str, Any]
+    satoshis: int | None = None
 
 
 class NoteFilters(BaseModel):

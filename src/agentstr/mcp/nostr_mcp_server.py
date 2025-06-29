@@ -6,8 +6,7 @@ from typing import Any
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.fastmcp.tools.tool_manager import ToolManager
 from pynostr.event import Event
-from pynostr.metadata import Metadata
-
+from agentstr.models import Tool, Metadata
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
 from agentstr.utils import stringify_result
