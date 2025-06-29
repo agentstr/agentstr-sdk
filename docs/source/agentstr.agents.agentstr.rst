@@ -12,7 +12,7 @@ Overview
 
    import asyncio
    import os
-   from agentstr import StratumAgent, NostrClient
+   from agentstr import AgentstrAgent, NostrClient
 
    # Required environment variables for the LLM
    os.environ["LLM_BASE_URL"] = "https://api.openai.com/v1"
@@ -20,19 +20,19 @@ Overview
    os.environ["LLM_MODEL_NAME"] = "gpt-4"
 
    # A private key for the agent's Nostr identity
-   PRIVATE_KEY_HEX = "your-nostr-private-key"
+   PRIVATE_KEY_NSEC = "your-nostr-private-key"
 
    async def main():
        # Initialize the Nostr client
-       nostr_client = NostrClient(private_key_hex=PRIVATE_KEY_HEX)
+       nostr_client = NostrClient(private_key_nsec=PRIVATE_KEY_NSEC)
        
-       # Create and start the Stratum agent
-       stratum_agent = StratumAgent(
+       # Create and start the Agentstr agent
+       agentstr_agent = AgentstrAgent(
            nostr_client=nostr_client,
-           name="MyStratumAgent",
-           description="A helpful assistant powered by Stratum."
+           name="MyAgentstrAgent",
+           description="A helpful assistant powered by Agentstr."
        )
-       await stratum_agent.start()
+       await agentstr_agent.start()
 
    if __name__ == "__main__":
        # To run this, you would typically use asyncio.run(main())
@@ -42,7 +42,7 @@ Overview
 Reference
 ---------
 
-.. automodule:: agentstr.agents.stratum
+.. automodule:: agentstr.agents.agentstr
    :members:
    :undoc-members:
    :show-inheritance:

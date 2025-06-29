@@ -13,12 +13,12 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 
-class StratumAgent:
-    """A high-level class for streamlining agentstr agent creation on nostr.
+class AgentstrAgent:
+    """A high-level class for streamlining Agentstr agent creation on Nostr.
 
-    This class simplifies the process of creating and running an agentstr agent
-    on the nostr network. It handles the setup of the agent, including its
-    connection to the nostr network, integration with MCPs (Model Control Protocol),
+    This class simplifies the process of creating and running an Agentstr agent
+    on the Nostr network. It handles the setup of the agent, including its
+    connection to the Nostr network, integration with MCP (Model Context Protocol),
     and state persistence.
 
     Key Features:
@@ -30,7 +30,7 @@ class StratumAgent:
     """
     def __init__(self,
                  nostr_client: NostrClient,
-                 name: str = "Stratum Agent",
+                 name: str = "Agentstr Agent",
                  description: str = "A helpful assistant.",
                  prompt: str = "You are a helpful assistant.",
                  satoshis: int = 0,
