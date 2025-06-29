@@ -1,3 +1,4 @@
+import os
 import time
 from collections.abc import Callable
 from typing import Any
@@ -76,6 +77,11 @@ class NostrClient:
         logger.info("Initializing NostrClient")
         try:
             self.relays = relays
+            if not relays or len(relays) == 0:
+                if os.getenv("NOSTR_RELAYS"):
+                    self.relays = os.getenv("NOSTR_RELAYS").split(",")
+                else:
+                    raise ValueError("No relays provided. Either pass variable `relays` or set environment variable `NOSTR_RELAYS`")
             logger.debug(f"Using relays: {relays}")
 
             if private_key:
@@ -83,9 +89,18 @@ class NostrClient:
                 self.public_key = self.private_key.public_key
                 logger.info(f"Initialized Nostr client with public key: {self.public_key.bech32()}")
             else:
-                self.private_key = None
-                self.public_key = None
-                logger.warning("No private key provided, Nostr client will be in read-only mode")
+                if os.getenv("AGENT_NSEC"):
+                    logger.info(f"Using private key from environment variable: AGENT_NSEC")
+                    self.private_key = PrivateKey.from_nsec(os.getenv("AGENT_NSEC"))
+                    self.public_key = self.private_key.public_key
+                elif os.getenv("MCP_SERVER_NSEC"):
+                    logger.info(f"Using private key from environment variable: MCP_SERVER_NSEC")
+                    self.private_key = PrivateKey.from_nsec(os.getenv("MCP_SERVER_NSEC"))
+                    self.public_key = self.private_key.public_key
+                else:
+                    self.private_key = None
+                    self.public_key = None
+                    logger.warning("No private key provided, Nostr client will be in read-only mode")
 
             self.nwc_str = nwc_str
             if nwc_str:
