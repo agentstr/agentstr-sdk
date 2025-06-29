@@ -67,14 +67,14 @@ The :class:`~agentstr.database.message_history.MessageHistory` class provides an
 Commands
 --------
 
-Agents can be equipped with a command handling system that allows them to respond to specific, exclamation-prefixed messages (e.g., `!help`). The :class:`~agentstr.chat.commands_chat_handler.CommandsChatHandler` class routes these commands to registered asynchronous handler functions.
+Agents can be equipped with a command handling system that allows them to respond to specific, exclamation-prefixed messages (e.g., `!help`). The :class:`~agentstr.commands.DefaultCommands` class routes these commands to registered asynchronous handler functions.
 
 **Default Commands:**
 
 *   `!help`: Lists available commands.
 *   `!describe`: Provides a description of the agent.
-*   `!balance`: Shows the agent's current balance.
-*   `!deposit`: Provides a deposit address for the agent.
+*   `!balance`: Shows the user's current balance.
+*   `!deposit <amount>`: Provides a deposit address for the user to top up their balance.
 
 Model Context Protocol (MCP)
 ----------------------------
@@ -86,7 +86,7 @@ The :class:`~agentstr.mcp.nostr_mcp_client.NostrMCPClient` is used to interact w
 Payments
 --------
 
-`agentstr` has built-in support for handling payments via the Nostr Wallet Connect (NWC) protocol. The :class:`~agentstr.wallet.nostr_wallet_connect.NostrWalletConnect` class provides an interface for sending and receiving payments.
+`agentstr` has built-in support for handling payments via the Nostr Wallet Connect (NWC) protocol. The :class:`~agentstr.relays.nwc_relay.NWCRelay` class provides an interface for sending and receiving payments.
 
 This is integrated with the MCP server to allow for paid tools, where an agent can charge for the use of its services.
 
