@@ -1,7 +1,7 @@
-Stratum
-=======
+Agentstr Agent
+==============
 
-The ``StratumAgent`` is a high-level class for streamlining agent creation on Nostr. It simplifies agent deployment with out-of-the-box support for state persistence, streaming payments, and human-in-the-loop capabilities, all with zero configuration required.
+The ``AgentstrAgent`` is a high-level class for streamlining agent creation on Nostr. It simplifies agent deployment with out-of-the-box support for state persistence, streaming payments, and human-in-the-loop capabilities, all with zero configuration required.
 
 Overview
 --------

@@ -15,7 +15,7 @@ For detailed usage examples and tutorials, check out our `Usage Guide <https://a
 
 Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>`_.
 
-.. admonition:: Featured: StratumAgent
+.. admonition:: Featured: AgentstrAgent
    :class: important
 
    The :class:`~agentstr.agents.agentstr.AgentstrAgent` is a high-level class for streamlining agent creation on Nostr. It simplifies agent deployment with out-of-the-box support for state persistence, streaming payments, and human-in-the-loop capabilities, all with zero configuration required. Get started in just a few clicks!
@@ -30,7 +30,17 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
    installation
    getting_started
    agentstr.high_level
+
+.. toctree::
+   :maxdepth: 2
+   :titlesonly:
+
    advanced
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
    cloud_cicd
    agentstr
 
