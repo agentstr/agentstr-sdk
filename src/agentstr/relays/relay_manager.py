@@ -191,7 +191,7 @@ class RelayManager:
 
         The callback will be called for each matching event.
         """
-        event_cache = ExpiringDict(max_len=1000, max_age_seconds=300)
+        event_cache = ExpiringDict(max_len=1000, max_age_seconds=900)
         lock = asyncio.Lock()
         tasks = []
         for relay in self.relays:
@@ -203,7 +203,7 @@ class RelayManager:
 
         The callback will be called with each received message and its decrypted content.
         """
-        event_cache = ExpiringDict(max_len=1000, max_age_seconds=300)
+        event_cache = ExpiringDict(max_len=1000, max_age_seconds=900)
         lock = asyncio.Lock()
         tasks = []
         for relay in self.relays:

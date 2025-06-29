@@ -135,7 +135,7 @@ class NostrAgentServer:
             user (User): The user making the request.
             satoshis (int): The required payment amount.
             invoice (str): The BOLT11 invoice to listen for.
-            timeout (int, optional): Maximum time to wait in seconds (default: 300).
+            timeout (int, optional): Maximum time to wait in seconds (default: 900).
             interval (int, optional): Time between checks in seconds (default: 2).
 
         Returns:

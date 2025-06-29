@@ -177,7 +177,7 @@ class NostrMCPServer:
                             invoice=invoice,
                             callback=on_success,
                             unsuccess_callback=on_failure,
-                            timeout=300,
+                            timeout=900,
                         ),
                     ))
                 else:

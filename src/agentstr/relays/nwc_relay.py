@@ -343,7 +343,7 @@ class NWCRelay:
         dobj = json.loads(drsp)
         return dobj.get("result", {}).get("balance")
 
-    async def wait_for_payment_success(self, invoice: str, timeout: int = 300, interval: int = 2):
+    async def wait_for_payment_success(self, invoice: str, timeout: int = 900, interval: int = 2):
         """Wait for payment success for a given invoice.
 
         This method continuously checks for payment success until either the payment
@@ -351,7 +351,7 @@ class NWCRelay:
 
         Args:
             invoice (str): The BOLT11 invoice string to listen for.
-            timeout (int, optional): Maximum time to wait in seconds (default: 300).
+            timeout (int, optional): Maximum time to wait in seconds (default: 900).
             interval (int, optional): Time between checks in seconds (default: 2).
 
         Returns:
@@ -370,7 +370,7 @@ class NWCRelay:
             return False
         return True
 
-    async def on_payment_success(self, invoice: str, callback=None, unsuccess_callback=None, timeout: int = 300, interval: int = 2):
+    async def on_payment_success(self, invoice: str, callback=None, unsuccess_callback=None, timeout: int = 900, interval: int = 2):
         """Listen for payment success for a given invoice.
 
         This method continuously checks for payment success until either the payment
@@ -380,7 +380,7 @@ class NWCRelay:
             invoice (str): The BOLT11 invoice string to listen for.
             callback (callable, optional): A function to call when payment succeeds.
             unsuccess_callback (callable, optional): A function to call if payment fails.
-            timeout (int, optional): Maximum time to wait in seconds (default: 300).
+            timeout (int, optional): Maximum time to wait in seconds (default: 900).
             interval (int, optional): Time between checks in seconds (default: 2).
 
         Raises:
