@@ -115,13 +115,15 @@ class AWSProvider(Provider):  # noqa: D401
             policies=["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"],
         )
         if secret_arns:
+            all_secret_arns = [f"{secret}-??????" for secret in secret_arns]
+            all_secret_arns.extend(secret_arns)
             stmt = {
                 "Version": "2012-10-17",
                 "Statement": [
                     {
                         "Effect": "Allow",
                         "Action": ["secretsmanager:GetSecretValue"],
-                        "Resource": [f"{secret}-??????" for secret in secret_arns],
+                        "Resource": all_secret_arns,
                     },
                     {
                         "Effect": "Allow",
@@ -363,6 +365,7 @@ CMD [\"python\", \"/app/app.py\"]
         cluster_arn = self._ensure_cluster()
         # Only pass ARNs that look like SecretsManager ARNs
         secret_arns = [v for v in secrets.values() if v.startswith("arn:aws:secretsmanager:")]
+        click.echo(f"Secret ARNs: {secret_arns}")
         task_role_arn, exec_role_arn = self._ensure_task_roles(deployment_name=deployment_name, secret_arns=secret_arns)
         task_def_arn = self._register_task_definition(
             deployment_name,

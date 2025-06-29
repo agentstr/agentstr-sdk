@@ -15,3 +15,8 @@ Here’s how you can use it:
     scheduler = Scheduler()
     scheduler.add_job(my_periodic_task, "interval", seconds=10)
     scheduler.start()
+
+Relevant Modules
+----------------
+
+*   :doc:`agentstr.scheduler`

@@ -17,6 +17,8 @@ import subprocess
 import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
+import importlib.metadata
+from typing_extensions import Annotated
 
 import yaml
 
@@ -195,7 +197,8 @@ def deploy(
                 click.echo(f"Skipping invalid line in {env_file_path}: {raw_line}", err=True)
                 continue
             key, val = line.split("=", 1)
-            secrets_dict[key.strip()] = provider.put_secret(key.strip(), val.strip())
+            secret_ref = provider.put_secret(key.strip(), val.strip())
+            secrets_dict[key.strip()] = secret_ref
 
     # 2. Load from config 'secrets', overwriting env_file
     config_secrets = cfg.get("secrets", {})
@@ -252,8 +255,6 @@ def deploy(
         click.echo("Provisioning managed Postgres database ...")
         env_key, secret_ref = provider.provision_database(deployment_name)
         secrets_dict[env_key] = secret_ref
-        if provider.name == "aws" and secret_ref.endswith("-??????"):
-            secrets_dict["DATABASE_URL"] = secret_ref[:-7]
 
     # Deploy
     provider.deploy(
@@ -351,10 +352,10 @@ load_dotenv()
 
 import os
 import asyncio
-from agentstr import AgentCard, NostrAgentServer, ChatInput, ChatOutput
+from agentstr import AgentCard, NostrAgent, NostrAgentServer, ChatInput
 
 # Define an agent callable
-async def hello_world_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
+async def hello_world_agent(chat: ChatInput) -> str:
     return f"Hello {chat.user_id}!"
 
 # Define the Nostr Agent
@@ -367,12 +368,8 @@ nostr_agent = NostrAgent(
 )
 
 # Define the Nostr Agent Server
-async def main() -> None:
-    server = NostrAgentServer(
-        nostr_agent=nostr_agent,
-        relays=os.getenv("NOSTR_RELAYS").split(","), 
-        private_key=os.getenv("AGENT_NSEC"),
-    )
+async def main():
+    server = NostrAgentServer(nostr_agent)
     await server.start()
 
 
@@ -446,13 +443,10 @@ load_dotenv()
 import os
 from agentstr import NostrClient, PrivateKey
 
-# Get the environment variables
-relays = [os.getenv("RELAY_URL")]
 agent_pubkey = os.getenv("AGENT_PUBKEY")
 
-
 async def chat():
-    client = NostrClient(relays, PrivateKey().bech32())
+    client = NostrClient(private_key=PrivateKey().bech32())
     response = await client.send_direct_message_and_receive_response(
         agent_pubkey,
         "Hello",
@@ -466,65 +460,32 @@ if __name__ == "__main__":
 
     (project_dir / "test_client.py").write_text(test_client_py)
 
-    # Create cloud deployment configs
-    os.makedirs(project_dir / "deploy", exist_ok=True)
+        # Create cloud deployment configs
+    main_path = os.path.join(project_name, "main.py")
+    env_path = os.path.join(project_name, ".env")
 
-    aws_config = f"""
-# Sample AWS configuration for agentstr CLI (ECS Fargate)
-provider: aws
+    try:
+        version = importlib.metadata.version("agentstr-sdk")
+        sdk_dep = f"agentstr-sdk=={version}"
+    except importlib.metadata.PackageNotFoundError:
+        sdk_dep = "agentstr-sdk"
 
-file_path: {project_dir}/main.py
-
-database: true  # Provision postgres database
-
-extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk
-
-env:  # Environment Variables
-  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
-
-env_file: .env
-"""
-
-    (project_dir / "deploy" / "aws.yml").write_text(aws_config)
-
-    gcp_config = f"""
-# Sample GCP configuration for agentstr CLI (GKE)
-provider: gcp
-
-file_path: {project_dir}/main.py
+    deploy_config = f"""name: {project_name}  # Deployment name
+    
+file_path: {main_path}  # Path to main.py file
 
 database: true  # Provision postgres database
 
 extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk
+  - {sdk_dep}
 
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
-env_file: .env
+env_file: {env_path}  # Path to .env file
 """
 
-    (project_dir / "deploy" / "gcp.yml").write_text(gcp_config)
-
-    azure_config = f"""
-# Sample Azure configuration for agentstr CLI (Azure Container Instances)
-provider: azure
-
-file_path: {project_dir}/main.py
-
-database: true  # Provision postgres database
-
-extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk
-
-env:  # Environment Variables
-  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
-
-env_file: .env
-"""
-
-    (project_dir / "deploy" / "azure.yml").write_text(azure_config)
+    (project_dir / "deploy.yml").write_text(deploy_config)
 
     click.echo(f"✅ Project skeleton created in {project_dir}")
 

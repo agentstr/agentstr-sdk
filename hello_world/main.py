@@ -5,10 +5,10 @@ load_dotenv()
 
 import os
 import asyncio
-from agentstr import AgentCard, NostrAgentServer, ChatInput, ChatOutput
+from agentstr import AgentCard, NostrAgent, NostrAgentServer, ChatInput
 
 # Define an agent callable
-async def hello_world_agent(chat: ChatInput) -> str | ChatOutput:  # noqa: D401
+async def hello_world_agent(chat: ChatInput) -> str:
     return f"Hello {chat.user_id}!"
 
 # Define the Nostr Agent
@@ -21,12 +21,8 @@ nostr_agent = NostrAgent(
 )
 
 # Define the Nostr Agent Server
-async def main() -> None:
-    server = NostrAgentServer(
-        nostr_agent=nostr_agent,
-        relays=[os.getenv("RELAY_URL")], 
-        private_key=os.getenv("AGENT_NSEC"),
-    )
+async def main():
+    server = NostrAgentServer(nostr_agent)
     await server.start()
 
 

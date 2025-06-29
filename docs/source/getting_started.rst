@@ -15,7 +15,7 @@ First, let's create a new project. The ``agentstr init`` command sets up a boile
 
    agentstr init hello_world
 
-This will create a new directory called ``hello_world`` with a basic agent structure.
+This will create a new directory called ``hello_world`` with a basic agent structure, including a ``deploy.yml`` file for 1-click cloud deployment.
 
 Step 2: Start the Development Relay
 -----------------------------------
@@ -53,7 +53,71 @@ You should see a "Hello" message from your agent, confirming that it received an
 
 .. code-block:: text
 
-   Hello <your-agent-pubkey>!
+   Hello <your-pubkey>!
+
+Step 5: One-Click Cloud Deployment
+----------------------------------
+
+Once you've tested your agent locally, you can deploy it to the cloud with a single command. The Agentstr SDK uses the ``hello_world/deploy.yml`` file created during initialization to handle the packaging, containerization, and deployment for you.
+
+.. note::
+   The cloud provider can be specified via the ``AGENTSTR_PROVIDER`` environment variable or in the configuration file.
+
+**Cloud Provider Requirements**
+
+Below are the prerequisites and example commands for each supported cloud provider.
+
+*   **AWS (Amazon Web Services)**
+    *   **Prerequisites:** `AWS CLI <https://aws.amazon.com/cli/>`_
+    *   **Command:**
+
+        .. code-block:: bash
+
+           # Configure your AWS profile
+           export AWS_PROFILE=agentstr
+           export AGENTSTR_PROVIDER=aws
+
+           # Configure CLI
+           aws configure --profile $AWS_PROFILE
+
+           # Deploy
+           agentstr deploy -f hello_world/deploy.yml
+
+*   **GCP (Google Cloud Platform)**
+    *   **Prerequisites:** `gcloud CLI <https://cloud.google.com/sdk/gcloud>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl/>`_
+    *   **Command:**
+
+        .. code-block:: bash
+
+           # Set your GCP Project ID
+           export GCP_PROJECT=agentstr
+           export AGENTSTR_PROVIDER=gcp
+
+           # Authenticate with gcloud
+           gcloud auth login
+
+           # Deploy
+           agentstr deploy -f hello_world/deploy.yml
+
+*   **Azure**
+    *   **Prerequisites:** `Azure CLI <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
+    *   **Command:**
+
+        .. code-block:: bash
+
+           # Set your Azure Subscription ID
+           export AZURE_SUBSCRIPTION_ID=<your-subscription-id>
+           export AGENTSTR_PROVIDER=azure
+
+           # Authenticate with Azure
+           az login
+
+           # Deploy
+           agentstr deploy -f hello_world/deploy.yml
+
+.. note::
+   For more detailed instructions on configuring deployment settings, managing secrets, and setting up CI/CD pipelines, please see the :doc:`Cloud CI/CD <cloud_cicd>` guide.
+
 
 Next Steps
 ----------

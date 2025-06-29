@@ -7,3 +7,9 @@ At the heart of `agentstr` are two core components:
 *   :class:`~agentstr.agents.nostr_agent_server.NostrAgentServer`: This class wraps a `NostrAgent` and runs it as a persistent server, listening for and responding to events on the Nostr network.
 
 By working with these components directly, you can customize every aspect of your agent's behavior.
+
+Relevant Modules
+----------------
+
+*   :doc:`agentstr.agents.nostr_agent`
+*   :doc:`agentstr.agents.nostr_agent_server`

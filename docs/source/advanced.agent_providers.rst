@@ -16,3 +16,8 @@ Here are the supported providers:
 *   **Agno**: See :doc:`agentstr.agents.providers.agno`.
 
 *   **Pydantic**: See :doc:`agentstr.agents.providers.pydantic`.
+
+Relevant Modules
+----------------
+
+*   :doc:`agentstr.agents.providers`

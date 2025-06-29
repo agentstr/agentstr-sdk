@@ -22,8 +22,12 @@ dependencies = [
     "dspy>=2.6.27",
     "asyncpg>=0.30.0",
     "apscheduler>=3.11.0",
-    "openai-agents==0.1.0",
+    "langgraph-checkpoint-postgres>=2.0.21",
+    "langgraph-checkpoint-sqlite>=2.0.10",
+    "psycopg[binary]>=3.2.9",
+    "langchain-openai>=0.3.18",
 ]
+
 readme = "README.md"
 [build-system]
 requires = ["setuptools >= 61.0"]
@@ -85,18 +89,14 @@ agentstr = "agentstr.cli:cli"
 rag = [
     "langchain>=0.3.25",
     "langchain-community>=0.3.24",
-    "langchain-openai>=0.3.18",
 ]
 langgraph = [
-    "langchain-openai>=0.3.18",
     "langgraph>=0.4.7",
 ]
 dspy = [
     "dspy>=2.6.27",
-    "langchain-openai>=0.3.18",
 ]
 agno = [
-    "langchain-openai>=0.3.18",
     "agno>=1.6.4",
 ]
 pydantic = [
@@ -144,13 +144,7 @@ all = [
     "langgraph-checkpoint-postgres>=2.0.21",
     "langgraph-checkpoint-sqlite>=2.0.10",
     "psycopg[binary]>=3.2.9",
-]
-stratum = [
-    "langchain-openai>=0.3.18",
-    "langgraph>=0.4.7",
-    "langgraph-checkpoint-postgres>=2.0.21",
-    "langgraph-checkpoint-sqlite>=2.0.10",
-    "psycopg[binary]>=3.2.9",
+    "semantic-kernel>=1.32.2",
 ]
 
 

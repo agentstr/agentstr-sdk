@@ -4,7 +4,7 @@ from typing import Callable, AsyncGenerator
 from agentstr.models import ChatInput, ChatOutput
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 from agentstr.logger import get_logger
-from agents import Agent, ItemHelpers, Runner, function_tool
+from agents import Agent, ItemHelpers, Runner
 
 
 logger = get_logger(__name__)

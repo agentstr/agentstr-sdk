@@ -12,8 +12,8 @@ logger = get_logger(__name__)
 class PostgresDatabase(BaseDatabase):
     """PostgreSQL implementation using `asyncpg`."""
 
-    USER_TABLE_NAME = "agent_user"
-    MESSAGE_TABLE_NAME = "message"
+    USER_TABLE_NAME = "agentstr_users"
+    MESSAGE_TABLE_NAME = "agentstr_messages"
 
     def __init__(self, conn_str: str, *, agent_name: str | None = None):
         super().__init__(conn_str, agent_name)
