@@ -1,6 +1,4 @@
-"""agentstr.commands
-====================
-
+"""
 Utility classes for parsing and handling *exclamation-prefixed* commands that
 are commonly used by chat bots or conversational agents on Nostr.
 

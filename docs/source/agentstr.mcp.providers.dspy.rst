@@ -1,5 +1,5 @@
-DSPy Integration
-================
+DSPy MCP Integration
+====================
 
 This module provides integration with `DSPy <https://github.com/stanford-futuredata/dspy>`_, allowing conversion between MCP tools and DSPy's tool format.
 

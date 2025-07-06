@@ -1,5 +1,5 @@
-PydanticAI Integration
-======================
+PydanticAI MCP Integration
+==========================
 
 This module provides integration with `PydanticAI <https://github.com/pydantic/pydantic-ai>`_, enabling conversion between MCP tools and PydanticAI's tool format.
 

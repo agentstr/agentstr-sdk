@@ -1,5 +1,5 @@
-Google Integration
-==================
+Google MCP Integration
+======================
 
 This module provides integration with Google's agent development tools, allowing for the use of MCP-defined tools within Google's ecosystem (e.g., with Gemini).
 
