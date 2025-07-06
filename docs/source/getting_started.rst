@@ -13,9 +13,9 @@ The Agentstr SDK provides a range of examples to help you understand and impleme
 
 - **Hello World**: A basic introduction to setting up and running your first agent. This example covers initializing a project, starting a local relay, running the agent, testing it, and deploying to the cloud. Ideal for beginners. [:doc:`Learn more <getting_started/hello_world>`]
 - **Simple Agent**: Builds on the basics by customizing the agent's response. This guide helps you modify the agent's logic to create a personalized interaction. [:doc:`Learn more <getting_started/simple_agent>`]
-- **Tool Calling Agent**: Demonstrates how to integrate external tools using the Model Context Protocol (MCP). This example shows how agents can access and utilize various tools for enhanced functionality. [:doc:`Learn more <getting_started/tool_calling_agent>`]
 - **Payment Enabled Agent**: Guides you through setting up an agent capable of handling payments with Nostr Wallet Connect (NWC). Learn to integrate payment processing into your agent's interactions. [:doc:`Learn more <getting_started/payment_enabled_agent>`]
 - **Creating an MCP Server**: Learn how to create your own MCP server to provide tools for your agents. [:doc:`Learn more <getting_started/creating_an_mcp_server>`]
+- **Tool Calling Agent**: Demonstrates how to integrate external tools using the Model Context Protocol (MCP). This example shows how agents can access and utilize various tools for enhanced functionality. [:doc:`Learn more <getting_started/tool_calling_agent>`]
 
 .. toctree::
    :maxdepth: 1
@@ -23,9 +23,9 @@ The Agentstr SDK provides a range of examples to help you understand and impleme
 
    getting_started/hello_world
    getting_started/simple_agent
-   getting_started/tool_calling_agent
    getting_started/payment_enabled_agent
    getting_started/creating_an_mcp_server
+   getting_started/tool_calling_agent
 
 Next Steps
 ----------

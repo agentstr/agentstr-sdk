@@ -66,7 +66,7 @@ Start a local Nostr relay for testing:
 
 Keep this running in a separate terminal.
 
-Step 4: Run Your Simple Agent
+Step 5: Run Your Simple Agent
 -----------------------------
 
 Run your modified agent:
@@ -75,7 +75,7 @@ Run your modified agent:
 
    python simple_agent/main.py
 
-Step 5: Test Your Agent
+Step 6: Test Your Agent
 -----------------------
 
 Use the test client to interact with your agent:
@@ -93,7 +93,7 @@ You should see a response like:
 .. note::
    If you encounter issues, refer to the troubleshooting tips in the :doc:`hello_world` guide.
 
-Step 6: Cloud Deployment
+Step 7: Cloud Deployment
 ------------------------
 
 Deploy your Simple Agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:

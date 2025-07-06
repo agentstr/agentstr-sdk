@@ -3,6 +3,8 @@ Payment Enabled Agent
 
 This guide will show you how to create an agent that can handle payments using Nostr Wallet Connect (NWC) with the Agentstr SDK.
 
+Before you begin, ensure you have a Nostr Wallet Connect connection string. You can get one from a wallet service provider like `Alby <https://getalby.com/>`_.
+
 Step 1: Initialize Your Project
 -------------------------------
 
@@ -10,36 +12,59 @@ If you haven't already, initialize a new project:
 
 .. code-block:: bash
 
-   agentstr init payment_agent
+   agentstr init payment_enabled
 
-This creates a `payment_agent` directory with the basic structure.
+This creates a `payment_enabled` directory with the basic structure.
 
-Step 2: Set Up Payment Integration
+Step 2: Update .env file
+------------------------
+
+Update the `payment_enabled/.env` file with your LLM information.
+
+.. code-block:: bash
+
+   LLM_BASE_URL=https://api.openai.com/v1
+   LLM_API_KEY=your-api-key
+   LLM_MODEL_NAME=gpt-3.5-turbo
+   NWC_CONN_STR=nostr+walletconnect://<your-nwc-connection-string>
+
+
+Step 3: Set Up Payment Integration
 ----------------------------------
 
-Modify `payment_agent/main.py` to include payment processing using NWC. You'll need an NWC connection string for this.
+Modify `payment_enabled/main.py` to include payment processing using NWC. You'll need an NWC connection string for this.
 
 .. code-block:: python
 
+   """Simple Agentstr agent with payment processing."""
+
+   from dotenv import load_dotenv
+   load_dotenv()
+
    import asyncio
-   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput
-   from agentstr.relays.nwc_relay import NWCRelay
+   from agentstr import AgentstrAgent, NostrClient
+   import os
 
-   async def payment_enabled_chat(input: ChatInput):
-       nwc_string = "nostr+walletconnect://<your-nwc-connection-string>"
-       nwc_relay = NWCRelay(nwc_string)
-       balance = await nwc_relay.get_balance()
-       yield ChatOutput(message=f"Hello! Your current balance is {balance} sats.")
 
-   agent_card = AgentCard(name="PaymentAgent", description="An agent that can process payments")
-   nostr_agent = NostrAgent(agent_card=agent_card, chat_generator=payment_enabled_chat)
+   # Define the Nostr Agent Server
+   async def main():
+      agent = AgentstrAgent(
+         name="PaymentEnabledAgent",
+         description="A simple Agentstr Agent with payment processing",
+         satoshis=10,  # 10 sats per message
+         nostr_client=NostrClient(nwc_str=os.getenv("NWC_CONN_STR"))
+      )
+      await agent.start()
 
-   # Continue with the standard setup for running the agent
+
+   # Run the server
+   if __name__ == "__main__":
+      asyncio.run(main())
 
 .. note::
-   Replace `<your-nwc-connection-string>` with your actual NWC connection string. Ensure you have access to a wallet service that supports Nostr Wallet Connect.
+   Ensure you have access to a wallet service that supports Nostr Wallet Connect.
 
-Step 3: Start a Local Relay
+Step 4: Start a Local Relay
 ---------------------------
 
 Start a local Nostr relay for testing:
@@ -50,30 +75,30 @@ Start a local Nostr relay for testing:
 
 Keep this running in a separate terminal.
 
-Step 4: Run Your Payment-Enabled Agent
+Step 5: Run Your Payment-Enabled Agent
 --------------------------------------
 
 Run your agent with payment processing capabilities:
 
 .. code-block:: bash
 
-   python payment_agent/main.py
+   python payment_enabled/main.py
 
-Step 5: Test Your Agent
+Step 6: Test Your Agent
 -----------------------
 
 Use the test client to interact with your agent and check your balance:
 
 .. code-block:: bash
 
-   python payment_agent/test_client.py
+   python payment_enabled/test_client.py
 
-You should see a response with your current balance if the NWC connection is successful.
+You should see a lightning invoice for 10 sats. Upon payment, you should see a response from the agent.
 
 .. note::
    If you encounter issues with the NWC connection, ensure your connection string is correct and the wallet service is accessible. Refer to troubleshooting tips in the :doc:`hello_world` guide for general connectivity issues.
 
-Step 6: Cloud Deployment
+Step 7: Cloud Deployment
 ------------------------
 
 Deploy your Payment Enabled Agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
@@ -88,7 +113,7 @@ Deploy your Payment Enabled Agent to the cloud for continuous operation and publ
 
    .. code-block:: bash
 
-      agentstr deploy -f payment_agent/deploy.yml
+      agentstr deploy -f payment_enabled/deploy.yml
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
