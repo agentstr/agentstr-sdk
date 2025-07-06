@@ -1,4 +1,4 @@
-LangGraph MCP Integration
+LangGraph MCP Provider
 =========================
 
 This module provides integration with `LangGraph <https://python.langchain.com/docs/langgraph>`_, allowing conversion between MCP tools and LangGraph's tool format.

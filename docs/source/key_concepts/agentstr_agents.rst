@@ -52,9 +52,7 @@ Here's a basic example of setting up an agent using `AgentstrAgent`:
 
 This snippet demonstrates how `AgentstrAgent` can be instantiated and started with minimal code, leveraging its built-in capabilities for immediate functionality.
 
-Next Steps
-----------
+Relevant Modules
+----------------
 
-- **Explore Agent Providers**: If you need a custom agentic framework, check out the :doc:`agent_providers` guide to understand how to integrate alternative frameworks with the Agentstr SDK.
-- **Advanced Features**: Learn how to enhance your agent with scheduling, persistence, or payment capabilities by exploring related sections like :doc:`scheduling`, :doc:`persistence`, and :doc:`payments`.
-- **Join the Community**: Connect with other developers using Agentstr SDK on our `GitHub Discussions <https://github.com/agentstr/agentstr-sdk/discussions>`_ page for support and to share your projects.
+*   :doc:`../../agentstr.agents.agentstr`

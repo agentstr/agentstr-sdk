@@ -1,4 +1,4 @@
-OpenAI MCP Integration
+OpenAI MCP Provider
 ======================
 
 This module provides integration with `OpenAI's <https://openai.com/>`_ tools, enabling conversion between MCP tools and OpenAI's tool format.
