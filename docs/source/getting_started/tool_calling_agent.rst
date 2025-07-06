@@ -1,7 +1,7 @@
 Tool Calling Agent
 =====================
 
-This guide will walk you through creating an agent that can call external tools using the Agentstr SDK, expanding on the concepts from the `Simple Agent <simple_agent>` example.
+This guide will walk you through creating an agent that can call external tools using the Agentstr SDK, expanding on the concepts from the :doc:`payment_enabled_agent` example.
 
 Step 1: Initialize Your Project
 -------------------------------

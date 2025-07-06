@@ -1,7 +1,7 @@
 Payment Enabled Agent
 =====================
 
-This guide will show you how to create an agent that can handle payments using Nostr Wallet Connect (NWC) with the Agentstr SDK.
+This guide expands on the :doc:`simple_agent` example to show you how to create an agent that can handle payments using Nostr Wallet Connect (NWC) with the Agentstr SDK.
 
 Before you begin, ensure you have a Nostr Wallet Connect connection string. You can get one from a wallet service provider like `Alby <https://getalby.com/>`_.
 

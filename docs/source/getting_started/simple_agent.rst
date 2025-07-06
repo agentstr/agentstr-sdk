@@ -1,7 +1,7 @@
 Simple Agent
 ============
 
-This guide will help you create a simple agent using the Agentstr SDK, building on the basics from the 'Hello World' example.
+This guide will help you create a simple agent using the Agentstr SDK, building on the basics from the :doc:`hello_world` example.
 
 Step 1: Initialize Your Project
 -------------------------------
@@ -95,6 +95,5 @@ Deploy your Simple Agent to the cloud for continuous operation and public access
 Next Steps
 ----------
 
-- **Expand Functionality**: Add more complex logic to `handle_message` to handle various user inputs or integrate with external APIs for enhanced capabilities.
 - **Explore Advanced Features**: Dive into advanced topics like :doc:`../key_concepts/scheduling` and :doc:`../key_concepts/persistence` to make your agent more robust and stateful.
 - **Explore More Examples**: Check out the :doc:`tool_calling_agent` and :doc:`payment_enabled_agent` guides for adding tool capabilities to your agent.
