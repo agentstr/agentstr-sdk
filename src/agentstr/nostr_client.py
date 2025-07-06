@@ -63,7 +63,7 @@ class NostrClient:
     `agent_discovery.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/agent_discovery.py>`_
     `chat_with_agents.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/chat_with_agents.py>`_
     """
-    def __init__(self, relays: list[str], private_key: str | None = None, nwc_str: str | None = None):
+    def __init__(self, relays: list[str] = [], private_key: str | None = None, nwc_str: str | None = None):
         """Initialize the NostrClient.
         
         Args:

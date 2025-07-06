@@ -343,6 +343,8 @@ def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
                 shutil.rmtree(p)
     project_dir.mkdir(parents=True, exist_ok=True)
 
+    name = project_dir.name
+
     # Write template files --------------------------------------------------
     (project_dir / "__init__.py").touch(exist_ok=True)
 
@@ -416,7 +418,9 @@ wheels/
 # Databases
 *.db
 *.sqlite3
-*.sqlite3*""")
+*.sqlite3*
+*.db-*
+""")
 
     (project_dir / "README.md").write_text("""# Agentstr Agent Skeleton
 
@@ -473,11 +477,11 @@ if __name__ == "__main__":
     except importlib.metadata.PackageNotFoundError:
         sdk_dep = "agentstr-sdk"
 
-    deploy_config = f"""name: {project_name}  # Deployment name
-    
+    deploy_config = f"""name: {name}  # Deployment name
+
 file_path: {main_path}  # Path to main.py file
 
-database: true  # Provision postgres database
+database: true  # Provision postgres database (if not already provisioned)
 
 extra_pip_deps:  # Additional Python deps installed in image
   - {sdk_dep}

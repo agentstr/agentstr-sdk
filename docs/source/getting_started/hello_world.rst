@@ -29,7 +29,7 @@ To test your agent locally, you need a Nostr relay running. The Agentstr SDK pro
 Keep this relay running in a separate terminal window. Your agent will connect to it to send and receive messages.
 
 .. tip::
-   If the default port (typically 6969) is already in use, you can specify a different port with the `--port` option, e.g., `agentstr relay start --port 8081`. Ensure your agent configuration matches the relay's port if changed.
+   The default port is 6969, so make sure that port is not in use. You can specify a different port with a config file. See an example config file `here <https://code.pobblelabs.org/nostr_relay/file?name=nostr_relay/config.yaml>`_.
 
 Step 3: Run Your Agent
 ----------------------

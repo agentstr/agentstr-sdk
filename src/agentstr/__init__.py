@@ -3,6 +3,7 @@ from agentstr.commands import DefaultCommands, Commands
 from agentstr.database import Database
 from agentstr.logger import get_logger
 from agentstr.models import AgentCard, Skill, NoteFilters, ChatInput, ChatOutput
+from agentstr.agents.agentstr import AgentstrAgent
 from agentstr.agents.nostr_rag import NostrRAG
 from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.agents.nostr_agent_server import NostrAgentServer

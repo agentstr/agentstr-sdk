@@ -14,24 +14,48 @@ If you haven't already, initialize a new project with the Agentstr SDK:
 
 This creates a `simple_agent` directory with the basic structure for your agent.
 
-Step 2: Modify the Agent Logic
+Step 2: Update .env file
+------------------------
+
+Update the `simple_agent/.env` file with your LLM information.
+
+.. code-block:: bash
+
+   LLM_BASE_URL=https://api.openai.com/v1
+   LLM_API_KEY=your-api-key
+   LLM_MODEL_NAME=gpt-3.5-turbo
+
+Step 3: Modify the Agent Logic
 ------------------------------
 
 Open `simple_agent/main.py` in your preferred editor. You'll see the basic 'Hello World' agent setup. Let's modify it to respond with a custom message.
 
 .. code-block:: python
 
-   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput
+   """Simple Agentstr agent - pass-through LLM call."""
 
-   async def custom_chat(input: ChatInput):
-       yield ChatOutput(message=f"Hello, {input.user_id}! I'm your custom simple agent.")
+   from dotenv import load_dotenv
+   load_dotenv()
 
-   agent_card = AgentCard(name="SimpleAgent", description="A basic custom agent")
-   nostr_agent = NostrAgent(agent_card=agent_card, chat_generator=custom_chat)
+   import asyncio
+   from agentstr import AgentstrAgent
 
-   # The rest of the setup remains similar to the Hello World example
 
-Step 3: Start a Local Relay
+   # Define the Nostr Agent Server
+   async def main():
+      agent = AgentstrAgent(
+         name="SimpleAgent",
+         description="A simple Agentstr Agent",
+      )
+      await agent.start()
+
+
+   # Run the server
+   if __name__ == "__main__":
+      asyncio.run(main())
+
+
+Step 4: Start a Local Relay
 ---------------------------
 
 Start a local Nostr relay for testing:
@@ -64,7 +88,7 @@ You should see a response like:
 
 .. code-block:: text
 
-   Hello, <your-user-id>! I'm your custom simple agent.
+   Hi there! How are you doing today? Is there anything I can help you with?
 
 .. note::
    If you encounter issues, refer to the troubleshooting tips in the :doc:`hello_world` guide.
