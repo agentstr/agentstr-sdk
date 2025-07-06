@@ -80,14 +80,15 @@ def google_chat_generator(agent: Agent, mcp_clients: list[NostrMCPClient] | None
                         satoshis = tool_to_sats_map.get(tool_call.name, 0)
                         logger.debug(f'Tool call: {tool_call.name}, satoshis: {satoshis}')
                         total_satoshis += satoshis
-                    yield ChatOutput(
-                        message=f"Tool call requires payment: {tool_call.name}",
-                        content=event.model_dump_json(),
-                        thread_id=input.thread_id,
-                        kind="requires_payment",
-                        user_id=input.user_id,
-                        satoshis=total_satoshis
-                    )
+                    if total_satoshis > 0:
+                        yield ChatOutput(
+                            message=f"Tool call requires payment: {tool_call.name}",
+                            content=event.model_dump_json(),
+                            thread_id=input.thread_id,
+                            kind="requires_payment",
+                            user_id=input.user_id,
+                            satoshis=total_satoshis
+                        )
                 else:
                     logger.info(f"Unknown event type: {event}")
     

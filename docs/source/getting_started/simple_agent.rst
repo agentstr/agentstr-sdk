@@ -30,29 +30,9 @@ Step 3: Modify the Agent Logic
 
 Open `simple_agent/main.py` in your preferred editor. You'll see the basic 'Hello World' agent setup. Let's modify it to respond with a custom message.
 
-.. code-block:: python
-
-   """Simple Agentstr agent - pass-through LLM call."""
-
-   from dotenv import load_dotenv
-   load_dotenv()
-
-   import asyncio
-   from agentstr import AgentstrAgent
-
-
-   # Define the Nostr Agent Server
-   async def main():
-      agent = AgentstrAgent(
-         name="SimpleAgent",
-         description="A simple Agentstr Agent",
-      )
-      await agent.start()
-
-
-   # Run the server
-   if __name__ == "__main__":
-      asyncio.run(main())
+.. literalinclude:: ../../../getting_started/simple_agent/main.py
+   :language: python
+   :linenos:
 
 
 Step 4: Start a Local Relay

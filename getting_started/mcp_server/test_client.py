@@ -6,7 +6,7 @@ import os
 import json
 from agentstr import NostrMCPClient, PrivateKey
 
-server_public_key = os.getenv("AGENT_PUBKEY")
+server_public_key = os.getenv("NOSTR_PUBKEY")
 
 async def chat():
     # Initialize the client

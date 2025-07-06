@@ -54,14 +54,15 @@ def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPCli
                         satoshis = tool_to_sats_map.get(tool_call['name'], 0)
                         logger.debug(f'Tool call: {tool_call["name"]}, satoshis: {satoshis}')
                         total_satoshis += satoshis
-                    yield ChatOutput(
-                        message=f"Tool call requires payment: {tool_call['name']}",
-                        content=update.model_dump_json(),
-                        thread_id=input.thread_id,
-                        kind="requires_payment",
-                        user_id=input.user_id,
-                        satoshis=total_satoshis
-                    )
+                    if total_satoshis > 0:
+                        yield ChatOutput(
+                            message=f"Tool call requires payment: {tool_call['name']}",
+                            content=update.model_dump_json(),
+                            thread_id=input.thread_id,
+                            kind="requires_payment",
+                            user_id=input.user_id,
+                            satoshis=total_satoshis
+                        )
                 else:
                     yield ChatOutput(
                         message=update.content,

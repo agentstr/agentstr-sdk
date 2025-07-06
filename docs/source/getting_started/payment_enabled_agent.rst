@@ -30,38 +30,16 @@ Update the `payment_enabled/.env` file with your LLM information and NWC connect
 
 .. note::
    - `NWC_CONN_STR` is the default environment variable for `NWCRelay` to enable Nostr Wallet Connect. You can override this by passing a connection string directly to the `NostrClient` constructor.
+   - `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL_NAME` are the default environment variables for `AgentstrAgent` to enable LLM integration. You can override these by passing a connection string directly to the `AgentstrAgent` constructor.
 
 Step 3: Set Up Payment Integration
 ----------------------------------
 
 Modify `payment_enabled/main.py` to include payment processing using NWC. You'll need an NWC connection string for this.
 
-.. code-block:: python
-
-   """Simple Agentstr agent with payment processing."""
-
-   from dotenv import load_dotenv
-   load_dotenv()
-
-   import asyncio
-   from agentstr import AgentstrAgent, NostrClient
-   import os
-
-
-   # Define the Nostr Agent Server
-   async def main():
-      agent = AgentstrAgent(
-         name="PaymentEnabledAgent",
-         description="A simple Agentstr Agent with payment processing",
-         satoshis=10,  # 10 sats per message
-         nostr_client=NostrClient(nwc_str=os.getenv("NWC_CONN_STR"))
-      )
-      await agent.start()
-
-
-   # Run the server
-   if __name__ == "__main__":
-      asyncio.run(main())
+.. literalinclude:: ../../../getting_started/payment_enabled_agent/main.py
+   :language: python
+   :linenos:
 
 .. note::
    Ensure you have access to a wallet service that supports Nostr Wallet Connect.

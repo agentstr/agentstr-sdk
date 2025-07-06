@@ -31,50 +31,9 @@ Step 3: Define Your Tools
 
 Modify `mcp_server/main.py` to define the tools you want to expose and initialize the MCP Server.
 
-.. code-block:: python
-
-    """Simple MCP Server"""
-
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    import os
-    from agentstr import NostrMCPServer, tool
-
-    # Addition tool
-    async def add(a: int, b: int) -> int:
-        """Add two numbers."""
-        return a + b
-
-    # Multiplication tool
-    @tool(satoshis=0)
-    async def multiply(a: int, b: int) -> int:
-        """Multiply two numbers."""
-        return a * b
-
-    # Weather tool (premium tool)
-    @tool(satoshis=5)
-    async def get_weather(city: str) -> str:
-        """Get weather for a given city."""
-        return f"It's always sunny in {city}!"
-
-
-    async def run():
-        # Define the server
-        server = NostrMCPServer(
-            "SimpleMCPServer",
-            nwc_str=os.getenv("NWC_CONN_STR"),
-            tools=[add, multiply, get_weather],
-        )
-
-        # Start the server
-        await server.start()
-
-
-    if __name__ == "__main__":
-        import asyncio
-        asyncio.run(run())
-
+.. literalinclude:: ../../../getting_started/mcp_server/main.py
+   :language: python
+   :linenos:
 
 
 Step 4: Modify the Test Client
@@ -82,34 +41,9 @@ Step 4: Modify the Test Client
 
 Modify `mcp_server/test_client.py` to list the tools available and call one of them.
 
-.. code-block:: python
-
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    import os
-    import json
-    from agentstr import NostrMCPClient, PrivateKey
-
-    server_public_key = os.getenv("AGENT_PUBKEY")
-
-    async def chat():
-        # Initialize the client
-        mcp_client = NostrMCPClient(mcp_pubkey=server_public_key,
-                                    private_key=PrivateKey().bech32())
-
-        # List available tools
-        tools = await mcp_client.list_tools()
-        print(f"Found tools: {json.dumps(tools, indent=4)}")
-
-        # Call a tool
-        result = await mcp_client.call_tool("add", {"a": 69, "b": 420})
-        print(result)
-
-
-    if __name__ == "__main__":
-        import asyncio
-        asyncio.run(chat())
+.. literalinclude:: ../../../getting_started/mcp_server/test_client.py
+   :language: python
+   :linenos:
 
 
 Step 5: Start a Local Relay

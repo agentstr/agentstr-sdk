@@ -102,7 +102,7 @@ class AgentstrAgent:
         for nostr_mcp_client in self.nostr_mcp_clients:
             all_tools.extend(await to_langgraph_tools(nostr_mcp_client))
 
-        all_skills = [await nostr_mcp_client.get_skills() for nostr_mcp_client in self.nostr_mcp_clients]
+        all_skills = [skill for skills in [await nostr_mcp_client.get_skills() for nostr_mcp_client in self.nostr_mcp_clients] for skill in skills]
 
         await checkpointer.setup()
 

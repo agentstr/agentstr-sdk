@@ -47,7 +47,7 @@ def _convert_call_tool_result(
     if call_tool_result.isError:
         raise ToolException(tool_content)
 
-    return tool_content, non_text_contents or None
+    return tool_content
 
 
 async def to_langgraph_tools(nostr_mcp_client: NostrMCPClient) -> list[BaseTool]:
@@ -70,7 +70,7 @@ async def to_langgraph_tools(nostr_mcp_client: NostrMCPClient) -> list[BaseTool]
             call_tool_result = await nostr_mcp_client.call_tool(tool_name, arguments)
             call_tool_result = CallToolResult(**call_tool_result)
             result = _convert_call_tool_result(call_tool_result)
-            return result, None
+            return result
         return inner
 
     for tool in tools["tools"]:
@@ -81,7 +81,7 @@ async def to_langgraph_tools(nostr_mcp_client: NostrMCPClient) -> list[BaseTool]
                 metadata={"satoshis": tool.get("satoshis", 0)},
                 args_schema=tool["inputSchema"],
                 coroutine=call_tool(tool["name"]),
-                response_format="content_and_artifact",
+                response_format="content",
             ),
         )
     return server_tools

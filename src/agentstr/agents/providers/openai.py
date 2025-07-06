@@ -35,15 +35,16 @@ def openai_chat_generator(agent: Agent, mcp_clients: list[NostrMCPClient] | None
                         satoshis = tool_to_sats_map.get(tool_call, 0)
                         logger.info(f'Tool call: {tool_call}, satoshis: {satoshis}')
                         total_satoshis += satoshis
-                        yield ChatOutput(
-                            message=f"Tool call requires payment: {tool_call}",
-                            content=event.data.item.model_dump_json(),
-                            thread_id=input.thread_id,
-                            kind="tool_message",
-                            user_id=input.user_id,
-                            role="tool",
-                            satoshis=total_satoshis
-                        )
+                        if total_satoshis > 0:
+                            yield ChatOutput(
+                                message=f"Tool call requires payment: {tool_call}",
+                                content=event.data.item.model_dump_json(),
+                                thread_id=input.thread_id,
+                                kind="tool_message",
+                                user_id=input.user_id,
+                                role="tool",
+                                satoshis=total_satoshis
+                            )
                 continue
             # When the agent updates, print that
             elif event.type == "agent_updated_stream_event":

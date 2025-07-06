@@ -141,147 +141,18 @@ For reference, here are the contents of the workflow files.
 
 **AWS**
 
-.. code-block:: yaml
+.. literalinclude:: ../../.github/workflows/deploy-aws.yml
+   :language: yaml
    :linenos:
-
-   # GitHub Actions workflow: Deploy to AWS with agentstr-cli
-
-   name: deploy-aws
-
-   # Trigger manually or when the AWS config changes
-   on:
-     workflow_dispatch:
-     push:
-       branches:
-         - main
-       paths:
-         - "configs/aws.yml"
-         - ".github/workflows/deploy-aws.yml"
-
-   jobs:
-     deploy:
-       runs-on: ubuntu-latest
-
-       steps:
-         - uses: actions/checkout@v4
-
-         - name: Install uv
-           uses: astral-sh/setup-uv@v5
-
-         - name: "Set up Python"
-           uses: actions/setup-python@v5
-           with:
-             python-version-file: ".python-version"
-             
-         - name: Install the project
-           run: uv sync --all-extras --dev
-
-         - name: Deploy to AWS
-           env:
-             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-             AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-           run: uv run agentstr deploy -f configs/aws.yml
 
 **GCP**
 
-.. code-block:: yaml
+.. literalinclude:: ../../.github/workflows/deploy-gcp.yml
+   :language: yaml
    :linenos:
-
-   # GitHub Actions workflow: Deploy to Google Cloud Run with agentstr-cli
-
-   name: deploy-gcp
-
-   on:
-     workflow_dispatch:
-     push:
-       branches:
-         - main
-       paths:
-         - "configs/gcp.yml"
-         - ".github/workflows/deploy-gcp.yml"
-
-   jobs:
-     deploy:
-       runs-on: ubuntu-latest
-
-       steps:
-         - uses: actions/checkout@v4
-
-         - name: Install uv
-           uses: astral-sh/setup-uv@v5
-
-         - name: "Set up Python"
-           uses: actions/setup-python@v5
-           with:
-             python-version-file: ".python-version"
-
-         - name: Install the project
-           run: uv sync --all-extras --dev
-
-         - name: Authenticate to GCP
-           uses: google-github-actions/auth@v2
-           with:
-             credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-         # Get the GKE credentials so we can deploy to the cluster
-         - uses: google-github-actions/get-gke-credentials@db150f2cc60d1716e61922b832eae71d2a45938f
-           with:
-             cluster_name: agentstr-cluster
-             location: us-central1-b
-             credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-         - name: Install gke-gcloud-auth-plugin
-           uses: simenandre/setup-gke-gcloud-auth-plugin@v1 # Or the latest version
-
-         - name: Deploy to GCP
-           env:
-             GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-           run: uv run agentstr deploy -f configs/gcp.yml
 
 **Azure**
 
-.. code-block:: yaml
+.. literalinclude:: ../../.github/workflows/deploy-azure.yml
+   :language: yaml
    :linenos:
-
-   # GitHub Actions workflow: Deploy to Azure Container Instances with agentstr-cli
-
-   name: deploy-azure
-
-   on:
-     workflow_dispatch:
-     push:
-       branches:
-         - main
-       paths:
-         - "configs/azure.yml"
-         - ".github/workflows/deploy-azure.yml"
-
-   jobs:
-     deploy:
-       runs-on: ubuntu-latest
-
-       steps:
-         - uses: actions/checkout@v4
-
-         - name: Install uv
-           uses: astral-sh/setup-uv@v5
-
-         - name: "Set up Python"
-           uses: actions/setup-python@v5
-           with:
-             python-version-file: ".python-version"
-
-         - name: Install the project
-           run: uv sync --all-extras --dev
-
-         - name: Azure Login
-           uses: azure/login@v2
-           with:
-             creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-         - name: Deploy to Azure
-           env:
-             AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-           run: uv run agentstr deploy -f configs/azure.yml
-

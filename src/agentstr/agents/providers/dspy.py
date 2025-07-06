@@ -72,15 +72,16 @@ def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient] | 
                         if "next_tool_name" in content:
                             tool_name = content["next_tool_name"]
                             satoshis = tool_to_sats_map.get(tool_name, 0)
-                            logger.info(f'Tool call requires payment: {tool_name}, satoshis: {satoshis}')
-                            yield ChatOutput(
-                                message=f"Tool call requires payment: {tool_name}",
-                                content=chunk.message,
-                                thread_id=input.thread_id,
-                                kind="requires_payment",
-                                user_id=input.user_id,
-                                satoshis=satoshis
-                            )
+                            if satoshis > 0:
+                                logger.info(f'Tool call requires payment: {tool_name}, satoshis: {satoshis}')
+                                yield ChatOutput(
+                                    message=f"Tool call requires payment: {tool_name}",
+                                    content=chunk.message,
+                                    thread_id=input.thread_id,
+                                    kind="requires_payment",
+                                    user_id=input.user_id,
+                                    satoshis=satoshis
+                                )
                     except Exception as e:
                         logger.error(f'Error parsing status message: {e}')
     return chat_generator
