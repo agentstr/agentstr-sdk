@@ -32,7 +32,7 @@ jobs:
 
       - name: Start agentstr relay
         run: |
-          uv run agentstr relay run &
+          uv run agentstr relay start &
           echo $! > relay.pid
         shell: bash
 

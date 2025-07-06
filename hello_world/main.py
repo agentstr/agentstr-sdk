@@ -3,7 +3,6 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
 import asyncio
 from agentstr import AgentCard, NostrAgent, NostrAgentServer, ChatInput
 

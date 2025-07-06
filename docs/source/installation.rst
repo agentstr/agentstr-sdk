@@ -4,7 +4,7 @@ Installation
 The Agentstr SDK is available on PyPI and requires Python 3.12 or newer.
 
 .. tip::
-   We recommend using `uv <https://docs.astral.sh/uv/>`_ for faster dependency management, but ``pip`` is also fully supported.
+   We recommend using `uv <https://docs.astral.sh/uv/>`_ for faster dependency management, but ``pip`` is also supported.
 
 Standard Installation
 ---------------------

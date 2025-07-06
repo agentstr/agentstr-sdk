@@ -29,8 +29,7 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
 
    installation
    getting_started
-   agentstr.high_level
-   advanced
+   key_concepts
    cloud_cicd
    agentstr
 
@@ -40,4 +39,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

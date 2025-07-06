@@ -5,10 +5,11 @@
 
 import os
 import sys
+import datetime
 
 # -- Project information -----------------------------------------------------
 project = "Agentstr SDK"
-copyright = "2025, Agentstr. All rights reserved."
+copyright = f"{datetime.datetime.now().year}, Agentstr. All rights reserved."
 author = "Agentstr"
 
 # -- General configuration ---------------------------------------------------

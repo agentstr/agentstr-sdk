@@ -171,6 +171,19 @@ def deploy(
     cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
 
+    # Resolve file_path: CLI > config
+    if file_path is None:
+        file_path = cfg.get("file_path")
+        if not file_path:
+            raise click.ClickException("You must provide a file_path argument or set 'file_path' in the config file.")
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
+
+    # Resolve deployment_name: CLI > config > file_path stem
+    deployment_name = name or cfg.get("name") or file_path.stem
+
+
     def _parse_kv(entries: tuple[str, ...], label: str, target: dict[str, str]):
         for ent in entries:
             if "=" not in ent:
@@ -197,7 +210,9 @@ def deploy(
                 click.echo(f"Skipping invalid line in {env_file_path}: {raw_line}", err=True)
                 continue
             key, val = line.split("=", 1)
-            secret_ref = provider.put_secret(key.strip(), val.strip())
+            # remove non-alphanumeric characters from deployment_name
+            deployment_name_safe = "".join(c for c in deployment_name if c.isalnum())
+            secret_ref = provider.put_secret(f'AGENTSTR-{deployment_name_safe}-{key.strip()}', val.strip())
             secrets_dict[key.strip()] = secret_ref
 
     # 2. Load from config 'secrets', overwriting env_file
@@ -234,18 +249,6 @@ def deploy(
 
     if memory == 512:  # default flag value, so check config
         memory = cfg.get("memory", 512)
-
-    # Resolve file_path: CLI > config
-    if file_path is None:
-        file_path = cfg.get("file_path")
-        if not file_path:
-            raise click.ClickException("You must provide a file_path argument or set 'file_path' in the config file.")
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
-
-    # Resolve deployment_name: CLI > config > file_path stem
-    deployment_name = name or cfg.get("name") or file_path.stem
 
     # Handle database provisioning
     cfg_db = cfg.get("database")
@@ -425,7 +428,7 @@ This is a minimal example of an Agentstr agent that greets users.
 
 #### Then start the local relay:
 
-`agentstr relay run`
+`agentstr relay start`
 
 #### Then run it:
 
@@ -499,10 +502,10 @@ def relay(ctx: click.Context):  # noqa: D401
     """Utilities for running lightweight local Nostr relays."""
 
 
-@relay.command("run")
+@relay.command("start")
 @click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.pass_context
-def relay_run(ctx: click.Context, config: Path):  # noqa: D401
+def relay_start(ctx: click.Context, config: Path):  # noqa: D401
     """Spawn a local *nostr-relay* instance using a YAML CONFIG_FILE.
 
     The command maps directly to::
@@ -553,34 +556,6 @@ def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | N
     provider = _get_provider(ctx, cfg)
     ref = provider.put_secret(key, value)
     click.echo(ref)
-
-
-@cli.command("put-secrets")
-@click.argument("env_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
-@click.pass_context
-def put_secrets(ctx: click.Context, env_file: Path, config: Path | None):  # noqa: D401
-    """Create or update multiple secrets from a .env file.
-
-    ENV_FILE should contain KEY=VALUE lines (comments with # allowed). Each
-    secret is stored via the provider's secret manager and the resulting
-    reference printed.
-    """
-    cfg = _load_config(ctx, config)
-    provider = _get_provider(ctx, cfg)
-    count = 0
-    for raw_line in Path(env_file).read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
-            click.echo(f"Skipping invalid line: {raw_line}", err=True)
-            continue
-        key, val = line.split("=", 1)
-        ref = provider.put_secret(key, val)
-        click.echo(f"{key} -> {ref}")
-        count += 1
-    click.echo(f"Stored {count} secrets.")
 
 
 @cli.command()
