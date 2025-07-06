@@ -42,19 +42,17 @@ You can also install specific extras to tailor the SDK to your needs. Here are t
    * - ``rag``
      - Adds support for Retrieval-Augmented Generation (RAG).
    * - ``langgraph``
-     - Integrates with LangGraph for building stateful, multi-agent applications.
+     - Integrates with LangGraph for building stateful, agentic applications.
    * - ``dspy``
      - Provides tools for working with DSPy.
    * - ``agno``
-     - Integrates with Agno for building and evaluating AI systems.
+     - Integrates with Agno for building and evaluating AI agents.
    * - ``pydantic``
-     - Includes helpers for using Pydantic with AI models.
+     - Includes helpers for using Pydantic's AI framework.
    * - ``openai``
      - Adds support for OpenAI's agent ecosystem.
    * - ``google``
      - Integrates with Google's AI developer kits.
-   * - ``examples``
-     - Installs dependencies needed to run the example scripts.
 
 To install one or more extras, list them in your installation command:
 

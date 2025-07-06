@@ -13,9 +13,10 @@ Before you can deploy, make sure you have the following tools installed and conf
 
 *   **Docker:** Required for building and containerizing your agent.
 *   **Cloud-specific CLIs:**
-    *   **AWS:** `AWS CLI <https://aws.amazon.com/cli/>`_
-    *   **Google Cloud:** `gcloud CLI <https://cloud.google.com/sdk/gcloud>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl/>`_
-    *   **Azure:** `Azure CLI <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
+
+    -   **AWS:** `AWS CLI <https://aws.amazon.com/cli/>`_
+    -   **Google Cloud:** `gcloud CLI <https://cloud.google.com/sdk/gcloud>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl/>`_
+    -   **Azure:** `Azure CLI <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
 
 You must also be authenticated with your chosen cloud provider and have permissions to push to its container registry (e.g., ECR, GCR, ACR).
 
