@@ -13,7 +13,7 @@ Here’s how you can use it:
         print("This task runs every 10 seconds.")
 
     scheduler = Scheduler()
-    scheduler.add_job(my_periodic_task, "interval", seconds=10)
+    scheduler.add_interval_job(my_periodic_task, seconds=10)
     scheduler.start()
 
 For more information on scheduling and managing tasks, refer to :doc:`../../agentstr.scheduler`.

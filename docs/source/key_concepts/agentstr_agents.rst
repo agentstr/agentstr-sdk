@@ -8,25 +8,25 @@ Key Features
 
 Agentstr comes with a rich set of features available out of the box:
 
-*   **Zero-Configuration Deployment**: Launch your agent with just a few lines of code. Agentstr automatically handles the underlying complexities of agent creation and server setup.
+*   **Zero-Configuration Deployment**: Launch your agent with just a few lines of code. Agentstr automatically handles the underlying complexities of Lightning (NWC) and Nostr integration.
 
 *   **State Persistence**: Your agent's conversations and state are automatically persisted. Agentstr supports both SQLite and PostgreSQL for robust data management, with no manual setup required.
 
-*   **Streaming Payments**: Easily monetize your agent. Stratum has built-in support for Nostr Wallet Connect, allowing your agent to request and receive streaming payments (Zaps) for its services.
+*   **Streaming Payments**: Easily monetize your agent. Agentstr has built-in support for Nostr Wallet Connect, allowing your agent to request and receive streaming payments (Zaps) for its services.
 
 *   **Human-in-the-Loop**: Seamlessly integrate human oversight and interaction into your agent's workflow. This is crucial for tasks requiring validation, or for creating collaborative human-AI systems.
 
-*   **Extensible through MCPs**: Stratum agents can be extended with new skills and tools via the Model Control Protocol (MCP). This allows you to connect to other agents or services on the Nostr network, creating powerful, decentralized applications.
+*   **Extensible through MCPs**: Agentstr agents can be extended with new skills and tools via the Model Control Protocol (MCP). This allows you to connect to other agents or services on the Nostr network, creating powerful, decentralized applications.
 
 Understanding AgentstrAgent
 ---------------------------
 
 `AgentstrAgent` is designed as a comprehensive, out-of-the-box solution. It encapsulates core functionalities like message handling, relay connections, and basic agent logic, allowing developers to focus on customizing agent behavior rather than building from scratch. This high-level abstraction is perfect for rapid prototyping or for developers new to the Nostr ecosystem.
 
-For more information on using `AgentstrAgent`, refer to :doc:`../../agentstr.agents`.
+For more information on using `AgentstrAgent`, refer to :doc:`../../agentstr.agents.agentstr`.
 
-Custom Agentic Frameworks with Agent Providers
-----------------------------------------------
+Using Custom Agentic Frameworks
+-------------------------------
 
 While `AgentstrAgent` provides a streamlined approach, the Agentstr SDK also supports advanced customization through agent providers. If you prefer to use a specific agentic framework or need to tailor the agent's logic to your unique requirements, you can select from a variety of agent providers. These providers allow you to integrate frameworks like LangGraph, DSPy, or OpenAI, giving you full control over the agent's underlying architecture. For a detailed exploration of available providers, refer to :doc:`agent_providers`.
 
@@ -55,7 +55,6 @@ This snippet demonstrates how `AgentstrAgent` can be instantiated and started wi
 Next Steps
 ----------
 
-- **Customize with AgentstrAgent**: Modify the agent's properties and behaviors by extending `AgentstrAgent` to suit your specific use case. Dive into :doc:`../../agentstr.agents` for advanced customization options.
 - **Explore Agent Providers**: If you need a custom agentic framework, check out the :doc:`agent_providers` guide to understand how to integrate alternative frameworks with the Agentstr SDK.
-- **Build Advanced Features**: Learn how to enhance your agent with scheduling, persistence, or payment capabilities by exploring related sections like :doc:`scheduling`, :doc:`persistence`, and :doc:`payments`.
+- **Advanced Features**: Learn how to enhance your agent with scheduling, persistence, or payment capabilities by exploring related sections like :doc:`scheduling`, :doc:`persistence`, and :doc:`payments`.
 - **Join the Community**: Connect with other developers using Agentstr SDK on our `GitHub Discussions <https://github.com/agentstr/agentstr-sdk/discussions>`_ page for support and to share your projects.

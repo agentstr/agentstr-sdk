@@ -39,22 +39,6 @@ Environment Variables
 .. note::
    You can override this environment variable by passing an explicit `nwc_connection_string` parameter to the `NWCRelay` constructor.
 
-Usage Example
--------------
-
-`NWCRelay` is typically used internally by `NostrClient` when a connection string is provided. However, you can initialize it independently if needed:
-
-.. code-block:: python
-
-   from agentstr.relays.nwc_relay import NWCRelay
-   import os
-
-   # Set environment variable (or use .env file)
-   os.environ["NWC_CONN_STR"] = "nostr+walletconnect://...your-connection-string..."
-
-   # Initialize relay with default from environment variable
-   nwc_relay = NWCRelay()
-
 Next Steps
 ----------
 

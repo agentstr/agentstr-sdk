@@ -1,17 +1,10 @@
 """A simple, opinionated scheduler for running asynchronous jobs using APScheduler."""
 import asyncio
-from datetime import datetime
-from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.calendarinterval import CalendarIntervalTrigger
-from apscheduler.triggers.date import DateTrigger
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 
-
-async def hello_world(statement: str):
-    print(f"hello world: {statement}")
 
 def job_func(func, *args, **kwargs):
     """A wrapper to run an async function in a synchronous context."""
@@ -57,9 +50,3 @@ class Scheduler:
     def start(self):
         """Starts the scheduler's blocking loop."""
         self.scheduler.start()
-
-if __name__ == '__main__':
-    scheduler = Scheduler()
-    scheduler.add_interval_job(hello_world, 60, "interval")
-    scheduler.add_cron_job(hello_world, "* * * * *", "cron")
-    scheduler.start()

@@ -17,7 +17,6 @@ agent_info = AgentCard(name="TestAgent", description="Agent description.", nostr
 nostr_client = NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str)
 
 
-
 async def run():
     db = Database()
     await db.async_init()

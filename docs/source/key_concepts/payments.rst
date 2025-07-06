@@ -10,4 +10,4 @@ This is integrated with the MCP server to allow for paid tools, where an agent c
 Relevant Modules
 ----------------
 
-*   :doc:`../../agentstr.relays`
+*   :doc:`../../agentstr.relays.nwc_relay`
