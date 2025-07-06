@@ -10,14 +10,14 @@ Start by initializing a new project if you haven't already:
 
 .. code-block:: bash
 
-   agentstr init tool_agent
+   agentstr init tool_calling_agent
 
-This sets up a `tool_agent` directory with the necessary structure.
+This sets up a `tool_calling_agent` directory with the necessary structure.
 
 Step 2: Define Tools for Your Agent
 -----------------------------------
 
-Open `tool_agent/main.py` and modify it to include tool calling functionality. You'll need to integrate with the Model Context Protocol (MCP) for tool access.
+Open `tool_calling_agent/main.py` and modify it to include tool calling functionality. You'll need to integrate with the Model Context Protocol (MCP) for tool access.
 
 .. code-block:: python
 
@@ -62,7 +62,7 @@ Run your agent with tool calling capabilities:
 
 .. code-block:: bash
 
-   python tool_agent/main.py
+   python tool_calling_agent/main.py
 
 Step 5: Test Your Agent
 -----------------------
@@ -71,7 +71,7 @@ Use the test client to interact with your agent and see the tool listing respons
 
 .. code-block:: bash
 
-   python tool_agent/test_client.py
+   python tool_calling_agent/test_client.py
 
 You should see a response indicating available tools or a message if none are available.
 
@@ -94,7 +94,7 @@ Deploy your Tool Calling Agent to the cloud for continuous operation and public 
 
    .. code-block:: bash
 
-      agentstr deploy -f tool_agent/deploy.yml
+      agentstr deploy -f tool_calling_agent/deploy.yml
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 

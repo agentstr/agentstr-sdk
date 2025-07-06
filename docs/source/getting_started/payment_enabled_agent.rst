@@ -19,7 +19,7 @@ This creates a `payment_enabled` directory with the basic structure.
 Step 2: Update .env file
 ------------------------
 
-Update the `payment_enabled/.env` file with your LLM information.
+Update the `payment_enabled/.env` file with your LLM information and NWC connection string.
 
 .. code-block:: bash
 

@@ -14,4 +14,5 @@ Unlock the full potential of the Agentstr SDK by exploring advanced strategies a
    key_concepts/commands
    key_concepts/payments
    key_concepts/mcp
+   key_concepts/nostr_metadata
    key_concepts/cookbook

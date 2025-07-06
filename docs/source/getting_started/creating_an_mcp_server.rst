@@ -17,13 +17,11 @@ This creates a `mcp_server` directory with the basic structure for your MCP serv
 Step 2: Update .env File
 ------------------------
 
-Update the `mcp_server/.env` file with your Nostr relay and server information.
+Update the `mcp_server/.env` file with your NWC connection string.
 
 .. code-block:: bash
 
-   NOSTR_RELAYS=wss://relay.damus.io,wss://relay.primal.net
-   MCP_SERVER_NSEC=your-server-private-key
-   MCP_SERVER_NWC_CONN_STR=your-nwc-connection-string
+   NWC_CONN_STR=nostr+walletconnect://<your-nwc-connection-string>
 
 Step 3: Define Your Tools
 -------------------------
