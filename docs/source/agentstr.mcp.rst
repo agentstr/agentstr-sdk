@@ -10,6 +10,18 @@ The protocol is divided into two main components:
 
 In addition, the :doc:`agentstr.mcp.providers` submodule offers integrations with popular agent frameworks, making it easy to adapt existing agents to use MCP.
 
+Environment Variables
+---------------------
+
+`NostrMCPServer` uses the following environment variables by default through its underlying `NostrClient`:
+
+- **NOSTR_RELAYS**: A comma-separated list of relay URLs to connect to. If not provided as a parameter, the client will use this environment variable.
+- **NOSTR_NSEC**: The Nostr private key in 'nsec' format for authenticated operations. If not provided as a parameter, the client will look for this environment variable.
+- **NWC_CONN_STR**: The Nostr Wallet Connect string for payment processing. If not provided as a parameter, the client will use this environment variable.
+
+.. note::
+   You can override these environment variables by passing explicit parameters to the `NostrMCPServer` constructor, such as `relays`, `private_key`, or `nwc_str`.
+
 Submodules
 ----------
 

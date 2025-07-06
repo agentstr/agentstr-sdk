@@ -4,9 +4,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import asyncio
-from agentstr import AgentstrAgent, NostrClient
+from agentstr import AgentstrAgent
 import os
 
+# Note: the NWC_CONN_STR environment variable is used by default for payment processing
+if os.getenv("NWC_CONN_STR") is None:
+    raise ValueError("NWC_CONN_STR environment variable is not set")
 
 # Define the Nostr Agent Server
 async def main():
@@ -14,7 +17,6 @@ async def main():
         name="PaymentEnabledAgent",
         description="A simple Agentstr Agent with payment processing",
         satoshis=10,  # 10 sats per message
-        nostr_client=NostrClient(nwc_str=os.getenv("NWC_CONN_STR"))
     )
     await agent.start()
 

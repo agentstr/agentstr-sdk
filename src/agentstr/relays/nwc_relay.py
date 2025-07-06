@@ -2,6 +2,8 @@ import asyncio
 import json
 import math
 import time
+import os
+from typing import Optional
 
 from bolt11.decode import decode
 from pynostr.encrypted_dm import EncryptedDirectMessage
@@ -106,20 +108,20 @@ class NWCRelay:
 
     Handles encrypted communication with wallet services over the Nostr network.
     """
-    def __init__(self, nwc_connection_string: str, relay: str | None = None):
-        """Initialize NWC client with connection string and optional relay URL.
+    def __init__(self, nwc_connection_string: Optional[str] = None):
+        """Initialize NWC client with connection string or environment variable (NWC_CONN_STR).
 
         Args:
             nwc_connection_string: NWC connection string (starts with 'nostr+walletconnect://')
-            relay: Optional relay URL override
         """
         logger.info(f"Initializing NWCRelay with connection string: {nwc_connection_string[:10]}...")
         try:
+            if nwc_connection_string is None:
+                nwc_connection_string = os.getenv("NWC_CONN_STR")
+                if nwc_connection_string is None:
+                    raise ValueError("No NWC connection string provided. Either pass variable `nwc_connection_string` or set environment variable `NWC_CONN_STR`")
             self.nwc_info = process_nwc_string(nwc_connection_string)
             logger.debug(f"NWC info: {self.nwc_info}")
-            if relay is None:
-                relay = self.nwc_info["relay"]
-            logger.debug(f"Using relay: {relay}")
             self.private_key = PrivateKey.from_hex(self.nwc_info["app_privkey"])
             logger.info("NWCRelay initialized successfully")
         except Exception as e:

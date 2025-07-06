@@ -69,7 +69,7 @@ class NostrClient:
         Args:
             relays: List of Nostr relay URLs to connect to.
             private_key: Nostr private key in 'nsec' format.
-            nwc_str: Nostr Wallet Connect string for payment processing (optional).
+            nwc_str: Nostr Wallet Connect string for payment processing (optional). If not provided, will use environment variable `NWC_CONN_STR`.
             
         Note:
             If no private key is provided, the client will operate in read-only mode.
@@ -89,21 +89,17 @@ class NostrClient:
                 self.public_key = self.private_key.public_key
                 logger.info(f"Initialized Nostr client with public key: {self.public_key.bech32()}")
             else:
-                if os.getenv("AGENT_NSEC"):
-                    logger.info(f"Using private key from environment variable: AGENT_NSEC")
-                    self.private_key = PrivateKey.from_nsec(os.getenv("AGENT_NSEC"))
-                    self.public_key = self.private_key.public_key
-                elif os.getenv("MCP_SERVER_NSEC"):
-                    logger.info(f"Using private key from environment variable: MCP_SERVER_NSEC")
-                    self.private_key = PrivateKey.from_nsec(os.getenv("MCP_SERVER_NSEC"))
+                if os.getenv("NOSTR_NSEC"):
+                    logger.info(f"Using private key from environment variable: NOSTR_NSEC")
+                    self.private_key = PrivateKey.from_nsec(os.getenv("NOSTR_NSEC"))
                     self.public_key = self.private_key.public_key
                 else:
                     self.private_key = None
                     self.public_key = None
                     logger.warning("No private key provided, Nostr client will be in read-only mode")
 
-            self.nwc_str = nwc_str
-            if nwc_str:
+            self.nwc_str = nwc_str or os.getenv("NWC_CONN_STR")
+            if self.nwc_str:
                 logger.info("Nostr Wallet Connect (NWC) is enabled")
             else:
                 logger.info("Nostr Wallet Connect (NWC) is not configured")

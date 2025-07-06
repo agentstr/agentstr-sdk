@@ -391,7 +391,7 @@ if __name__ == "__main__":
     key = PrivateKey()
     nsec = key.bech32()
     pubkey = key.public_key.bech32()
-    (project_dir / ".env").write_text(f"NOSTR_RELAYS=ws://localhost:6969\nAGENT_NSEC={nsec}\nAGENT_PUBKEY={pubkey}")
+    (project_dir / ".env").write_text(f"NOSTR_RELAYS=ws://localhost:6969\nNOSTR_NSEC={nsec}\nNOSTR_PUBKEY={pubkey}")
 
     (project_dir / ".gitignore").write_text("""# Python-generated files
 __pycache__/

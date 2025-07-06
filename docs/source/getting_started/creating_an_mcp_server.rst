@@ -23,6 +23,9 @@ Update the `mcp_server/.env` file with your NWC connection string.
 
    NWC_CONN_STR=nostr+walletconnect://<your-nwc-connection-string>
 
+.. note::
+   - `NWC_CONN_STR` is the default environment variable for `NWCRelay` to enable Nostr Wallet Connect. You can override this by passing a connection string directly to the `NostrMCPServer` constructor.
+
 Step 3: Define Your Tools
 -------------------------
 

@@ -5,7 +5,7 @@ Payments
 
 To integrate payment processing into your agent, you'll need to configure the NWC relay. Refer to :doc:`../../agentstr.relays` for setup instructions.
 
-This is integrated with the MCP server to allow for paid tools, where an agent can charge for the use of its services.
+This is integrated with the MCP server to allow for paid tools, where an agent can pay for tools and charge for the use of its services.
 
 Relevant Modules
 ----------------

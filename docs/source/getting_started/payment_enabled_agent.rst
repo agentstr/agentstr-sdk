@@ -28,6 +28,8 @@ Update the `payment_enabled/.env` file with your LLM information and NWC connect
    LLM_MODEL_NAME=gpt-3.5-turbo
    NWC_CONN_STR=nostr+walletconnect://<your-nwc-connection-string>
 
+.. note::
+   - `NWC_CONN_STR` is the default environment variable for `NWCRelay` to enable Nostr Wallet Connect. You can override this by passing a connection string directly to the `NostrClient` constructor.
 
 Step 3: Set Up Payment Integration
 ----------------------------------
