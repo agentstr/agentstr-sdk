@@ -9,10 +9,9 @@ Unlock the full potential of the Agentstr SDK by exploring advanced strategies a
 
    key_concepts/agentstr_agents
    key_concepts/agent_providers
-   key_concepts/scheduling
-   key_concepts/persistence
    key_concepts/commands
-   key_concepts/payments
    key_concepts/mcp
    key_concepts/nostr_metadata
-   key_concepts/cookbook
+   key_concepts/payments
+   key_concepts/persistence
+   key_concepts/scheduling

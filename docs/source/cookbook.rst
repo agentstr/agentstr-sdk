@@ -1,4 +1,4 @@
-Cookbook Examples
+Agentstr Cookbook
 =================
 
 The `cookbook/` directory contains practical, real-world examples that demonstrate how to use these advanced features.

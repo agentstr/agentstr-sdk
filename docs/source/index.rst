@@ -30,6 +30,7 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
    installation
    getting_started
    key_concepts
+   cookbook
    cloud_cicd
    agentstr
 

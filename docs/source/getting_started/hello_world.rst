@@ -65,8 +65,8 @@ You should see a "Hello" message from your agent, confirming that it received an
    - **No response from agent**: Ensure both the relay and agent scripts are running. Check the relay logs for connection attempts and the agent logs for any errors processing events.
    - **Test client fails to connect**: Verify the relay URL in `test_client.py` matches the one your relay is running on. The default is usually `ws://localhost:8080`.
 
-Cloud Deployment
-----------------
+Step 5 (Optional): Deploy to the Cloud
+--------------------------------------
 
 Deploy your Hello World agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
 
@@ -84,12 +84,12 @@ Deploy your Hello World agent to the cloud for continuous operation and public a
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
+For more information on cloud deployment and CI/CD, see the :doc:`../cloud_cicd` guide.
+
 Next Steps
 ----------
 
 Congratulations on setting up your first agent with the Agentstr SDK! Here are some suggestions for what to do next:
 
-- **Customize Your Agent**: Modify the `main.py` file in the `hello_world` directory to change the agent's response or add new functionality.
 - **Explore More Examples**: Check out the :doc:`simple_agent`, :doc:`tool_calling_agent`, and :doc:`payment_enabled_agent` guides for more advanced use cases.
 - **Dive into the API**: Learn more about the capabilities of the SDK by exploring the :doc:`../../agentstr` documentation.
-- **Join the Community**: Connect with other developers using Agentstr SDK on our `GitHub Discussions <https://github.com/agentstr/agentstr-sdk/discussions>`_ page for support and to share your projects.

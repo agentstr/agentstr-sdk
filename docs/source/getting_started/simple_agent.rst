@@ -73,8 +73,8 @@ You should see a response like:
 .. note::
    If you encounter issues, refer to the troubleshooting tips in the :doc:`hello_world` guide.
 
-Step 7: Cloud Deployment
-------------------------
+Step 7 (Optional): Deploy to the Cloud
+--------------------------------------
 
 Deploy your Simple Agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
 
@@ -92,8 +92,10 @@ Deploy your Simple Agent to the cloud for continuous operation and public access
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
+For more information on cloud deployment and CI/CD, see the :doc:`../cloud_cicd` guide.
+
 Next Steps
 ----------
 
-- **Explore Advanced Features**: Dive into advanced topics like :doc:`../key_concepts/scheduling` and :doc:`../key_concepts/persistence` to make your agent more robust and stateful.
-- **Explore More Examples**: Check out the :doc:`tool_calling_agent` and :doc:`payment_enabled_agent` guides for adding tool capabilities to your agent.
+- **Explore More Examples**: Check out the :doc:`tool_calling_agent` and :doc:`payment_enabled_agent` guides for adding tool and payment capabilities to your agent.
+- **Dive into the API**: Learn more about the capabilities of the SDK by exploring the :doc:`../../agentstr` documentation.

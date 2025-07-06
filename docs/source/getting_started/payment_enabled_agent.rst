@@ -78,8 +78,8 @@ You should see a lightning invoice for 10 sats. Upon payment, you should see a r
 .. note::
    If you encounter issues with the NWC connection, ensure your connection string is correct and the wallet service is accessible. Refer to troubleshooting tips in the :doc:`hello_world` guide for general connectivity issues.
 
-Step 7: Cloud Deployment
-------------------------
+Step 7 (Optional): Deploy to the Cloud
+--------------------------------------
 
 Deploy your Payment Enabled Agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
 
@@ -97,9 +97,10 @@ Deploy your Payment Enabled Agent to the cloud for continuous operation and publ
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
+For more information on cloud deployment and CI/CD, see the :doc:`../cloud_cicd` guide.
+
 Next Steps
 ----------
 
-- **Enhance Payment Logic**: Customize payment amounts, conditions, or integrate with different payment providers via Nostr Wallet Connect.
-- **Explore Persistence**: Learn how to store payment history or user data with :doc:`../key_concepts/persistence`.
-- **Explore More Examples**: Check out the :doc:`../key_concepts/cookbook` for more advanced use cases and examples.
+- **Explore More Examples**: Check out the :doc:`tool_calling_agent` guide for a more advanced use case.
+- **Dive into the API**: Learn more about the capabilities of the SDK by exploring the :doc:`../../agentstr` documentation.

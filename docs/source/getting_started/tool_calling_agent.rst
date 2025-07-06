@@ -1,5 +1,5 @@
 Tool Calling Agent
-=====================
+==================
 
 This guide will walk you through creating an agent that can call external tools using the Agentstr SDK, expanding on the concepts from the :doc:`payment_enabled_agent` example.
 
@@ -86,8 +86,8 @@ You should see a response indicating available tools or a message if none are av
    If you encounter connection issues with the MCP server, ensure the server is running and accessible. Refer to troubleshooting tips in the :doc:`hello_world` guide for general connectivity issues.
 
 
-Step 7: Cloud Deployment
-------------------------
+Step 8 (Optional): Deploy to the Cloud
+--------------------------------------
 
 Deploy your Tool Calling Agent to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
 
@@ -105,7 +105,11 @@ Deploy your Tool Calling Agent to the cloud for continuous operation and public 
 
    This command packages your agent and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
+For more information on cloud deployment and CI/CD, see the :doc:`../cloud_cicd` guide.
+
 Next Steps
 ----------
 
 - **Expand Tool Integration**: Explore more MCP tools and services to enhance your agent's capabilities. Check out :doc:`../key_concepts/mcp` for advanced integration techniques.
+- **Dive into the API**: Learn more about the capabilities of the SDK by exploring the :doc:`../../agentstr` documentation.
+- **Explore the Cookbook**: Check out the :doc:`../cookbook` for more advanced use cases and examples.

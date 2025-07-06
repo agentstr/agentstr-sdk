@@ -18,7 +18,7 @@ The Agentstr SDK provides a range of examples to help you understand and impleme
 - **Tool Calling Agent**: Demonstrates how to integrate external tools using the Model Context Protocol (MCP). This example shows how agents can access and utilize various tools for enhanced functionality. [:doc:`Learn more <getting_started/tool_calling_agent>`]
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Examples
 
    getting_started/hello_world
@@ -33,5 +33,5 @@ Next Steps
 Congratulations on exploring the getting started guides! Here's what you can do next:
 
 *   **Explore the API:** Dive into the :doc:`Core Modules <agentstr>` for in-depth API details.
-*   **See More Examples:** Check out the `Examples <https://github.com/agentstr/agentstr-sdk/tree/main/examples>`_ directory for more advanced use cases.
+*   **See More Examples:** Check out the :doc:`Agentstr Cookbook <cookbook>` for more comprehensive use cases.
 *   **Deploy to the Cloud:** Learn how to deploy your agent with our :doc:`Cloud CI/CD <cloud_cicd>` guide.

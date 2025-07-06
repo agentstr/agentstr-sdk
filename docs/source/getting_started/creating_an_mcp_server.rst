@@ -1,5 +1,5 @@
 Creating an MCP Server
-=======================
+======================
 
 This guide explains how to create and run a Model Context Protocol (MCP) server using the Agentstr SDK. MCP servers provide tools that agents can call.
 
@@ -79,8 +79,8 @@ Use the test client to interact with your MCP server and check your balance:
 
 You should see a JSON structure defining the available tools, followed by a tool call response.
 
-Step 8: Cloud Deployment
-------------------------
+Step 8 (Optional): Deploy to the Cloud
+--------------------------------------
 
 Deploy your MCP Server to the cloud for continuous operation and public accessibility. Assuming you are already logged into the Agentstr CLI, follow these steps:
 
@@ -98,6 +98,7 @@ Deploy your MCP Server to the cloud for continuous operation and public accessib
 
    This command packages your MCP server and deploys it to the specified cloud provider. Ensure your project directory structure is compatible with the deployment requirements.
 
+For more information on cloud deployment and CI/CD, see the :doc:`../cloud_cicd` guide.
 
 Next Steps
 ----------
