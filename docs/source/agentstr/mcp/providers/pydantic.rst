@@ -40,5 +40,5 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.agents.providers.pydantic` — For using PydanticAI agents with Agentstr.
+- :doc:`../../agents/providers/pydantic` — For using PydanticAI agents with Agentstr.
 - :class:`agentstr.mcp.nostr_mcp_client.NostrMCPClient` — The client used to fetch MCP tools.

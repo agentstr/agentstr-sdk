@@ -36,6 +36,6 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.agents.providers.dspy` — For using DSPy agents with Agentstr.
+- :doc:`../../agents/providers/dspy` — For using DSPy agents with Agentstr.
 - :class:`agentstr.mcp.nostr_mcp_client.NostrMCPClient` — The client used to fetch MCP tools.
 

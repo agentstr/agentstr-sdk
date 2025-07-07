@@ -42,5 +42,5 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.agents.providers.openai` — For using OpenAI agents with Agentstr.
+- :doc:`../../agents/providers/openai` — For using OpenAI agents with Agentstr.
 - :class:`agentstr.mcp.nostr_mcp_client.NostrMCPClient` — The client used to fetch MCP tools.
