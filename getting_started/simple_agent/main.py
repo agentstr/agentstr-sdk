@@ -7,11 +7,12 @@ import asyncio
 from agentstr import AgentstrAgent
 
 
-# Define the Nostr Agent Server
+# Define the Agent
 async def main():
     agent = AgentstrAgent(
         name="SimpleAgent",
         description="A simple Agentstr Agent",
+        prompt="You are a helpful assistant.",
     )
     await agent.start()
 

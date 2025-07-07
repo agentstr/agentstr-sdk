@@ -1,4 +1,5 @@
 import os
+from typing import Callable
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from agentstr.agents.providers.langgraph import langgraph_chat_generator
@@ -7,7 +8,7 @@ from agentstr.mcp.nostr_mcp_client import NostrMCPClient
 from agentstr.nostr_client import NostrClient
 from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.agents.nostr_agent_server import NostrAgentServer
-from agentstr.models import AgentCard, Metadata
+from agentstr.models import AgentCard, ChatInput, ChatOutput, Metadata
 from agentstr.database import BaseDatabase, Database
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
@@ -39,7 +40,11 @@ class AgentstrAgent:
                  agent_card: AgentCard = None,
                  nostr_metadata: Metadata | None = None,
                  database: BaseDatabase | None = None,
-                 checkpointer: AsyncPostgresSaver | AsyncSqliteSaver | None = None):
+                 checkpointer: AsyncPostgresSaver | AsyncSqliteSaver | None = None,
+                 llm_model_name: str | None = None,
+                 llm_base_url: str | None = None,
+                 llm_api_key: str | None = None,
+                 agent_callable: Callable[[ChatInput], ChatOutput | str] | None = None):
         """Initializes the AgentstrAgent.
 
         Args:
@@ -54,8 +59,11 @@ class AgentstrAgent:
             nostr_metadata: Metadata for the agent's nostr profile.
             database: The database for state persistence.
             checkpointer: The checkpointer for saving agent state.
+            llm_model_name: The name of the language model to use (or use environment variable LLM_MODEL_NAME).
+            llm_base_url: The base URL for the language model (or use environment variable LLM_BASE_URL).
+            llm_api_key: The API key for the language model (or use environment variable LLM_API_KEY).
+            agent_callable: A callable for non-streaming responses (overrides default LLM response).
         """
-        self._check_env_vars()
         self.nostr_client = nostr_client or NostrClient()
         self.nostr_mcp_clients = nostr_mcp_clients.copy() if nostr_mcp_clients else []
         for mcp_pubkey in nostr_mcp_pubkeys:
@@ -69,16 +77,22 @@ class AgentstrAgent:
         self.name = name
         self.description = description
         self.satoshis = satoshis
+        self.llm_model_name = llm_model_name or os.getenv("LLM_MODEL_NAME")
+        self.llm_base_url = llm_base_url or os.getenv("LLM_BASE_URL")
+        self.llm_api_key = llm_api_key or os.getenv("LLM_API_KEY")
+        self.agent_callable = agent_callable
+        if self.agent_callable is None:
+            # Require LLM
+            self._check_llm_vars()
 
-    def _check_env_vars(self):
+    def _check_llm_vars(self):
         """Checks for required environment variables."""
-        if os.getenv("LLM_BASE_URL") is None:
-            raise ValueError("LLM_BASE_URL is not set")
-        if os.getenv("LLM_API_KEY") is None:
-            raise ValueError("LLM_API_KEY is not set")
-        if os.getenv("LLM_MODEL_NAME") is None:
+        if self.llm_model_name is None:
             raise ValueError("LLM_MODEL_NAME is not set")
-        
+        if self.llm_base_url is None:
+            raise ValueError("LLM_BASE_URL is not set")
+        if self.llm_api_key is None:
+            raise ValueError("LLM_API_KEY is not set")        
 
     @property
     def checkpointer(self):
@@ -106,18 +120,22 @@ class AgentstrAgent:
 
         await checkpointer.setup()
 
-        # Create react agent
-        agent = create_react_agent(
-            model=ChatOpenAI(temperature=0,
-                            base_url=os.getenv("LLM_BASE_URL"),
-                            api_key=os.getenv("LLM_API_KEY"),
-                            model_name=os.getenv("LLM_MODEL_NAME")),
-            tools=all_tools,
-            prompt=self.prompt,
-            checkpointer=checkpointer,
-        )
+        if self.agent_callable is not None:
+            # Create dummy agent
+            chat_generator = None
+        else:            
+            # Create react agent
+            agent = create_react_agent(
+                model=ChatOpenAI(temperature=0,
+                                base_url=self.llm_base_url,
+                                api_key=self.llm_api_key,
+                                model_name=self.llm_model_name),
+                tools=all_tools,
+                prompt=self.prompt,
+                checkpointer=checkpointer,
+            )
 
-        chat_generator = langgraph_chat_generator(agent, self.nostr_mcp_clients)
+            chat_generator = langgraph_chat_generator(agent, self.nostr_mcp_clients)
 
         # Create Nostr Agent
         nostr_agent = NostrAgent(
@@ -127,6 +145,7 @@ class AgentstrAgent:
                 skills=all_skills, 
                 satoshis=self.satoshis),
             chat_generator=chat_generator,
+            agent_callable=self.agent_callable,
             nostr_metadata=self.nostr_metadata)
 
         # Create Nostr Agent Server

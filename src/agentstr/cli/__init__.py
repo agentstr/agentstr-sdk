@@ -355,27 +355,23 @@ def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
 import asyncio
-from agentstr import AgentCard, NostrAgent, NostrAgentServer, ChatInput
+from agentstr import AgentstrAgent, ChatInput
+
 
 # Define an agent callable
 async def hello_world_agent(chat: ChatInput) -> str:
     return f"Hello {chat.user_id}!"
 
-# Define the Nostr Agent
-nostr_agent = NostrAgent(
-    agent_card=AgentCard(
-        name="HelloWorldAgent", 
-        description="A minimal example that greets users.", 
-    ),
-    agent_callable=hello_world_agent
-)
 
-# Define the Nostr Agent Server
+# Define the Agent
 async def main():
-    server = NostrAgentServer(nostr_agent)
-    await server.start()
+    agent = AgentstrAgent(
+        name="HelloWorldAgent",
+        description="A minimal example that greets users.",
+        agent_callable=hello_world_agent,
+    )
+    await agent.start()
 
 
 # Run the server
@@ -391,7 +387,14 @@ if __name__ == "__main__":
     key = PrivateKey()
     nsec = key.bech32()
     pubkey = key.public_key.bech32()
-    (project_dir / ".env").write_text(f"NOSTR_RELAYS=ws://localhost:6969\nNOSTR_NSEC={nsec}\nNOSTR_PUBKEY={pubkey}")
+    (project_dir / ".env").write_text(f"""NOSTR_RELAYS=ws://localhost:6969
+NOSTR_NSEC={nsec}
+NOSTR_PUBKEY={pubkey}
+NWC_CONN_STR=
+LLM_MODEL_NAME=
+LLM_BASE_URL=
+LLM_API_KEY=
+""")
 
     (project_dir / ".gitignore").write_text("""# Python-generated files
 __pycache__/
