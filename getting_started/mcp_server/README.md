@@ -1,6 +1,6 @@
-# Agentstr Agent Skeleton
+# Agentstr MCP Server Example
 
-This is a minimal example of an Agentstr agent that greets users.
+This example demonstrates how to create and run a Model Context Protocol (MCP) server using the Agentstr SDK. MCP servers provide tools that agents can call to enhance their functionality.
 
 #### To run it, first install the dependencies:
 
@@ -14,6 +14,10 @@ This is a minimal example of an Agentstr agent that greets users.
 
 `python main.py`
 
-#### You can now test the agent with the test_client.py script:
+#### You can now test the MCP server with the test_client.py script:
 
 `python test_client.py`
+
+#### Learn More:
+
+For a comprehensive guide on creating and deploying an MCP server, visit the [Creating an MCP Server Guide](https://docs.agentstr.com/getting_started/creating_an_mcp_server.html) in the Agentstr documentation.
