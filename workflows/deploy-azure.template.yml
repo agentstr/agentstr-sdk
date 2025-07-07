@@ -11,6 +11,10 @@ on:
       - "configs/azure.yml"
       - ".github/workflows/deploy-azure.yml"
 
+env: 
+  AGENTSTR_PROVIDER: azure
+  AGENTSTR_CONFIG: configs/azure.yml  # Change this to your config file
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

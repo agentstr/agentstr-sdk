@@ -11,6 +11,10 @@ on:
       - "configs/gcp.yml"
       - ".github/workflows/deploy-gcp.yml"
 
+env: 
+  AGENTSTR_PROVIDER: gcp
+  AGENTSTR_CONFIG: configs/gcp.yml  # Change this to your config file
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

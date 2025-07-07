@@ -130,33 +130,33 @@ To get started, copy one of the following workflow files into the ``.github/work
      - Workflow File
      - Description
    * - AWS
-     - `deploy-aws.yml <https://github.com/agentstr/agentstr-sdk/blob/main/.github/workflows/deploy-aws.yml>`_
+     - `deploy-aws.yml <https://github.com/agentstr/agentstr-sdk/blob/main/workflows/deploy-aws.template.yml>`_
      - Authenticates with AWS and runs ``agentstr deploy``.
    * - GCP
-     - `deploy-gcp.yml <https://github.com/agentstr/agentstr-sdk/blob/main/.github/workflows/deploy-gcp.yml>`_
+     - `deploy-gcp.yml <https://github.com/agentstr/agentstr-sdk/blob/main/workflows/deploy-gcp.template.yml>`_
      - Authenticates with a GCP service account and runs ``agentstr deploy``.
    * - Azure
-     - `deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/main/.github/workflows/deploy-azure.yml>`_
+     - `deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/main/workflows/deploy-azure.template.yml>`_
      - Logs in with the Azure CLI and runs ``agentstr deploy``.
 
 **Workflow Examples**
 
-For reference, here are the contents of the workflow files.
+For reference, here are the contents of the workflow files. Make sure to update the `AGENTSTR_CONFIG` environment variable to point to your Agentstr configuration file.
 
 **AWS**
 
-.. literalinclude:: ../../.github/workflows/deploy-aws.yml
+.. literalinclude:: ../../workflows/deploy-aws.template.yml
    :language: yaml
    :linenos:
 
 **GCP**
 
-.. literalinclude:: ../../.github/workflows/deploy-gcp.yml
+.. literalinclude:: ../../workflows/deploy-gcp.template.yml
    :language: yaml
    :linenos:
 
 **Azure**
 
-.. literalinclude:: ../../.github/workflows/deploy-azure.yml
+.. literalinclude:: ../../workflows/deploy-azure.template.yml
    :language: yaml
    :linenos:

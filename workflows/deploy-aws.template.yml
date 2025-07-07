@@ -12,6 +12,10 @@ on:
       - "configs/aws.yml"
       - ".github/workflows/deploy-aws.yml"
 
+env: 
+  AGENTSTR_PROVIDER: aws
+  AGENTSTR_CONFIG: configs/aws.yml  # Change this to your config file
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
