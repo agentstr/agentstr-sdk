@@ -1,7 +1,7 @@
 Agno MCP Provider
 ====================
 
-This module provides integration with `Agno <https://github.com/agnoauth/agno>`_ tools, allowing conversion between MCP tools and Agno's function format.
+This module provides integration with `Agno <https://github.com/agno-agi/agno>`_ tools, allowing conversion between MCP tools and Agno's function format.
 
 Overview
 --------

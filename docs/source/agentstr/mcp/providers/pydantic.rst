@@ -1,7 +1,7 @@
 PydanticAI MCP Provider
 =======================
 
-This module provides integration with `PydanticAI <https://github.com/pydantic/pydantic-ai>`_, enabling conversion between MCP tools and PydanticAI's tool format.
+This module provides integration with `PydanticAI <https://ai.pydantic.dev/>`_, enabling conversion between MCP tools and PydanticAI's tool format.
 
 Overview
 --------

@@ -1,7 +1,7 @@
 Google MCP Provider
-======================
+====================
 
-This module provides integration with Google's agent development tools, allowing for the use of MCP-defined tools within Google's ecosystem (e.g., with Gemini).
+This module provides integration with the `Google ADK <https://google.github.io/adk-docs/>`_, allowing for the use of MCP-defined tools within Google's ecosystem (e.g., with Gemini).
 
 Overview
 --------

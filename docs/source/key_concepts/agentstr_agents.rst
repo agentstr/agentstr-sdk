@@ -23,7 +23,7 @@ Understanding AgentstrAgent
 
 `AgentstrAgent` is designed as a comprehensive, out-of-the-box solution. It encapsulates core functionalities like message handling, relay connections, and basic agent logic, allowing developers to focus on customizing agent behavior rather than building from scratch. This high-level abstraction is perfect for rapid prototyping or for developers new to the Nostr ecosystem.
 
-For more information on using `AgentstrAgent`, refer to :doc:`../../agentstr.agents.agentstr`.
+For more information on using `AgentstrAgent`, refer to :doc:`../../agentstr/agents/agentstr`.
 
 Using Custom Agentic Frameworks
 -------------------------------
@@ -55,4 +55,4 @@ This snippet demonstrates how `AgentstrAgent` can be instantiated and started wi
 Relevant Modules
 ----------------
 
-*   :doc:`../../agentstr.agents.agentstr`
+*   :doc:`../../agentstr/agents/agentstr`

@@ -16,9 +16,9 @@ Here’s how you can use it:
     scheduler.add_interval_job(my_periodic_task, seconds=10)
     scheduler.start()
 
-For more information on scheduling and managing tasks, refer to :doc:`../../agentstr.scheduler`.
+For more information on scheduling and managing tasks, refer to :doc:`../../agentstr/scheduler`.
 
 Relevant Modules
 ----------------
 
-*   :doc:`../../agentstr.scheduler`
+*   :doc:`../../agentstr/scheduler`

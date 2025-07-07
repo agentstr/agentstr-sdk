@@ -21,10 +21,10 @@ Check out :doc:`../../cloud_cicd` for more information on how to deploy your Age
 
 The :class:`~agentstr.models.Message` class provides an interface for storing and retrieving conversation histories, which is essential for context-aware agents.
 
-For more information on database configurations and advanced persistence options, refer to :doc:`../../agentstr.database`.
+For more information on database configurations and advanced persistence options, refer to :doc:`../../agentstr/database`.
 
 Relevant Modules
 ----------------
 
-*   :doc:`../../agentstr.database`
+*   :doc:`../../agentstr/database`
 *   :class:`~agentstr.models.Message`

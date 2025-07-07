@@ -1,7 +1,7 @@
 LangGraph MCP Provider
 =========================
 
-This module provides integration with `LangGraph <https://python.langchain.com/docs/langgraph>`_, allowing conversion between MCP tools and LangGraph's tool format.
+This module provides integration with `LangGraph <https://www.langchain.com/langgraph>`_, allowing conversion between MCP tools and LangGraph's tool format.
 
 Overview
 --------
@@ -40,5 +40,5 @@ Reference
 
 See Also
 --------
-- :doc:`../../agentstr.agents.providers.langgraph` — For using LangGraph agents with Agentstr.
+- :doc:`../../agentstr/agents/providers/langgraph` — For using LangGraph agents with Agentstr.
 - :class:`agentstr.mcp.nostr_mcp_client.NostrMCPClient` — The client used to fetch MCP tools.

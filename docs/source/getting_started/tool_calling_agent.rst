@@ -30,7 +30,7 @@ Update the `tool_calling_agent/.env` file with your LLM information and NWC conn
 .. note::
    - `NWC_CONN_STR` is the default environment variable for `NWCRelay` to enable Nostr Wallet Connect. You can override this by passing a connection string directly to the `NostrClient` constructor.
    - `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL_NAME` are the default environment variables for `AgentstrAgent` to enable LLM integration. You can override these by passing a connection string directly to the `AgentstrAgent` constructor.
-   - Replace `<your-mcp-server-key>` with the actual public key of a Nostr MCP server you have access to. If you're testing locally, ensure an MCP server is set up as described in the :doc:`../../agentstr.mcp.nostr_mcp_server` documentation.
+   - Replace `<your-mcp-server-key>` with the actual public key of a Nostr MCP server you have access to. If you're testing locally, ensure an MCP server is set up as described in the :doc:`../../agentstr/mcp/nostr_mcp_server` documentation.
    - You can follow the :doc:`creating_an_mcp_server` guide to set up Nostr MCP server.
    
 Step 3: Define Tools for Your Agent

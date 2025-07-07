@@ -1,7 +1,7 @@
 OpenAI MCP Provider
 ======================
 
-This module provides integration with `OpenAI's <https://openai.com/>`_ tools, enabling conversion between MCP tools and OpenAI's tool format.
+This module provides integration with `OpenAI Agents SDK <https://openai.github.io/openai-agents-python/>`_, enabling conversion between MCP tools and OpenAI's tool format.
 
 Overview
 --------
