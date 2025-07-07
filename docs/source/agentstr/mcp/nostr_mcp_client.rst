@@ -42,4 +42,4 @@ Reference
 See Also
 --------
 - :class:`agentstr.mcp.nostr_mcp_server.NostrMCPServer` — The server-side implementation of the MCP protocol.
-- :doc:`agentstr.mcp.providers` — For integrations with specific agent frameworks.
+- :doc:`providers` — For integrations with specific agent frameworks.

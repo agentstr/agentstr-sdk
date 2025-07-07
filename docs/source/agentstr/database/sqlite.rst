@@ -39,5 +39,5 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.database.base` — for the abstract base class.
-- :doc:`agentstr.database.postgres` — for the PostgreSQL implementation.
+- :doc:`base` — for the abstract base class.
+- :doc:`postgres` — for the PostgreSQL implementation.

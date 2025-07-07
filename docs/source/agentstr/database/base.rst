@@ -23,5 +23,5 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.database.sqlite` — for the SQLite implementation.
-- :doc:`agentstr.database.postgres` — for the PostgreSQL implementation.
+- :doc:`sqlite` — for the SQLite implementation.
+- :doc:`postgres` — for the PostgreSQL implementation.

@@ -48,4 +48,4 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.mcp.providers.pydantic` — For converting MCP tools to the PydanticAI format.
+- :doc:`../../mcp/providers/pydantic` — For converting MCP tools to the PydanticAI format.

@@ -67,5 +67,4 @@ Reference
 
 See Also
 --------
-- :doc:`../../agentstr/agents` — for agent adapters overview.
-- :doc:`../../agentstr/mcp/providers/langgraph` — for LangGraph MCP integration.
+- :doc:`../../mcp/providers/langgraph` — for LangGraph MCP integration.

@@ -53,4 +53,4 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.mcp.providers.openai` — For converting MCP tools to the OpenAI format.
+- :doc:`../../mcp/providers/openai` — For converting MCP tools to the OpenAI format.

@@ -47,4 +47,4 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.mcp.providers.google` — For converting MCP tools to the Google format.
+- :doc:`../../mcp/providers/google` — For converting MCP tools to the Google format.

@@ -43,5 +43,5 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.database.base` — for the abstract base class.
-- :doc:`agentstr.database.sqlite` — for the SQLite implementation.
+- :doc:`base` — for the abstract base class.
+- :doc:`sqlite` — for the SQLite implementation.

@@ -30,8 +30,8 @@ Commands
    # Create a new agent project
    agentstr init my-new-agent
 
-   # Deploy an agent to the cloud
-   agentstr deploy my-new-agent/main.py --provider aws --name my-first-agent
+   # Deploy the agent to the cloud
+   agentstr deploy -f my-new-agent/config.yaml
 
 Reference
 ---------

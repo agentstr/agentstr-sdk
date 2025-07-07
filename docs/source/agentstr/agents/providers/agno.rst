@@ -43,4 +43,4 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.mcp.providers.agno` — For converting MCP tools to the Agno format.
+- :doc:`../../mcp/providers/agno` — For converting MCP tools to the Agno format.

@@ -50,4 +50,4 @@ Reference
 
 See Also
 --------
-- :doc:`agentstr.mcp.providers.dspy` — For converting MCP tools to the DSPy format.
+- :doc:`../../mcp/providers/dspy` — For converting MCP tools to the DSPy format.
