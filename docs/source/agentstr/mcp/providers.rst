@@ -7,9 +7,9 @@ The ``agentstr.mcp.providers`` submodule contains provider integrations for MCP 
    :maxdepth: 1
    :caption: Available Providers
 
-   agentstr.mcp.providers.agno
-   agentstr.mcp.providers.dspy
-   agentstr.mcp.providers.google
-   agentstr.mcp.providers.langgraph
-   agentstr.mcp.providers.openai
-   agentstr.mcp.providers.pydantic
+   providers/agno
+   providers/dspy
+   providers/google
+   providers/langgraph
+   providers/openai
+   providers/pydantic

@@ -85,13 +85,6 @@ Usage Example
    # Start the agent (typically done through NostrAgentServer)
    print(f"Agent initialized with public key: {nostr_agent.public_key.bech32()}")
 
-Next Steps
-----------
-
-- **Run Your Agent**: Learn how to run an agent with the high-level `AgentstrAgent` class in the :doc:`../../getting_started/simple_agent` guide.
-- **Enable Payments**: Add payment processing to your agent in the :doc:`../../getting_started/payment_enabled_agent` guide.
-- **Discoverability**: Enhance your agent's visibility with metadata in the :doc:`../../key_concepts/nostr_metadata` guide.
-
 Reference
 ---------
 
@@ -99,3 +92,9 @@ Reference
    :members:
    :undoc-members:
    :show-inheritance:
+
+See Also
+--------
+- :doc:`../../getting_started/simple_agent` — for running an agent with the high-level `AgentstrAgent` class.
+- :doc:`../../getting_started/payment_enabled_agent` — for adding payment processing to your agent.
+- :doc:`../../key_concepts/nostr_metadata` — for enhancing your agent's visibility with metadata.

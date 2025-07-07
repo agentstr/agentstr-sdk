@@ -13,8 +13,8 @@ The package offers a simple factory that selects the appropriate backend based o
    :maxdepth: 1
    :caption: Database API
 
-   agentstr.database.base
-   agentstr.database.sqlite
-   agentstr.database.postgres
+   database/base
+   database/sqlite
+   database/postgres
 
 

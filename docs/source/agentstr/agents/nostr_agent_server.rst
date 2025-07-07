@@ -39,5 +39,6 @@ Reference
 
 See Also
 --------
+- :class:`agentstr.agents.agentstr.AgentstrAgent` — for a high-level interface to run an agent on Nostr.
 - :class:`agentstr.agents.nostr_agent.NostrAgent` — for adapting an agent to the Nostr protocol.
-- :doc:`../agents` — for an overview of all agent functionality within the Agentstr SDK.
+- :doc:`../agents` — for an overview of all agent adapters.

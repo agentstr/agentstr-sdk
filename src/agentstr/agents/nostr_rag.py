@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Literal
 
 from pynostr.event import Event
@@ -83,8 +84,12 @@ class NostrRAG:
         self.vector_store = vector_store or InMemoryVectorStore(self.embeddings)
         self.known_authors = known_authors or []
         self.known_authors_name_to_pubkey = {author.name: author.pubkey for author in self.known_authors}
+        if llm is None and llm_model_name is not None:
+            llm_model_name = os.getenv("LLM_MODEL_NAME")
+            llm_base_url = os.getenv("LLM_BASE_URL")
+            llm_api_key = os.getenv("LLM_API_KEY")
         if llm is None and llm_model_name is None:
-            raise ValueError("llm or llm_model_name must be provided")
+            raise ValueError("llm or llm_model_name must be provided (or set environment variables)")
         self.llm = llm or ChatOpenAI(model_name=llm_model_name, base_url=llm_base_url, api_key=llm_api_key, temperature=0)
 
     async def _select_author(self, question: str) -> tuple[str, str]:

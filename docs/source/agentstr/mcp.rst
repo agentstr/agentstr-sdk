@@ -28,10 +28,10 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
-   agentstr.mcp.nostr_mcp_client
-   agentstr.mcp.nostr_mcp_server
+   mcp/nostr_mcp_client
+   mcp/nostr_mcp_server
 
 .. toctree::
    :maxdepth: 2
 
-   agentstr.mcp.providers
+   mcp/providers

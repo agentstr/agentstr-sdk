@@ -7,6 +7,6 @@ The ``agentstr.relays`` module contains classes and utilities for interacting wi
    :maxdepth: 1
    :caption: Relay Submodules
 
-   agentstr.relays.nwc_relay
-   agentstr.relays.relay
-   agentstr.relays.relay_manager
+   relays/nwc_relay
+   relays/relay
+   relays/relay_manager

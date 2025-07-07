@@ -49,6 +49,8 @@ Reference
 
 See Also
 --------
+- :doc:`../../getting_started/simple_agent` — for a basic example.
+- :class:`~agentstr.agents.agentstr.AgentstrAgent` — The high-level agent class.
 - :class:`~agentstr.agents.nostr_agent.NostrAgent` — The underlying agent class.
 - :class:`~agentstr.agents.nostr_agent_server.NostrAgentServer` — The server that hosts the agent.
 - :doc:`../agents` — for an overview of all agent functionality within the Agentstr SDK.

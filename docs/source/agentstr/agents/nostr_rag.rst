@@ -44,4 +44,5 @@ Reference
 
 See Also
 --------
-- :class:`agentstr.database.base.NostrDB` — for the base class for Nostr databases.
+- :class:`agentstr.agents.nostr_rag.NostrRAG` — for the base class of Nostr RAG.
+- :doc:`../../getting_started/nostr_rag` — for a basic example.
