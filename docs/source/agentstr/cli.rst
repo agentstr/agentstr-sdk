@@ -55,7 +55,7 @@ Reference
    :nested: full
 
 .. click:: agentstr.cli:relay
-   :prog: agentstr relay start
+   :prog: agentstr relay
    :nested: full
 
 
