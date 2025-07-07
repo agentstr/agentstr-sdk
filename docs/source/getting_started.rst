@@ -18,7 +18,7 @@ The Agentstr SDK provides a range of examples to help you understand and impleme
 - **Payment Enabled Agent**: Guides you through setting up an agent capable of handling payments with Nostr Wallet Connect (NWC). Learn to integrate payment processing into your agent's interactions. [:doc:`Learn more <getting_started/payment_enabled_agent>`]
 - **Creating an MCP Server**: Learn how to create your own MCP server to provide tools for your agents. [:doc:`Learn more <getting_started/creating_an_mcp_server>`]
 - **Tool Calling Agent**: Demonstrates how to integrate external tools using the Model Context Protocol (MCP). This example shows how agents can access and utilize various tools for enhanced functionality. [:doc:`Learn more <getting_started/tool_calling_agent>`]
-- **Custom Framework Agent**: Learn how to create a custom framework agent. [:doc:`Learn more <getting_started/custom_framework_agent>`]
+- **Custom Framework Agent**: Learn how to create a custom framework agent. This example uses the Google ADK, but you can use any agentic framework you want. [:doc:`Learn more <getting_started/custom_framework_agent>`]
 
 .. toctree::
    :maxdepth: 2
