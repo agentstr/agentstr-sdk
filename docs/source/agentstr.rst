@@ -10,10 +10,10 @@ The Agentstr SDK provides a powerful, modular architecture for building intellig
    agentstr/agents
    agentstr/cli
    agentstr/commands
+   agentstr/models
    agentstr/database
    agentstr/logger
    agentstr/mcp
-   agentstr/models
    agentstr/nostr_client
    agentstr/relays
    agentstr/scheduler

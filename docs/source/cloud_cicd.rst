@@ -115,6 +115,9 @@ To tear down a deployment and delete all associated resources, use the ``destroy
 
    agentstr destroy -f path/to/config.yaml
 
+.. note::
+   For more information on the CLI commands, see the :doc:`agentstr/cli` module.
+
 CI/CD with GitHub Actions
 -------------------------
 

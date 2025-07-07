@@ -1,5 +1,5 @@
-Command-Line Interface
-======================
+Agentstr CLI
+============
 
 The ``agentstr.cli`` module provides a command-line interface (CLI) for managing and running Agentstr services, primarily for deploying agents to cloud providers.
 
