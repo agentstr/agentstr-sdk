@@ -3,7 +3,7 @@ Agentstr Agent
 
 The ``AgentstrAgent`` is a high-level class for streamlining agent creation on Nostr. It simplifies agent deployment with out-of-the-box support for state persistence, streaming payments, and human-in-the-loop capabilities, all with zero configuration required.
 
-See :doc:`getting_started/simple_agent` for a basic example.
+See :doc:`../../getting_started/simple_agent` for a basic example.
 
 Overview
 --------
@@ -51,4 +51,4 @@ See Also
 --------
 - :class:`~agentstr.agents.nostr_agent.NostrAgent` — The underlying agent class.
 - :class:`~agentstr.agents.nostr_agent_server.NostrAgentServer` — The server that hosts the agent.
-- :doc:`agentstr.agents` — for an overview of all agent adapters.
+- :doc:`../agents` — for an overview of all agent functionality within the Agentstr SDK.

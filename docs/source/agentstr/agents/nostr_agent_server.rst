@@ -40,4 +40,4 @@ Reference
 See Also
 --------
 - :class:`agentstr.agents.nostr_agent.NostrAgent` — for adapting an agent to the Nostr protocol.
-- :doc:`agentstr.agents` — for an overview of all agent adapters.
+- :doc:`../agents` — for an overview of all agent functionality within the Agentstr SDK.

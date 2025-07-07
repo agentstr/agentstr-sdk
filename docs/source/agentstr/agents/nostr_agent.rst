@@ -88,9 +88,9 @@ Usage Example
 Next Steps
 ----------
 
-- **Run Your Agent**: Learn how to run an agent with `NostrAgentServer` in the :doc:`../getting_started/simple_agent` guide.
-- **Enable Payments**: Add payment processing to your agent in the :doc:`../getting_started/payment_enabled_agent` guide.
-- **Discoverability**: Enhance your agent's visibility with metadata in the :doc:`../key_concepts/nostr_metadata` guide.
+- **Run Your Agent**: Learn how to run an agent with the high-level `AgentstrAgent` class in the :doc:`../../getting_started/simple_agent` guide.
+- **Enable Payments**: Add payment processing to your agent in the :doc:`../../getting_started/payment_enabled_agent` guide.
+- **Discoverability**: Enhance your agent's visibility with metadata in the :doc:`../../key_concepts/nostr_metadata` guide.
 
 Reference
 ---------
