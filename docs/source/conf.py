@@ -31,6 +31,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_click",
 ]
 
 autodoc_default_options = {

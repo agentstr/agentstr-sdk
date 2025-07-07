@@ -16,9 +16,7 @@ Commands
 - ``agentstr list``: Lists active deployments.
 - ``agentstr logs <name>``: Fetches logs for a specific deployment.
 - ``agentstr destroy <name>``: Removes a deployment and its resources.
-- ``agentstr put-secret <key> <value>``: Stores a single secret in the provider's secret manager.
-- ``agentstr put-secrets <env_file>``: Stores multiple secrets from a ``.env`` file.
-- ``agentstr relay run``: Runs a local Nostr relay for development purposes.
+- ``agentstr relay start``: Runs a local Nostr relay for development purposes.
 
 **Typical usage:**
 
@@ -36,10 +34,30 @@ Commands
 Reference
 ---------
 
-.. automodule:: agentstr.cli
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. click:: agentstr.cli:init_cmd
+   :prog: agentstr init
+   :nested: full
+
+.. click:: agentstr.cli:deploy
+   :prog: agentstr deploy
+   :nested: full
+
+.. click:: agentstr.cli:list_cmd
+   :prog: agentstr list
+   :nested: full
+
+.. click:: agentstr.cli:logs
+   :prog: agentstr logs
+   :nested: full
+
+.. click:: agentstr.cli:destroy
+   :prog: agentstr destroy
+   :nested: full
+
+.. click:: agentstr.cli:relay
+   :prog: agentstr relay start
+   :nested: full
+
 
 See Also
 --------

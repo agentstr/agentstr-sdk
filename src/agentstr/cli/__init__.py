@@ -319,13 +319,10 @@ def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
 
     The generated template includes a minimal `main.py` that starts an in-memory
     agent with echo behaviour plus a `requirements.txt` file.  This aims to make
-    the :doc:`getting_started` guide work out-of-the-box::
+    the :doc:`../getting_started` guide work out-of-the-box::
 
         agentstr init my_agent
-        cd my_agent
-        python -m venv .venv && source .venv/bin/activate
-        pip install -r requirements.txt
-        python main.py
+        python my_agent/main.py
     """
     from textwrap import dedent
 
