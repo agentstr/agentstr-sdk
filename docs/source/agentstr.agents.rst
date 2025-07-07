@@ -9,10 +9,10 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   agentstr.agents.agentstr
    agentstr.agents.nostr_agent
    agentstr.agents.nostr_agent_server
    agentstr.agents.nostr_rag
-   agentstr.agents.agentstr
 
 .. toctree::
    :maxdepth: 2

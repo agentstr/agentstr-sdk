@@ -102,9 +102,3 @@ Benefits
 - **Discoverability**: Metadata makes your agent or MCP server more discoverable on the Nostr network by providing descriptive information.
 - **User Trust**: Including verification details (like NIP-05) or payment addresses (like lud16) can build trust with users.
 - **Branding**: Use profile pictures, banners, and display names to create a consistent identity for your services.
-
-Next Steps
-----------
-
-- **Explore Agent Customization**: Learn more about building agents in the :doc:`../getting_started/simple_agent` guide.
-- **Create MCP Tools**: See the :doc:`../getting_started/creating_an_mcp_server` guide for creating tools with MCP servers.

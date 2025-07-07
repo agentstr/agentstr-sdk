@@ -1,7 +1,16 @@
 Persistence
 ===========
 
-`agentstr` supports persistence for storing user data and message history. This is handled by the :class:`~agentstr.database.database.Database` class, which provides an abstraction over different database backends.
+Agentstr supports persistence for storing user data and message history. This is handled by the :class:`~agentstr.database.database.Database` class, which provides an abstraction over different database backends.
+
+These features are enabled by default for all Agentstr agents.
+
+Environments
+------------
+
+When running Agentstr SDK locally, SQLite is used by default. For production environments, Postgres is recommended and can be configured automatically in the configuration file when running **agentstr deploy**.
+
+Check out :doc:`../../cloud_cicd` for more information on how to deploy your Agentstr agent to the cloud.
 
 **Supported Backends:**
 

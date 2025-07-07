@@ -39,6 +39,9 @@ Here is an example of a complete configuration file:
    # Name for your deployment/service (optional)
    name: my-awesome-agent
 
+   # Database (optional but recommended for production)
+   database: true
+
    # Resource allocation (optional)
    cpu: 256          # CPU units (AWS/Azure) or cores (GCP)
    memory: 512       # Memory in MiB

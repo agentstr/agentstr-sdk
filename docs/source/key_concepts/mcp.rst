@@ -23,7 +23,7 @@ Available MCP Providers
 *   :doc:`../../agentstr.mcp.providers.openai`
 *   :doc:`../../agentstr.mcp.providers.pydantic`
 
-Check out the :doc:`../../getting_started/creating_an_mcp_server` for more information on how to create an MCP server.
+Check out the :doc:`../../getting_started/creating_an_mcp_server` for a getting started guide on how to create an MCP server.
 
 Relevant Modules
 ----------------

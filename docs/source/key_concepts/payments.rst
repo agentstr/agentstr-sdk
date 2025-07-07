@@ -7,6 +7,12 @@ To integrate payment processing into your agent, you'll need to configure the NW
 
 Payments are also integrated with Nostr MCP servers to enable paid tools, allowing agents to pay for premium services and fairly charge the cost back to the user.
 
+Next Steps
+----------
+
+- **Enable Payments in Agents**: Learn how to integrate NWC with agents in the :doc:`../getting_started/payment_enabled_agent` guide.
+- **Paid Tools with MCP**: See how to use NWC for paid tools in MCP servers in the :doc:`../getting_started/creating_an_mcp_server` guide.
+
 Relevant Modules
 ----------------
 
