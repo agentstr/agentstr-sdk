@@ -17,6 +17,7 @@ Commands
 - ``agentstr logs <name>``: Fetches logs for a specific deployment.
 - ``agentstr destroy <name>``: Removes a deployment and its resources.
 - ``agentstr relay start``: Runs a local Nostr relay for development purposes.
+- ``agentstr put_secret <key> [value]``: Creates or updates a secret in the cloud provider.
 
 **Typical usage:**
 
@@ -25,39 +26,33 @@ Commands
    # Get help on all commands
    agentstr --help
 
+   # Choose Cloud provider
+   export AGENTSTR_PROVIDER=aws # or gcp, azure
+
    # Create a new agent project
    agentstr init my-new-agent
 
    # Deploy the agent to the cloud
-   agentstr deploy -f my-new-agent/config.yaml
+   agentstr deploy -f my-new-agent/deploy.yml
+
+   # List active deployments
+   agentstr list
+
+   # View logs for the deployment
+   agentstr logs -f my-new-agent/deploy.yml
+
+   # Destroy the deployment when no longer needed
+   agentstr destroy -f my-new-agent/deploy.yml
+
+.. note::
+   Make sure your cloud provider credentials are set up before running these commands. See :doc:`../cloud_cicd` for details.
 
 Reference
 ---------
 
-.. click:: agentstr.cli:init_cmd
-   :prog: agentstr init
+.. click:: agentstr.cli:cli
+   :prog: agentstr
    :nested: full
-
-.. click:: agentstr.cli:deploy
-   :prog: agentstr deploy
-   :nested: full
-
-.. click:: agentstr.cli:list_cmd
-   :prog: agentstr list
-   :nested: full
-
-.. click:: agentstr.cli:logs
-   :prog: agentstr logs
-   :nested: full
-
-.. click:: agentstr.cli:destroy
-   :prog: agentstr destroy
-   :nested: full
-
-.. click:: agentstr.cli:relay
-   :prog: agentstr relay
-   :nested: full
-
 
 See Also
 --------
