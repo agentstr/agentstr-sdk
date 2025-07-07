@@ -1,7 +1,7 @@
 PydanticAI Agent Provider
 =========================
 
-This module provides an adapter for using `PydanticAI <https://github.com/pydantic/pydantic-ai>`_ agents with the Agentstr framework.
+This module provides an adapter for using `PydanticAI <https://ai.pydantic.dev/>`_ agents with the Agentstr framework.
 
 Overview
 --------

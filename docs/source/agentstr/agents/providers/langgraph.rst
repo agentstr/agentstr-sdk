@@ -1,7 +1,7 @@
 LangGraph Provider
 ==================
 
-The ``agentstr.agents.providers.langgraph`` module provides integration between Agentstr and the `LangGraph <https://github.com/langchain-ai/langgraph>`_ orchestration framework. It enables you to use LangGraph graphs as chat agents within the Agentstr SDK, supporting streaming, tool calls, and payment-aware responses.
+The ``agentstr.agents.providers.langgraph`` module provides integration between Agentstr and the `LangGraph <https://www.langchain.com/langgraph>`_ agent framework. It enables you to use LangGraph graphs as chat agents within the Agentstr SDK, supporting streaming, tool calls, and payment-aware responses.
 
 Overview
 --------

@@ -1,7 +1,7 @@
 OpenAI Agent Provider
 =====================
 
-This module provides an adapter for using OpenAI-compatible agents with the Agentstr framework.
+This module provides an adapter for using `OpenAI Agents SDK <https://openai.github.io/openai-agents-python/>`_ with the Agentstr framework.
 
 Overview
 --------

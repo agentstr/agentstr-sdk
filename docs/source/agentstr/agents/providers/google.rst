@@ -1,7 +1,7 @@
 Google Agent Provider
 =====================
 
-This module provides adapters for using Google's agent development tools with the Agentstr framework.
+This module provides adapters for using `Google ADK <https://google.github.io/adk-docs/>`_ with the Agentstr framework.
 
 Overview
 --------

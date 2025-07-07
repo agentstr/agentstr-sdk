@@ -1,7 +1,7 @@
 DSPy Agent Provider
 ===================
 
-This module provides an adapter for using `DSPy <https://github.com/stanford-futuredata/dspy>`_ agents with the Agentstr framework.
+This module provides an adapter for using `DSPy <https://dspy.ai/>`_ agents with the Agentstr framework.
 
 Overview
 --------

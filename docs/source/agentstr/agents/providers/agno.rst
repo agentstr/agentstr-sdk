@@ -1,7 +1,7 @@
 Agno Agent Provider
 ===================
 
-This module provides an adapter for using `Agno <https://github.com/agnoauth/agno>`_ agents with the Agentstr framework.
+This module provides an adapter for using `Agno <https://github.com/agno-agi/agno>`_ agents with the Agentstr framework.
 
 Overview
 --------

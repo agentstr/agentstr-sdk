@@ -28,5 +28,5 @@ Reference
 See Also
 --------
 
-- :doc:`agentstr.cli` — The command-line interface uses these models for configuration.
-- :doc:`agentstr.database.base` — The database layer uses these models for storage.
+- :doc:`agents/nostr_agent` — The nostr agent uses these models for configuration.
+- :doc:`database/base` — The database layer uses these models for persisting user data and chat history.
