@@ -1,4 +1,5 @@
 from pynostr.key import PrivateKey, PublicKey
+from pynostr.metadata import Metadata
 from agentstr.commands import DefaultCommands, Commands 
 from agentstr.database import Database
 from agentstr.logger import get_logger

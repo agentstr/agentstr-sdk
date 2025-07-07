@@ -12,11 +12,6 @@ The class is defined as follows:
 
 .. code-block:: python
 
-   from dataclasses import dataclass
-   from pynostr.event import Event
-   from typing import Optional
-
-   @dataclass
    class Metadata(Event):
        name: Optional[str] = None
        about: Optional[str] = None
@@ -52,8 +47,7 @@ Example with NostrAgent
 
 .. code-block:: python
 
-   from pynostr.metadata import Metadata
-   from agentstr import NostrAgent, AgentCard
+   from agentstr import NostrAgent, AgentCard, Metadata
 
    # Define metadata for the agent
    agent_metadata = Metadata(
@@ -76,8 +70,7 @@ Example with NostrMCPServer
 
 .. code-block:: python
 
-   from pynostr.metadata import Metadata
-   from agentstr import NostrMCPServer
+   from agentstr import NostrMCPServer, Metadata
 
    # Define metadata for the MCP server
    server_metadata = Metadata(
