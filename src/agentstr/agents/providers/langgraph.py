@@ -28,7 +28,16 @@ def langgraph_agent_callable(agent: CompiledGraph) -> Callable[[ChatInput], Chat
 
 
 def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
-    """Create a chat generator from a LangGraph graph."""
+    """Create a chat generator from a LangGraph graph. Supports human-in-the-loop and streaming payments.
+    
+    Args:
+        agent: The LangGraph graph to wrap.
+        mcp_clients: A list of NostrMCPClient objects (optional).
+    
+    Returns:
+        An async generator that can be used with the Agentstr framework.
+    """
+
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
         for mcp_client in mcp_clients:

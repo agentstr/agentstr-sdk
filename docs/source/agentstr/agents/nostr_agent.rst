@@ -9,41 +9,40 @@ Overview of NostrAgent
 The `NostrAgent` class is a core component of the Agentstr SDK, allowing developers to build conversational agents that operate on the Nostr network. It integrates with language models (LLMs) for chat functionality and supports payment processing through Nostr Wallet Connect.
 
 Key Features
-------------
+~~~~~~~~~~~~
 
-- **Conversational Interface**: Processes user input and generates responses using an LLM.
+- **Conversational Interface**: Processes user input and generates responses using a common chat interface.
 - **Nostr Integration**: Connects to the Nostr network for decentralized communication.
 - **Payment Support**: Can charge for interactions or pay for tool usage with Nostr Wallet Connect.
+- **Human-in-the-Loop**: Can confirm tool calls and delegate tool payments to a human (or other agent).
+- **State Persistence**: Can store and retrieve user information and message history using a database.
 - **Metadata**: Supports broadcasting agent metadata for discoverability on the Nostr network.
 
-Initialization
---------------
+Usage
+-----
 
 The `NostrAgent` can be initialized with various parameters, leveraging defaults from environment variables where available.
 
 .. code-block:: python
 
-   from agentstr import NostrAgent, AgentCard
+   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput
 
    # Define an agent card with metadata
    agent_card = AgentCard(name="MyAgent", description="A helpful chat agent")
 
-   # Initialize with minimal parameters, using environment variable defaults
-   agent = NostrAgent(agent_card=agent_card)
+   # Define a chat generator function
+   async def chat_generator(input: ChatInput):
+       yield ChatOutput(message=f"Echo: {input.message}")
 
-   # Or override defaults with explicit parameters
-   agent = NostrAgent(
-       agent_card=agent_card,
-       relays=["wss://relay.example.com"],
-       private_key="nsec1...your-private-key...",
-       nwc_str="nostr+walletconnect://...your-connection-string...",
-       llm_base_url="https://api.openai.com/v1",
-       llm_api_key="your-api-key",
-       llm_model_name="gpt-3.5-turbo"
-   )
+   # Initialize using environment variable defaults
+   agent = NostrAgent(agent_card=agent_card, chat_generator=chat_generator)
+
+.. note::
+   See :doc:`nostr_agent_server` for information on how to run the agent.
+
 
 Environment Variables
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 `NostrAgent` uses the following environment variables by default through its underlying components:
 
@@ -56,34 +55,6 @@ Environment Variables
 
 .. note::
    You can override these environment variables by passing explicit parameters to the `NostrAgent` constructor, such as `relays`, `private_key`, `nwc_str`, `llm_base_url`, `llm_api_key`, or `llm_model_name`.
-
-Usage Example
--------------
-
-.. code-block:: python
-
-   import asyncio
-   from agentstr import NostrAgent, AgentCard, ChatInput, ChatOutput
-   import os
-
-   # Set environment variables (or use .env file)
-   os.environ["NOSTR_RELAYS"] = "wss://relay.damus.io,wss://relay.primal.net"
-   os.environ["NOSTR_NSEC"] = "nsec1...your-private-key..."
-   os.environ["NWC_CONN_STR"] = "nostr+walletconnect://...your-connection-string..."
-   os.environ["LLM_BASE_URL"] = "https://api.openai.com/v1"
-   os.environ["LLM_API_KEY"] = "your-api-key"
-   os.environ["LLM_MODEL_NAME"] = "gpt-3.5-turbo"
-
-   # Define a simple chat function
-   async def simple_chat(input: ChatInput):
-       yield ChatOutput(message=f"Echo: {input.message}")
-
-   # Create agent card and agent
-   agent_card = AgentCard(name="EchoBot", description="Echoes your input")
-   nostr_agent = NostrAgent(agent_card=agent_card, chat_generator=simple_chat)
-
-   # Start the agent (typically done through NostrAgentServer)
-   print(f"Agent initialized with public key: {nostr_agent.public_key.bech32()}")
 
 Reference
 ---------

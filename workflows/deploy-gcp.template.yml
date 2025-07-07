@@ -51,4 +51,4 @@ jobs:
       - name: Deploy to GCP
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-        run: uv run agentstr deploy -f configs/gcp.yml
+        run: uv run agentstr deploy -f $AGENTSTR_CONFIG

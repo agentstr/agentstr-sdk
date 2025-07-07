@@ -41,4 +41,4 @@ jobs:
       - name: Deploy to Azure
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        run: uv run agentstr deploy -f configs/azure.yml
+        run: uv run agentstr deploy -f $AGENTSTR_CONFIG

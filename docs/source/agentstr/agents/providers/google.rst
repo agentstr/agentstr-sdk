@@ -1,5 +1,5 @@
-Google Agent Provider
-=====================
+Google ADK Provider
+===================
 
 This module provides adapters for using `Google ADK <https://google.github.io/adk-docs/>`_ with the Agentstr framework.
 
@@ -17,9 +17,8 @@ The main components are the ``google_agent_callable`` and ``google_chat_generato
    from google.adk.agents import Agent
    from google.adk.models.lite_llm import LiteLlm
 
-   # Note: To run this example, you need the Google Agent Development Kit installed
-   # and your environment configured (e.g., with a GOOGLE_API_KEY).
-   # pip install google-adk google-generativeai
+   # Note: To run this example, you need the Agentstr Google ADK extra
+   # pip install agentstr-sdk[google]
 
    # 1. Initialize a Google agent
    # This example uses LiteLlm, which may require further configuration.
@@ -48,3 +47,4 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/google` — For converting MCP tools to the Google format.
+- `Google ADK Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/google_agent.py>`_ - A complete example of using Google ADK with Agentstr.

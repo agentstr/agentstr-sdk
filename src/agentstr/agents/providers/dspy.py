@@ -35,6 +35,16 @@ class MyStatusMessageProvider(dspy.streaming.StatusMessageProvider):
 
 
 def dspy_agent_callable(agent: dspy.Module, input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], ChatOutput | str]:
+    """Create a callable that can be used with the Agentstr framework.
+    
+    Args:
+        agent: The DSPy Module to wrap.
+        input_field: The name of the input field to use (default: 'question').
+        output_field: The name of the output field to use (default: 'answer').
+    
+    Returns:
+        A callable that can be used with the Agentstr framework.
+    """
     async def agent_callable(input: ChatInput):
         result = await agent.acall(**{input_field: input.message})
         logger.info(f'DSPY callable result: {result}')
@@ -43,7 +53,12 @@ def dspy_agent_callable(agent: dspy.Module, input_field: str = 'question', outpu
 
 
 def dspy_chat_generator(agent: dspy.Module, mcp_clients: list[NostrMCPClient] | None = None, input_field: str = 'question', output_field: str = 'answer') -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
-    """Create a chat generator from a LangGraph graph."""
+    """Create a chat generator from a DSPy Module.
+    
+    Note: This function is currently not supported.
+    """
+    raise NotImplementedError("DSPy chat generator is not currently supported")
+
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
         for mcp_client in mcp_clients:

@@ -36,7 +36,7 @@ The ``RelayManager`` class manages connections to multiple Nostr relays, handlin
        if events:
            print(f"Fetched {len(events)} unique events from {len(relay_urls)} relays:")
            for event in events:
-               print(f" - Event content: {event.content[:80]}...")
+               print(f" - Event content: {event.content}")
        else:
            print("No events found.")
 

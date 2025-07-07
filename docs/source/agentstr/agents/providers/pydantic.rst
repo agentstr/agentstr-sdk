@@ -17,9 +17,8 @@ The main component is the ``pydantic_agent_callable`` function, which wraps a ``
    from pydantic_ai import Agent
    from pydantic_ai.llm.openai import OpenAI
 
-   # Note: To run this example, you need pydantic-ai and its dependencies installed.
-   # You also need an OPENAI_API_KEY set in your environment.
-   # pip install pydantic-ai
+   # Note: To run this example, you need the Agentstr Pydantic extra
+   # pip install agentstr-sdk[pydantic]
 
    # 1. Initialize a PydanticAI agent with an LLM
    # This example uses the OpenAI LLM.
@@ -49,3 +48,5 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/pydantic` — For converting MCP tools to the PydanticAI format.
+- `PydanticAI Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/pydantic_agent.py>`_ - A complete example of using PydanticAI with Agentstr.
+

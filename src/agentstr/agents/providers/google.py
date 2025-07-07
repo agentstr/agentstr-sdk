@@ -10,6 +10,14 @@ from agentstr.logger import get_logger
 logger = get_logger(__name__)
 
 def google_agent_callable(agent: Agent) -> Callable[[ChatInput], ChatOutput | str]:
+    """Create a callable that can be used with the Agentstr framework.
+    
+    Args:
+        agent: The Google Agent to wrap.
+    
+    Returns:
+        A callable that can be used with the Agentstr framework.
+    """
     # Session and Runner
     session_service = InMemorySessionService()
     runner = Runner(agent=agent, app_name='agentstr', session_service=session_service)
@@ -31,7 +39,15 @@ def google_agent_callable(agent: Agent) -> Callable[[ChatInput], ChatOutput | st
 
 
 def google_chat_generator(agent: Agent, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
-    """Create a chat generator from a LangGraph graph."""
+    """Create a chat generator from a Google Agent. Supports human-in-the-loop, streaming messages, and streaming payments.
+
+    Args:
+        agent: The Google Agent to wrap.
+        mcp_clients: A list of NostrMCPClient objects (optional).
+    
+    Returns:
+        An async generator that can be used with the Agentstr framework.
+    """
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
         for mcp_client in mcp_clients:

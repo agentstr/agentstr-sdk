@@ -8,7 +8,8 @@ Overview
 
 The main component is the ``dspy_agent_callable`` function, which wraps a DSPy module (like ``dspy.ReAct``), making it compatible with the ``NostrAgent``. This allows you to leverage DSPy's capabilities within the Agentstr ecosystem.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
@@ -16,9 +17,8 @@ The main component is the ``dspy_agent_callable`` function, which wraps a DSPy m
    from agentstr import NostrAgent, AgentCard
    import dspy
 
-   # Note: To run this example, you need DSPy and an LLM provider installed,
-   # and your environment configured (e.g., with an OPENAI_API_KEY).
-   # pip install dspy-ai openai
+   # Note: To run this example, you need the Agentstr DSPy extra
+   # pip install agentstr-sdk[dspy]
 
    # 1. Configure DSPy with a language model
    lm = dspy.OpenAI(model='gpt-3.5-turbo')
@@ -26,7 +26,7 @@ The main component is the ``dspy_agent_callable`` function, which wraps a DSPy m
 
    # 2. Initialize a DSPy module (e.g., a ReAct agent)
    # The signature defines the input ('question') and output ('answer') fields.
-   my_dspy_agent = dspy.ReAct(signatures="question -> answer")
+   my_dspy_agent = dspy.ReAct("question -> answer")
 
    # 3. Wrap the DSPy module to create a callable compatible with Agentstr
    agent_callable = dspy_agent_callable(my_dspy_agent)
@@ -51,3 +51,4 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/dspy` — For converting MCP tools to the DSPy format.
+- `DSPy Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/dspy_agent.py>`_ - A complete example of using DSPy with Agentstr.

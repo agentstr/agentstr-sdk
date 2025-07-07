@@ -1,7 +1,10 @@
 Agent Providers
 ===============
 
-The ``agentstr.agents.providers`` submodule contains provider integrations for agent adapters and frameworks. Each provider enables the Agentstr SDK to interact with a different agent orchestration backend.
+The ``agentstr.agents.providers`` submodule contains integrations for agentic frameworks. Each provider class enables the Agentstr SDK to seamlessly interact with that respective backend.
+
+.. note::
+   Currently, only the LangGraph and Google ADK providers support streaming.
 
 .. toctree::
    :maxdepth: 1

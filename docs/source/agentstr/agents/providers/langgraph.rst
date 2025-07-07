@@ -16,46 +16,33 @@ The main utility is :func:`langgraph_chat_generator`, which adapts a compiled La
 
 .. code-block:: python
 
-   import asyncio
-   from typing import TypedDict, Annotated
-   from agentstr.agents.providers.langgraph import langgraph_chat_generator
-   from agentstr import NostrAgent, AgentCard, ChatInput
-   from langgraph.graph import StateGraph
-   from langgraph.graph.message import add_messages
+    from langchain_openai import ChatOpenAI
+    from langgraph.prebuilt import create_react_agent
 
-   # Note: To run this example, you need LangGraph installed.
-   # pip install langgraph
+    from agentstr import NostrAgentServer, NostrMCPClient, NostrAgent, AgentCard
+    from agentstr.mcp.providers.langgraph import to_langgraph_tools
+    from agentstr.agents.providers.langgraph import langgraph_chat_generator
 
-   # 1. Define the state for the LangGraph graph
-   class AgentState(TypedDict):
-       messages: Annotated[list, add_messages]
+    # Note: To run this example, you need the Agentstr LangGraph extra
+    # pip install agentstr-sdk[langgraph]
 
-   # 2. Define a node for the graph (a simple echo function)
-   def echo_node(state: AgentState):
-       last_message = state['messages'][-1]
-       return {"messages": [("ai", f"Echo: {last_message.content}")]}
+    # 1. Create react agent
+    my_langgraph_agent = create_react_agent(
+        model=ChatOpenAI(),
+        prompt="You are a helpful assistant",
+    )
 
-   # 3. Create and compile the LangGraph graph
-   graph = StateGraph(AgentState)
-   graph.add_node("echo", echo_node)
-   graph.set_entry_point("echo")
-   graph.set_finish_point("echo")
-   compiled_graph = graph.compile()
+    # 2. Create LangGraph chat generator
+    chat_generator = langgraph_chat_generator(my_langgraph_agent, [nostr_mcp_client])
 
-   # 4. Create the chat generator from the compiled graph
-   chat_gen = langgraph_chat_generator(compiled_graph)
+    # 3. Create Nostr Agent
+    nostr_agent = NostrAgent(
+        agent_card=AgentCard(name="LangGraphBot", description="An agent powered by LangGraph."),
+        chat_generator=chat_generator)
 
-   # 5. Create the NostrAgent
-   agent_card = AgentCard(name="LangGraphEchoBot", description="A simple echo agent.")
-   nostr_agent = NostrAgent(agent_card=agent_card, chat_generator=chat_gen)
+    # This `nostr_agent` can now be used with a NostrAgentServer to expose
+    # the LangGraph agent over the Nostr protocol.
 
-   # 6. Use the agent in a streaming chat
-   async def main():
-       async for chunk in nostr_agent.chat_stream(ChatInput(message="Hello!", thread_id="t1", user_id="u1")):
-           print(chunk.message)
-
-   if __name__ == "__main__":
-       asyncio.run(main())
 
 Reference
 ---------
@@ -68,3 +55,4 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/langgraph` — for LangGraph MCP integration.
+- `LangGraph Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/langgraph_agent.py>`_ - A complete example of using LangGraph with Agentstr.

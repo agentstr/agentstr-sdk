@@ -36,7 +36,7 @@ The ``EventRelay`` class handles communication with a single Nostr relay. It can
        if events:
            print(f"Fetched {len(events)} events:")
            for event in events:
-               print(f" - Event content: {event.content[:80]}...")
+               print(f" - Event content: {event.content}")
        else:
            print("No events found.")
 

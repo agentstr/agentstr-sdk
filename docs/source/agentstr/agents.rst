@@ -1,7 +1,7 @@
 Agents
 ======
 
-Agentstr's `agents` subpackage provides adapters and utilities for exposing LLMs and other agentic systems over the Nostr protocol, including streaming chat, payment, and retrieval-augmented generation (RAG) support.
+Agentstr's `agents` subpackage provides classes, adapters, and utilities for exposing agentic systems over the Nostr protocol, including message streaming, tool-calling, payments, state peristence, and human-in-the-loop.
 
 Submodules
 ----------

@@ -10,6 +10,14 @@ from agents import Agent, ItemHelpers, Runner
 logger = get_logger(__name__)
 
 def openai_agent_callable(agent: Agent) -> Callable[[ChatInput], ChatOutput | str]:
+    """Create a callable that can be used with the Agentstr framework.
+    
+    Args:
+        agent: The OpenAI agent to wrap.
+    
+    Returns:
+        A callable that can be used with the Agentstr framework.
+    """
     async def agent_callable(input: ChatInput) -> str:
         result = await Runner.run(agent, input=input.message)
         return result.final_output
@@ -17,7 +25,11 @@ def openai_agent_callable(agent: Agent) -> Callable[[ChatInput], ChatOutput | st
 
 
 def openai_chat_generator(agent: Agent, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
-    """Create a chat generator from an OpenAI agent."""
+    """Create a chat generator from an OpenAI agent.
+    
+    Note: this is not currently supported."""
+
+    raise NotImplementedError("OpenAI chat generator is not currently supported")
     tool_to_sats_map = {}
     if mcp_clients is not None and len(mcp_clients) > 0:
         for mcp_client in mcp_clients:

@@ -1,33 +1,29 @@
 Nostr Agent Server
 ==================
 
-The ``NostrAgentServer`` class provides a high-level interface for running a Nostr agent as a networked server. It manages the connection to the Nostr network, listens for incoming events, and delegates them to the appropriate agent for processing.
+The ``NostrAgentServer`` class provides a high-level interface for running a Nostr agent as a networked server. It manages the connection to the Nostr network, listens for incoming direct messages, and delegates them to the agent for processing.
 
-Overview
---------
-
-**Typical usage:**
+Usage
+-----
 
 .. code-block:: python
 
    import asyncio
-   from agentstr import NostrAgent, NostrAgentServer, AgentCard, ChatInput, ChatOutput
+   from agentstr import NostrAgent, NostrAgentServer
 
-   # Define a simple agent
-   async def simple_chat(input: ChatInput):
-       yield ChatOutput(message=f"Echo: {input.message}")
-
-   agent_card = AgentCard(name="EchoBot", description="Echoes your input")
-   nostr_agent = NostrAgent(agent_card=agent_card, chat_generator=simple_chat)
+   # Initialize the Nostr agent
+   nostr_agent = NostrAgent(...)
 
    # Create and run the server
-   server = NostrAgentServer(nostr_agent=nostr_agent)
-
    async def main():
+       server = NostrAgentServer(nostr_agent=nostr_agent)
        await server.start()
 
    if __name__ == "__main__":
        asyncio.run(main())
+
+.. note::
+   See :doc:`nostr_agent` for information on how to create an agent.
 
 Reference
 ---------
@@ -39,6 +35,6 @@ Reference
 
 See Also
 --------
-- :class:`agentstr.agents.agentstr.AgentstrAgent` — for a high-level interface to run an agent on Nostr.
-- :class:`agentstr.agents.nostr_agent.NostrAgent` — for adapting an agent to the Nostr protocol.
-- :doc:`../agents` — for an overview of all agent adapters.
+- :doc:`agentstr` — for a high-level interface to run an agent on Nostr.
+- :doc:`nostr_agent` — for adapting an agent to the Nostr protocol.
+- :doc:`../agents` — for an overview of all agentic components in the Agentstr SDK.

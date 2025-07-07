@@ -14,11 +14,12 @@ The main component is the ``openai_agent_callable`` function, which wraps an ``a
 
    from agentstr.agents.providers.openai import openai_agent_callable
    from agentstr import NostrAgent, AgentCard
-   # Note: This provider uses the 'agents' library, not to be confused with the official 'openai' package.
-   # pip install agents
    from agents import Agent
    from agents.models import OpenAIChatCompletionsModel
    from openai import AsyncOpenAI
+
+   # Note: To run this example, you need the Agentstr OpenAI extra
+   # pip install agentstr-sdk[openai]
 
    # 1. Initialize an OpenAI client (requires OPENAI_API_KEY in env)
    client = AsyncOpenAI()
@@ -54,3 +55,4 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/openai` — For converting MCP tools to the OpenAI format.
+- `OpenAI Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/openai_agent.py>`_ - A complete example of using OpenAI with Agentstr.

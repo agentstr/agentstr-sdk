@@ -137,7 +137,25 @@ To get started, copy one of the following workflow files into the ``.github/work
      - Authenticates with a GCP service account and runs ``agentstr deploy``.
    * - Azure
      - `deploy-azure.yml <https://github.com/agentstr/agentstr-sdk/blob/main/workflows/deploy-azure.template.yml>`_
-     - Logs in with the Azure CLI and runs ``agentstr deploy``.
+     - Logs in with Azure credentials and runs ``agentstr deploy``.
+
+.. list-table:: Required Secrets
+   :header-rows: 1
+   :widths: 10 20 40
+
+   * - Cloud
+     - Secret Name
+     - Description
+   * - AWS
+     - ``AWS_ACCESS_KEY_ID``, ``AWS_SECRET_ACCESS_KEY``, ``AWS_REGION``
+     - AWS credentials and region for authentication.
+   * - GCP
+     - ``GCP_PROJECT``, ``GCP_SERVICE_ACCOUNT_KEY``
+     - GCP project ID and service account key for authentication.
+   * - Azure
+     - ``AZURE_SUBSCRIPTION_ID``, ``AZURE_CREDENTIALS``
+     - Azure subscription ID and credentials for authentication.
+
 
 **Workflow Examples**
 

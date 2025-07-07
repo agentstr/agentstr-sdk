@@ -8,7 +8,8 @@ Overview
 
 The main component is the ``agno_agent_callable`` function, which wraps an ``agno.agent.Agent`` instance, making it compatible with the ``NostrAgent``. This allows you to leverage Agno's capabilities within the Agentstr ecosystem.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
@@ -16,6 +17,9 @@ The main component is the ``agno_agent_callable`` function, which wraps an ``agn
    from agentstr import NostrAgent, AgentCard
    from agno.agent import Agent
    from agno.models.openai import OpenAIChat
+
+   # Note: To run this example, you need the Agentstr Agno extra
+   # pip install agentstr-sdk[agno]
 
    # 1. Initialize an Agno agent (requires configuration, e.g., API keys)
    my_agno_agent = Agent(model=OpenAIChat())
@@ -44,3 +48,4 @@ Reference
 See Also
 --------
 - :doc:`../../mcp/providers/agno` — For converting MCP tools to the Agno format.
+- `Agno Example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/agno_agent.py>`_ - A complete example of using Agno with Agentstr.
