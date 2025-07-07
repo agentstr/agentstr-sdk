@@ -1,4 +1,6 @@
-"""agentstr CLI for Infrastructure-as-Code operations.
+"""Agentstr CLI for Infrastructure-as-Code operations.
+
+The Agentstr CLI provides a command-line interface for deploying and managing agent applications on various cloud providers.
 
 Usage:
     agentstr deploy <path_to_file> [--provider aws|gcp|azure] [--name NAME]
@@ -27,8 +29,19 @@ import click
 from .providers import get_provider, Provider
 
 
-def _get_provider(ctx: click.Context, cfg: Dict[str, Any] | None = None) -> Provider:  # noqa: D401
-    """Return Provider instance from ctx or config, else error."""
+def _get_provider(ctx: click.Context, cfg: Dict[str, Any] | None = None) -> Provider:
+    """Return Provider instance from ctx or config, else error.
+
+    Args:
+        ctx: Click context object containing command state.
+        cfg: Optional configuration dictionary to extract provider information from.
+
+    Returns:
+        Provider: An instance of the cloud provider class.
+
+    Raises:
+        click.ClickException: If provider is not specified via flag, environment variable, or config.
+    """
     prov: Provider | None = ctx.obj.get("provider")
     if prov is not None:
         return prov
@@ -43,13 +56,23 @@ def _get_provider(ctx: click.Context, cfg: Dict[str, Any] | None = None) -> Prov
     ctx.obj["provider"] = prov
     return prov
 
+
 DEFAULT_PROVIDER_ENV = "AGENTSTR_PROVIDER"
 DEFAULT_CONFIG_ENV = "AGENTSTR_CONFIG"
 PROVIDER_CHOICES = ["aws", "gcp", "azure"]
 
 
-def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optional[str]):  # noqa: D401
-    """Resolve provider from flag or env; may return None to allow config fallback."""
+def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optional[str]):
+    """Resolve provider from flag or env; may return None to allow config fallback.
+
+    Args:
+        ctx: Click context object containing command state.
+        param: Click parameter object for the provider option.
+        value: Optional value provided via command line flag.
+
+    Returns:
+        Optional[str]: Provider name if resolved from flag or environment, None otherwise.
+    """
     if value:
         return value
     env_val = os.getenv(DEFAULT_PROVIDER_ENV)
@@ -59,8 +82,15 @@ def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optiona
     return None
 
 
-def _resolve_config_path(config_path: Path | None) -> Path | None:  # noqa: D401
-    """Return config path from flag or $AGENTSTR_CONFIG env var (if flag is None)."""
+def _resolve_config_path(config_path: Path | None) -> Path | None:
+    """Return config path from flag or $AGENTSTR_CONFIG env var (if flag is None).
+
+    Args:
+        config_path: Optional path to configuration file provided via flag.
+
+    Returns:
+        Path | None: Resolved path to configuration file or None if not specified.
+    """
     if config_path is not None:
         return config_path
     ctx_val = click.get_current_context(silent=True)
@@ -72,8 +102,17 @@ def _resolve_config_path(config_path: Path | None) -> Path | None:  # noqa: D401
     return None
 
 
-def _store_config_path(ctx: click.Context, _param: click.Parameter, value: Path | None):  # noqa: D401
-    """Early callback to save --config path so subcommands can access regardless of position."""
+def _store_config_path(ctx: click.Context, _param: click.Parameter, value: Path | None):
+    """Early callback to save --config path so subcommands can access regardless of position.
+
+    Args:
+        ctx: Click context object to store the config path.
+        _param: Click parameter object (unused).
+        value: Path to config file if provided, None otherwise.
+
+    Returns:
+        Path | None: The provided config path value (unchanged).
+    """
     if not value:
         return None
     if ctx.obj is None:
@@ -83,7 +122,18 @@ def _store_config_path(ctx: click.Context, _param: click.Parameter, value: Path 
 
 
 def _load_config(ctx: click.Context, config_path: Path | None) -> Dict[str, Any]:
-    """Load config from YAML file (flag or env var)."""
+    """Load config from YAML file (flag or env var).
+
+    Args:
+        ctx: Click context object containing command state.
+        config_path: Optional path to configuration file.
+
+    Returns:
+        Dict[str, Any]: Configuration data loaded from YAML file, empty dict if no file.
+
+    Raises:
+        click.ClickException: If YAML parsing fails.
+    """
     cfg_path = _resolve_config_path(config_path)
     config_data: Dict[str, Any] = {}
     if cfg_path is not None:
@@ -112,46 +162,78 @@ def _load_config(ctx: click.Context, config_path: Path | None) -> Dict[str, Any]
     callback=_store_config_path,
 )
 @click.pass_context
-def cli(ctx: click.Context, provider: Optional[str]):  # noqa: D401
-    """agentstr-cli – lightweight cli for deploying agentstr apps to cloud providers."""
+def cli(ctx: click.Context, provider: Optional[str]):
+    """Agentstr CLI - Lightweight command-line interface for deploying Agentstr apps to cloud providers.
+
+    This CLI tool simplifies the process of deploying and managing Agentstr applications across multiple cloud providers.
+    Use the subcommands to initialize projects, deploy applications, manage deployments, and more.
+
+    Args:
+        ctx: Click context object to store state across commands.
+        provider: Optional provider name specified via flag or environment variable.
+    """
     ctx.ensure_object(dict)
     if provider is not None:
         ctx.obj["provider_name"] = provider.lower()
         ctx.obj["provider"] = get_provider(provider.lower())
 
 
-
 @cli.command()
-@click.argument("file_path", required=False, type=click.Path(exists=True, path_type=Path))
-@click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
-@click.option("--name", help="Deployment name", required=False)
+@click.argument("file-path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=False)
 @click.option(
+    "-f",
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to YAML config file.",
+)
+@click.option(
+    "-n",
+    "--name",
+    type=str,
+    help="Unique name for this deployment (default derived from file-path or config).",
+)
+@click.option(
+    "-s",
     "--secret",
+    type=str,
     multiple=True,
-    help="Secret in KEY=VALUE format. Can be supplied multiple times.",
+    help="Secrets as KEY=VALUE pairs (can be repeated).",
 )
 @click.option(
+    "-e",
     "--env",
+    type=str,
     multiple=True,
-    help="Environment variable KEY=VALUE to inject. Can be supplied multiple times.",
+    help="Environment variables as KEY=VALUE pairs (can be repeated).",
 )
 @click.option(
-    "--pip",
-    "dependency",
+    "-d",
+    "--dependency",
+    type=str,
     multiple=True,
-    help="Additional Python package (pip install) to include in the container. Repeatable.",
+    help="Extra pip dependencies (can be repeated).",
 )
 @click.option(
     "--env-file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Load environment variables from a .env file. Overridden by --secret flags.",
+    help="Path to .env file with KEY=VALUE lines.",
 )
-@click.option("--cpu", type=int, help="Number of CPU units to allocate.")
-@click.option("--memory", type=int, default=512, help="Amount of memory (in MB) to allocate.")
+@click.option(
+    "--cpu",
+    type=int,
+    help="""Requested CPU cores (default 256 for AWS, 0.25 for GCP/Azure).""",
+)
+@click.option(
+    "--memory",
+    type=int,
+    help="""Requested memory in MB (default 512).""",
+    default=512,
+)
 @click.option(
     "--database/--no-database",
+    is_flag=True,
     default=None,
-    help="Provision a managed serverless Postgres database.",
+    help="Whether to provision a postgres database (default derived from config).",
 )
 @click.pass_context
 def deploy(
@@ -167,7 +249,27 @@ def deploy(
     memory: int,
     database: bool | None,
 ):
-    """Deploy an application file (server or agent) to the chosen provider."""
+    """Deploy an application file (server or agent) to the chosen provider.
+
+    If ``file-path`` is omitted, it will be resolved from the config file's ``file_path`` field.
+    If no config file is provided, a ``file-path`` argument is required.
+
+    Args:
+        ctx: Click context object containing command state.
+        file_path: Path to the application file to deploy.
+        config: Path to YAML configuration file.
+        name: Unique name for the deployment.
+        secret: Tuple of secret key-value pair strings.
+        env: Tuple of environment variable key-value pair strings.
+        dependency: Tuple of additional pip dependencies.
+        env_file: Path to .env file with environment variables.
+        cpu: Requested CPU cores.
+        memory: Requested memory in MB.
+        database: Flag to provision a PostgreSQL database.
+
+    Raises:
+        click.ClickException: If required parameters are missing or invalid.
+    """
     cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
 
@@ -175,7 +277,7 @@ def deploy(
     if file_path is None:
         file_path = cfg.get("file_path")
         if not file_path:
-            raise click.ClickException("You must provide a file_path argument or set 'file_path' in the config file.")
+            raise click.ClickException("You must provide a file-path argument or set 'file_path' in the config file.")
         file_path = Path(file_path)
         if not file_path.exists():
             raise click.ClickException(f"Configured file_path '{file_path}' does not exist.")
@@ -183,8 +285,18 @@ def deploy(
     # Resolve deployment_name: CLI > config > file_path stem
     deployment_name = name or cfg.get("name") or file_path.stem
 
-
     def _parse_kv(entries: tuple[str, ...], label: str, target: dict[str, str]):
+        """Parse key-value pairs from command line arguments.
+
+        Args:
+            ctx: Click context object (unused in this function).
+            entries: Tuple of strings in KEY=VALUE format.
+            label: Label for error messages.
+            target: Dictionary to store parsed key-value pairs.
+
+        Raises:
+            click.ClickException: If a key-value pair is malformed.
+        """
         for ent in entries:
             if "=" not in ent:
                 click.echo(f"Invalid {label} '{ent}'. Must be KEY=VALUE.", err=True)
@@ -272,11 +384,27 @@ def deploy(
 
 
 @cli.command(name="list")
-@click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
-@click.option("--name", help="Filter by deployment name", required=False)
+@click.option(
+    "-f",
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to YAML config file.",
+)
+@click.option(
+    "-n",
+    "--name",
+    type=str,
+    help="Filter by deployment name.",
+)
 @click.pass_context
-def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # noqa: D401
-    """List active deployments on the chosen provider."""
+def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):
+    """List active deployments on the chosen provider.
+
+    Args:
+        ctx: Click context object containing command state.
+        config: Path to YAML configuration file.
+        name: Optional name to filter deployments.
+    """
     cfg = _load_config(ctx, config)
     provider = _get_provider(ctx, cfg)
     provider.list(name_filter=name)
@@ -284,13 +412,26 @@ def list_cmd(ctx: click.Context, config: Path | None, name: Optional[str]):  # n
 
 @cli.command()
 @click.argument("name", required=False)
-@click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
+@click.option(
+    "-f",
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Path to YAML config file.",
+)
 @click.pass_context
-def logs(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D401
+def logs(ctx: click.Context, name: str | None, config: Path | None):
     """Fetch logs for a deployment.
 
-    If NAME is omitted, it will be resolved from the config file's 'name' field or
-    derived from the 'file_path' stem.
+    If ``name`` is omitted, it will be resolved from the config file's ``name`` field
+    or derived from the ``file_path`` stem.
+
+    Args:
+        ctx: Click context object containing command state.
+        name: Name of the deployment to fetch logs for.
+        config: Path to YAML configuration file.
+
+    Raises:
+        click.ClickException: If name cannot be resolved.
     """
     cfg = _load_config(ctx, config)
     if not name:
@@ -311,18 +452,26 @@ def logs(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D4
 # ---------------------------------------------------------------------------
 
 @cli.command("init")
-@click.argument("project_name")
-@click.option("--force", is_flag=True, help="Overwrite PROJECT_NAME directory if it exists.")
+@click.argument("project-name")
+@click.option("--force", is_flag=True, help="Overwrite directory if it exists")
 @click.pass_context
-def init_cmd(ctx: click.Context, project_name: str, force: bool):  # noqa: D401
-    """Initialise a *new* Agentstr agent project skeleton in *PROJECT_NAME* directory.
+def init_cmd(ctx: click.Context, project_name: str, force: bool):
+    """Initialize a new Agentstr agent project skeleton in ``project-name`` directory.
 
-    The generated template includes a minimal `main.py` that starts an in-memory
-    agent with echo behaviour plus a `requirements.txt` file.  This aims to make
+    The generated template includes a minimal ``main.py`` that starts an in-memory
+    agent with echo behavior plus a ``requirements.txt`` file. This aims to make
     the :doc:`../getting_started` guide work out-of-the-box::
 
         agentstr init my_agent
         python my_agent/main.py
+
+    Args:
+        ctx: Click context object (unused in this function).
+        project_name: Name of the directory to create the project in.
+        force: Overwrite existing directory if it exists.
+
+    Raises:
+        click.ClickException: If directory exists and --force is not specified.
     """
     from textwrap import dedent
 
@@ -502,15 +651,20 @@ env_file: {env_path}  # Path to .env file
 
 @cli.group()
 @click.pass_context
-def relay(ctx: click.Context):  # noqa: D401
-    """Utilities for running lightweight local Nostr relays."""
+def relay(ctx: click.Context):
+    """Utilities for running lightweight local Nostr relays.
+
+    Args:
+        ctx: Click context object (unused in this function).
+    """
+    pass
 
 
 @relay.command("start")
 @click.option("--config", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.pass_context
-def relay_start(ctx: click.Context, config: Path):  # noqa: D401
-    """Spawn a local *nostr-relay* instance using a YAML CONFIG_FILE.
+def relay_start(ctx: click.Context, config: Path):
+    """Spawn a local Nostr relay instance using a YAML config file.
 
     The command maps directly to::
 
@@ -518,6 +672,13 @@ def relay_start(ctx: click.Context, config: Path):  # noqa: D401
 
     See example config at:
     https://code.pobblelabs.org/nostr_relay/file?name=nostr_relay/config.yaml
+
+    Args:
+        ctx: Click context object (unused in this function).
+        config: Path to YAML configuration file for the relay.
+
+    Raises:
+        click.ClickException: If 'nostr-relay' CLI is not installed.
     """
     # Ensure nostr-relay CLI is available
     if shutil.which("nostr-relay") is None:  # pragma: no cover
@@ -538,6 +699,7 @@ def relay_start(ctx: click.Context, config: Path):  # noqa: D401
     # Forward control; when relay exits, we return.
     subprocess.run(cmd, check=True)
 
+
 # ---------------------------------------------------------------------------
 
 @click.argument("key")
@@ -545,10 +707,20 @@ def relay_start(ctx: click.Context, config: Path):  # noqa: D401
 @click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.option("--value-file", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Read secret value from file (overrides VALUE argument).")
 @click.pass_context
-def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | None, value_file: Path | None):  # noqa: D401
+def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | None, value_file: Path | None):
     """Create or update a cloud-provider secret and return its reference string.
 
     VALUE may be provided directly or via --value-file.
+
+    Args:
+        ctx: Click context object containing command state.
+        key: Secret key name.
+        value: Secret value (optional if using --value-file).
+        config: Path to YAML configuration file.
+        value_file: Path to file containing secret value.
+
+    Raises:
+        click.ClickException: If neither VALUE nor --value-file is provided.
     """
     # Load config (needed for provider resolution)
     cfg = _load_config(ctx, config)
@@ -566,8 +738,17 @@ def put_secret(ctx: click.Context, key: str, value: str | None, config: Path | N
 @click.argument("name", required=False)
 @click.option("-f", "--config", type=click.Path(exists=True, dir_okay=False, path_type=Path), help="Path to YAML config file.")
 @click.pass_context
-def destroy(ctx: click.Context, name: str | None, config: Path | None):  # noqa: D401
-    """Destroy a deployment."""
+def destroy(ctx: click.Context, name: str | None, config: Path | None):
+    """Destroy a deployment.
+
+    Args:
+        ctx: Click context object containing command state.
+        name: Name of the deployment to destroy.
+        config: Path to YAML configuration file.
+
+    Raises:
+        click.ClickException: If name cannot be resolved.
+    """
     cfg = _load_config(ctx, config)
     if not name:
         name = cfg.get("name")
@@ -581,8 +762,11 @@ def destroy(ctx: click.Context, name: str | None, config: Path | None):  # noqa:
     provider.destroy(name)
 
 
-def main() -> None:  # noqa: D401
-    """Entry point for `python -m agentstr.cli`."""
+def main() -> None:
+    """Entry point for `python -m agentstr.cli`.
+
+    Runs the Agentstr CLI tool.
+    """
     cli()
 
 

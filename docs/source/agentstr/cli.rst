@@ -17,7 +17,6 @@ Commands
 - ``agentstr logs <name>``: Fetches logs for a specific deployment.
 - ``agentstr destroy <name>``: Removes a deployment and its resources.
 - ``agentstr relay start``: Runs a local Nostr relay for development purposes.
-- ``agentstr put_secret <key> [value]``: Creates or updates a secret in the cloud provider.
 
 **Typical usage:**
 
