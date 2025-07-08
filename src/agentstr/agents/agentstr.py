@@ -10,6 +10,8 @@ from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.agents.nostr_agent_server import NostrAgentServer
 from agentstr.models import AgentCard, ChatInput, ChatOutput, Metadata
 from agentstr.database import BaseDatabase, Database
+from agentstr.commands.commands import DefaultCommands
+from agentstr.commands.base import Commands
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
@@ -40,6 +42,7 @@ class AgentstrAgent:
                  agent_card: AgentCard = None,
                  nostr_metadata: Metadata | None = None,
                  database: BaseDatabase | None = None,
+                 commands: Commands | None = None,
                  checkpointer: AsyncPostgresSaver | AsyncSqliteSaver | None = None,
                  llm_model_name: str | None = None,
                  llm_base_url: str | None = None,
@@ -58,6 +61,7 @@ class AgentstrAgent:
             agent_card: An AgentCard model with agent details.
             nostr_metadata: Metadata for the agent's nostr profile.
             database: The database for state persistence.
+            commands: The commands for the agent.
             checkpointer: The checkpointer for saving agent state.
             llm_model_name: The name of the language model to use (or use environment variable LLM_MODEL_NAME).
             llm_base_url: The base URL for the language model (or use environment variable LLM_BASE_URL).
@@ -70,6 +74,7 @@ class AgentstrAgent:
             self.nostr_mcp_clients.append(NostrMCPClient(nostr_client=self.nostr_client,
                                                          mcp_pubkey=mcp_pubkey))
         self.database = database or Database()
+        self.commands = commands or DefaultCommands(db=self.database, nostr_client=self.nostr_client, agent_card=agent_card)
         self.agent_card = agent_card
         self.nostr_metadata = nostr_metadata
         self.prompt = prompt
@@ -150,7 +155,9 @@ class AgentstrAgent:
 
         # Create Nostr Agent Server
         server = NostrAgentServer(nostr_client=self.nostr_client,
-                                  nostr_agent=nostr_agent)
+                                  nostr_agent=nostr_agent,
+                                  db=self.database,
+                                  commands=self.commands)
 
         return server
 

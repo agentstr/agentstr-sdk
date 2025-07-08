@@ -1,9 +1,10 @@
 import asyncpg
 import json
 from datetime import datetime, timezone
-from typing import Optional, Any, List, Literal
+from typing import Self, Any, List, Literal
 
-from agentstr.database.base import BaseDatabase, User, Message
+from agentstr.models import Message, User
+from agentstr.database.base import BaseDatabase
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,7 +19,7 @@ class PostgresDatabase(BaseDatabase):
     def __init__(self, conn_str: str, *, agent_name: str | None = None):
         super().__init__(conn_str, agent_name)
 
-    async def async_init(self) -> "PostgresDatabase":
+    async def async_init(self) -> Self:
         logger.debug("Connecting to Postgres: %s", self.conn_str)
         self.conn = await asyncpg.connect(dsn=self.conn_str)
         await self._ensure_user_table()
@@ -84,7 +85,7 @@ class PostgresDatabase(BaseDatabase):
         satoshis: int | None = None,
         extra_inputs: dict[str, Any] = {},
         extra_outputs: dict[str, Any] = {},
-    ) -> "Message":
+    ) -> Message:
         next_idx: int = await self.conn.fetchval(
             f"SELECT COALESCE(MAX(idx), -1) + 1 FROM {self.MESSAGE_TABLE_NAME} WHERE agent_name = $1 AND thread_id = $2",
             self.agent_name,
@@ -130,7 +131,7 @@ class PostgresDatabase(BaseDatabase):
         before_idx: int | None = None,
         after_idx: int | None = None,
         reverse: bool = False,
-    ) -> List["Message"]:
+    ) -> List[Message]:
         """Retrieve messages for *thread_id* ordered by idx."""
         base_query = f"SELECT * FROM {self.MESSAGE_TABLE_NAME} WHERE agent_name = $1 AND thread_id = $2 AND user_id = $3"
         params: list[Any] = [self.agent_name, thread_id, user_id]
@@ -166,7 +167,7 @@ class PostgresDatabase(BaseDatabase):
         await self.upsert_user(user)
 
     # --------------------------- API ----------------------------------
-    async def get_user(self, user_id: str) -> "User":
+    async def get_user(self, user_id: str) -> User:
         logger.debug("[Postgres] Getting user %s", user_id)
         row = await self.conn.fetchrow(
             f"SELECT available_balance, current_thread_id FROM {self.USER_TABLE_NAME} WHERE agent_name = $1 AND user_id = $2",
@@ -177,7 +178,7 @@ class PostgresDatabase(BaseDatabase):
             return User(user_id=user_id, available_balance=row["available_balance"], current_thread_id=row["current_thread_id"])
         return User(user_id=user_id)
 
-    async def upsert_user(self, user: "User") -> None:
+    async def upsert_user(self, user: User) -> None:
         logger.debug("[Postgres] Upserting user %s", user)
         await self.conn.execute(
             f"""INSERT INTO {self.USER_TABLE_NAME} (agent_name, user_id, available_balance, current_thread_id)

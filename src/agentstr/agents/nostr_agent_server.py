@@ -10,7 +10,8 @@ from pynostr.event import Event
 from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.database import Database, BaseDatabase
 from agentstr.models import AgentCard, ChatInput, ChatOutput, Message, User, NoteFilters
-from agentstr.commands import Commands, DefaultCommands
+from agentstr.commands.base import Commands
+from agentstr.commands.commands import DefaultCommands
 from agentstr.logger import get_logger
 from agentstr.nostr_client import NostrClient
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient

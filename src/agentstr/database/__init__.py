@@ -2,7 +2,7 @@ import os
 from typing import Optional
 from agentstr.database.sqlite import SQLiteDatabase
 from agentstr.database.postgres import PostgresDatabase
-from agentstr.database.base import BaseDatabase, User, Message
+from agentstr.database.base import BaseDatabase
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)

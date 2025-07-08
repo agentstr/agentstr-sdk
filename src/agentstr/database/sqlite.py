@@ -1,9 +1,10 @@
-from typing import Optional, Any, List, Literal
+from typing import Optional, Any, List, Literal, Self
 import json
 import aiosqlite
 from datetime import datetime, timezone
 
-from agentstr.database.base import BaseDatabase, User, Message
+from agentstr.models import Message, User
+from agentstr.database.base import BaseDatabase
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
@@ -66,7 +67,7 @@ class SQLiteDatabase(BaseDatabase):
         await self.conn.commit()
 
     # --------------------------- API ----------------------------------
-    async def async_init(self) -> "SQLiteDatabase":
+    async def async_init(self) -> Self:
         self.conn = await aiosqlite.connect(self._db_path)
         # Return rows as mappings so we can access by column name
         self.conn.row_factory = aiosqlite.Row
@@ -79,7 +80,7 @@ class SQLiteDatabase(BaseDatabase):
             await self.conn.close()
             self.conn = None
 
-    async def get_user(self, user_id: str) -> "User":
+    async def get_user(self, user_id: str) -> User:
         logger.debug("[SQLite] Getting user %s", user_id)
         async with self.conn.execute(
             "SELECT available_balance, current_thread_id FROM user WHERE agent_name = ? AND user_id = ?",
@@ -102,7 +103,7 @@ class SQLiteDatabase(BaseDatabase):
         await self.upsert_user(user)
 
 
-    async def upsert_user(self, user: "User") -> None:
+    async def upsert_user(self, user: User) -> None:
         logger.debug("[SQLite] Upserting user %s", user)
         await self.conn.execute(
             """INSERT INTO user (agent_name, user_id, available_balance, current_thread_id) VALUES (?, ?, ?, ?)
@@ -122,7 +123,7 @@ class SQLiteDatabase(BaseDatabase):
             satoshis: int | None = None,
             extra_inputs: dict[str, Any] = {},
             extra_outputs: dict[str, Any] = {},
-        ) -> "Message":
+        ) -> Message:
             """Append a message to a thread and return the stored model."""
             # Determine next index for thread
             async with self.conn.execute(
@@ -175,7 +176,7 @@ class SQLiteDatabase(BaseDatabase):
             before_idx: int | None = None,
             after_idx: int | None = None,
             reverse: bool = False,
-    ) -> List["Message"]:
+    ) -> List[Message]:
         """Retrieve messages for *thread_id* with optional pagination."""
         query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ? AND user_id = ?"
         params: list[Any] = [self.agent_name, thread_id, user_id]
