@@ -1,0 +1,20 @@
+[project]
+name = "medical-agent"
+version = "0.1.0"
+description = "A medical agent for agentstr."
+dependencies = [
+    "python-dotenv",
+    "agno",
+    "agentstr @ {root:uri}/../../..",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true

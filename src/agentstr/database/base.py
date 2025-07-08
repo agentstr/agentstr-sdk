@@ -13,59 +13,19 @@ All implementations share the same async API.
 from __future__ import annotations
 
 import abc
-import os
-from typing import Optional, Any, List, Literal
-import json
-from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from typing import Any, List, Literal
+from agentstr.models import Message, User
 
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class User(BaseModel):
-    """Simple user model persisted by the database layer."""
-
-    user_id: str
-    available_balance: int = 0
-    current_thread_id: str | None = None
-
-
-class Message(BaseModel):
-    """Chat/message row stored per agent/thread."""
-
-    agent_name: str
-    thread_id: str
-    idx: int
-    user_id: str
-    role: Literal["user", "agent"]
-    content: str
-    metadata: dict[str, Any] | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    @classmethod
-    def from_row(cls, row: Any) -> "Message":  # helper for Sqlite (tuple) or asyncpg.Record
-        if row is None:
-            raise ValueError("Row cannot be None")
-        # Both sqlite and pg rows behave like dicts with keys
-        return cls(
-            agent_name=row["agent_name"],
-            thread_id=row["thread_id"],
-            idx=row["idx"],
-            user_id=row["user_id"],
-            role=row["role"],
-            content=row["content"],
-            metadata=json.loads(row["metadata"]) if row["metadata"] else None,
-            created_at=row["created_at"],
-        )
-
-
 class BaseDatabase(abc.ABC):
     """Abstract base class for concrete database backends."""
 
-    def __init__(self, connection_string: str, agent_name: str = "default"):
-        self.connection_string = connection_string
+    def __init__(self, conn_str: str, agent_name: str | None = None):
+        self.conn_str = conn_str
         self.agent_name = agent_name
         self.conn = None  # Will be set by :py:meth:`async_init`.
 
@@ -100,9 +60,13 @@ class BaseDatabase(abc.ABC):
         self,
         thread_id: str,
         user_id: str,
-        role: Literal["user", "agent"],
-        content: str,
-        metadata: dict[str, Any] | None = None,
+        role: Literal["user", "agent", "tool"],
+        message: str = "",
+        content: str = "",
+        kind: str = "request",
+        satoshis: int | None = None,
+        extra_inputs: dict[str, Any] = {},
+        extra_outputs: dict[str, Any] = {},
     ) -> "Message":
         """Append a message to a thread and return the stored model."""
 
@@ -110,6 +74,7 @@ class BaseDatabase(abc.ABC):
     async def get_messages(
         self,
         thread_id: str,
+        user_id: str,
         *,
         limit: int | None = None,
         before_idx: int | None = None,

@@ -7,7 +7,7 @@ import importlib
 import os
 from pathlib import Path
 from typing import Dict, Optional, List
-
+import time
 import click
 import base64
 import re
@@ -330,6 +330,20 @@ CMD [\"python\", \"/app/app.py\"]
         if sa_desc.returncode != 0:
             click.echo(f"Creating GCP service account '{gcp_sa_email}' ...")
             self._run_cmd(["gcloud", "iam", "service-accounts", "create", gcp_sa_name, "--project", project])
+
+        # Ensure GCP service account exists (takes a bit of time)
+        max_wait_time = 30  # seconds
+        start_time = time.time()
+        while time.time() - start_time < max_wait_time:
+            sa_desc = subprocess.run([
+                "gcloud", "iam", "service-accounts", "describe", gcp_sa_email, "--project", project, "--format=value(email)"],
+                capture_output=True, text=True)
+            if sa_desc.returncode == 0:
+                break
+            time.sleep(1)
+        if sa_desc.returncode != 0:
+            click.echo(f"Failed to create GCP service account '{gcp_sa_email}'", err=True)
+            return
 
         # Grant Secret Manager access scoped to each secret
         for secret_path in secrets.values():

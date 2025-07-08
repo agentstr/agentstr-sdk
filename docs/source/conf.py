@@ -5,10 +5,11 @@
 
 import os
 import sys
+import datetime
 
 # -- Project information -----------------------------------------------------
 project = "Agentstr SDK"
-copyright = "2025, Agentstr. All rights reserved."
+copyright = f"{datetime.datetime.now().year}, Agentstr. All rights reserved."
 author = "Agentstr"
 
 # -- General configuration ---------------------------------------------------
@@ -30,6 +31,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.autodoc_pydantic",
+    "sphinx_click",
 ]
 
 autodoc_default_options = {

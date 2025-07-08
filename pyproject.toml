@@ -1,6 +1,6 @@
 [project]
 name = "agentstr-sdk"
-version = "0.5.1"
+version = "0.6.0"
 description = "Python SDK for building decentralized agentic applications on Nostr."
 requires-python = ">=3.10"
 classifiers = [
@@ -21,7 +21,14 @@ dependencies = [
     "websockets>=15.0.1",
     "dspy>=2.6.27",
     "asyncpg>=0.30.0",
+    "apscheduler>=3.11.0",
+    "langgraph-checkpoint-postgres>=2.0.21",
+    "langgraph-checkpoint-sqlite>=2.0.10",
+    "psycopg[binary]>=3.2.9",
+    "langchain-openai>=0.3.18",
+    "python-dotenv>=1.1.0",
 ]
+
 readme = "README.md"
 [build-system]
 requires = ["setuptools >= 61.0"]
@@ -35,6 +42,7 @@ dev = [
     "ruff>=0.9.0",
     "autodoc-pydantic>=2.0.0",
     "pytest-asyncio>=1.0.0",
+    "sphinx-click>=6.0.0",
 ]
 
 [tool.ruff]
@@ -83,19 +91,15 @@ agentstr = "agentstr.cli:cli"
 rag = [
     "langchain>=0.3.25",
     "langchain-community>=0.3.24",
-    "langchain-openai>=0.3.18",
 ]
 langgraph = [
-    "langchain-openai>=0.3.18",
     "langgraph>=0.4.7",
 ]
 dspy = [
     "dspy>=2.6.27",
-    "langchain-openai>=0.3.18",
 ]
 agno = [
-    "langchain-openai>=0.3.18",
-    "agno>=1.5.6",
+    "agno>=1.6.4",
 ]
 pydantic = [
     "pydantic-ai-slim[openai]>=0.2.9",
@@ -106,16 +110,6 @@ openai = [
 google = [
     "google-adk>=1.1.1",
     "litellm>=1.72.0",
-]
-examples = [
-    "yfinance>=0.2.61",
-    "python-dotenv>=1.1.0",
-]
-aws = [
-    "boto3>=1.38.36",
-]
-gcp = [
-    "google-cloud-run>=0.10.18",
 ]
 cli = [
     "click>=8.1.7",
@@ -133,8 +127,6 @@ all = [
     "langgraph>=0.4.7",
     "dspy>=2.6.27",
     "agno>=1.5.6",
-    "yfinance>=0.2.61",
-    "python-dotenv>=1.1.0",
     "pydantic-ai-slim[openai]>=0.2.9",
     "openai-agents>=0.0.14",
     "google-adk>=1.1.1",
@@ -145,6 +137,10 @@ all = [
     "azure-identity>=1.23.0",
     "PyYAML>=6.0",
     "nostr-relay>=1.14",
+    "langgraph-checkpoint-postgres>=2.0.21",
+    "langgraph-checkpoint-sqlite>=2.0.10",
+    "psycopg[binary]>=3.2.9",
+    "semantic-kernel>=1.32.2",
 ]
 
 

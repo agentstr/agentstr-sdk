@@ -5,18 +5,16 @@ load_dotenv()
 import os
 from agentstr.database import Database
 from agentstr.commands import DefaultCommands
-from agentstr.nostr_agent_server import NostrAgentServer
-from agentstr import AgentCard, NostrClient
+from agentstr import AgentCard, NostrClient, NostrAgentServer
 
 
 relays   = os.getenv("NOSTR_RELAYS").split(",")
-private_key = os.getenv("EXAMPLE_MCP_SERVER_NSEC")
+private_key = os.getenv("MCP_SERVER_NSEC")
 nwc_str = os.getenv("MCP_SERVER_NWC_CONN_STR")
-server_public_key = os.getenv("EXAMPLE_MCP_SERVER_PUBKEY")
+server_public_key = os.getenv("MCP_SERVER_PUBKEY")
 
 agent_info = AgentCard(name="TestAgent", description="Agent description.", nostr_pubkey=server_public_key)
 nostr_client = NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str)
-
 
 
 async def run():

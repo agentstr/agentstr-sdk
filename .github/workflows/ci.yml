@@ -2,7 +2,7 @@ name: nostr-agent-tools-ci
 on:
   push:
     branches:
-      - main
+      - '**'
 
 # Grant write permissions so the action can push commits back
 permissions:
@@ -30,17 +30,36 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
+      - name: Start agentstr relay
+        run: |
+          uv run agentstr relay start &
+          echo $! > relay.pid
+        shell: bash
+
+      - name: Wait for relay to become ready
+        run: sleep 5
+
+      - name: Run unit tests
+        run: uv run pytest tests/
+        env:
+          TEST_NWC_CONN_STR: ${{ secrets.TEST_NWC_CONN_STR }}
+
+      - name: Stop agentstr relay
+        if: always()
+        run: kill $(cat relay.pid)
+
       - name: Build
         run: uv build
 
       - name: Commit bumped version
+        if: github.ref == 'refs/heads/main'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(release): bump patch version [skip ci]"
-          token: ${{ secrets.GITHUB_TOKEN }}
           file_pattern: pyproject.toml
 
       - name: Publish to PyPI
+        if: github.ref == 'refs/heads/main'
         run: uv publish
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}

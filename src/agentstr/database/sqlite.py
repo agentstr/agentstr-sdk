@@ -1,9 +1,10 @@
-from typing import Optional, Any, List, Literal
+from typing import Optional, Any, List, Literal, Self
 import json
 import aiosqlite
 from datetime import datetime, timezone
 
-from agentstr.database.base import BaseDatabase, User, Message
+from agentstr.models import Message, User
+from agentstr.database.base import BaseDatabase
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,10 +13,10 @@ logger = get_logger(__name__)
 class SQLiteDatabase(BaseDatabase):
     """SQLite implementation using `aiosqlite`."""
 
-    def __init__(self, connection_string: Optional[str] = None, *, agent_name: str = "default"):
-        super().__init__(connection_string or "sqlite://agentstr_local.db", agent_name)
+    def __init__(self, conn_str: Optional[str] = None, *, agent_name: str | None = None):
+        super().__init__(conn_str or "sqlite://agentstr_local.db", agent_name)
         # Strip the scheme to obtain the filesystem path.
-        self._db_path = self.connection_string.replace("sqlite://", "", 1)
+        self._db_path = self.conn_str.replace("sqlite://", "", 1)
 
     # --------------------------- helpers -------------------------------
     async def _ensure_user_table(self) -> None:
@@ -43,10 +44,15 @@ class SQLiteDatabase(BaseDatabase):
                 idx INTEGER NOT NULL,
                 user_id TEXT NOT NULL,
                 role TEXT NOT NULL,
+                message TEXT,
                 content TEXT NOT NULL,
-                metadata TEXT,
+                kind TEXT,
+                satoshis INTEGER,
+                extra_inputs TEXT,
+                extra_outputs TEXT,
+
                 created_at DATETIME NOT NULL,
-                PRIMARY KEY (agent_name, thread_id, idx)
+                PRIMARY KEY (agent_name, thread_id, idx, user_id)
             )"""
         ):
             pass
@@ -61,7 +67,7 @@ class SQLiteDatabase(BaseDatabase):
         await self.conn.commit()
 
     # --------------------------- API ----------------------------------
-    async def async_init(self) -> "SQLiteDatabase":
+    async def async_init(self) -> Self:
         self.conn = await aiosqlite.connect(self._db_path)
         # Return rows as mappings so we can access by column name
         self.conn.row_factory = aiosqlite.Row
@@ -74,7 +80,7 @@ class SQLiteDatabase(BaseDatabase):
             await self.conn.close()
             self.conn = None
 
-    async def get_user(self, user_id: str) -> "User":
+    async def get_user(self, user_id: str) -> User:
         logger.debug("[SQLite] Getting user %s", user_id)
         async with self.conn.execute(
             "SELECT available_balance, current_thread_id FROM user WHERE agent_name = ? AND user_id = ?",
@@ -97,7 +103,7 @@ class SQLiteDatabase(BaseDatabase):
         await self.upsert_user(user)
 
 
-    async def upsert_user(self, user: "User") -> None:
+    async def upsert_user(self, user: User) -> None:
         logger.debug("[SQLite] Upserting user %s", user)
         await self.conn.execute(
             """INSERT INTO user (agent_name, user_id, available_balance, current_thread_id) VALUES (?, ?, ?, ?)
@@ -110,12 +116,15 @@ class SQLiteDatabase(BaseDatabase):
             self,
             thread_id: str,
             user_id: str,
-            role: Literal["user", "agent"],
-            content: str,
-            metadata: dict[str, Any] | None = None,
-        ) -> "Message":
+            role: Literal["user", "agent", "tool"],
+            message: str = "",
+            content: str = "",
+            kind: str = "request",
+            satoshis: int | None = None,
+            extra_inputs: dict[str, Any] = {},
+            extra_outputs: dict[str, Any] = {},
+        ) -> Message:
             """Append a message to a thread and return the stored model."""
-            metadata_json = json.dumps(metadata or {}) if metadata else None
             # Determine next index for thread
             async with self.conn.execute(
                 "SELECT COALESCE(MAX(idx), -1) + 1 AS next_idx FROM message WHERE agent_name = ? AND thread_id = ?",
@@ -126,15 +135,19 @@ class SQLiteDatabase(BaseDatabase):
 
             created_at = datetime.now(timezone.utc).isoformat()
             await self.conn.execute(
-                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, content, metadata, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO message (agent_name, thread_id, idx, user_id, role, message, content, kind, satoshis, extra_inputs, extra_outputs, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     self.agent_name,
                     thread_id,
                     next_idx,
                     user_id,
                     role,
+                    message,
                     content,
-                    metadata_json,
+                    kind,
+                    satoshis,
+                    json.dumps(extra_inputs) if extra_inputs else None,
+                    json.dumps(extra_outputs) if extra_outputs else None,
                     created_at,
                 ),
             )
@@ -145,23 +158,28 @@ class SQLiteDatabase(BaseDatabase):
                 idx=next_idx,
                 user_id=user_id,
                 role=role,
+                message=message,
                 content=content,
-                metadata=metadata,
+                kind=kind,
+                satoshis=satoshis,
+                extra_inputs=extra_inputs,
+                extra_outputs=extra_outputs,
                 created_at=datetime.fromisoformat(created_at).astimezone(timezone.utc),
             )
 
     async def get_messages(
             self,
             thread_id: str,
+            user_id: str,
             *,
             limit: int | None = None,
             before_idx: int | None = None,
             after_idx: int | None = None,
             reverse: bool = False,
-    ) -> List["Message"]:
+    ) -> List[Message]:
         """Retrieve messages for *thread_id* with optional pagination."""
-        query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ?"
-        params: list[Any] = [self.agent_name, thread_id]
+        query = "SELECT * FROM message WHERE agent_name = ? AND thread_id = ? AND user_id = ?"
+        params: list[Any] = [self.agent_name, thread_id, user_id]
         if after_idx is not None:
                 query += " AND idx > ?"
                 params.append(after_idx)

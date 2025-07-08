@@ -1,3 +1,4 @@
+import os
 import time
 from collections.abc import Callable
 from typing import Any
@@ -9,9 +10,9 @@ from pynostr.metadata import Metadata
 from pynostr.utils import get_public_key, get_timestamp
 
 from agentstr.logger import get_logger
-from agentstr.nwc_relay import NWCRelay
-from agentstr.relay import DecryptedMessage
-from agentstr.relay_manager import RelayManager
+from agentstr.relays.nwc_relay import NWCRelay
+from agentstr.relays.relay import DecryptedMessage
+from agentstr.relays.relay_manager import RelayManager
 
 logger = get_logger(__name__)
 
@@ -22,53 +23,14 @@ class NostrClient:
     This class provides methods to connect to Nostr relays, send and receive direct messages,
     manage metadata, and read posts by tags. It integrates with Nostr Wallet Connect (NWC)
     for payment processing if provided.
-
-    Examples
-    --------
-    Basic read of recent posts that use the ``#agentstr_agents`` tag::
-
-        import asyncio
-        from agentstr import NostrClient
-
-        relays = ["wss://relay.damus.io"]
-        client = NostrClient(relays)
-
-        async def main():
-            events = await client.read_posts_by_tag("agentstr_agents", limit=5)
-            for ev in events:
-                print(ev.content)
-
-        asyncio.run(main())
-
-    Send an end-to-end encrypted direct-message and await the reply::
-
-        import asyncio
-        from agentstr import NostrClient, PrivateKey
-
-        relays = ["wss://relay.damus.io"]
-        # Generate a temporary private key purely for the example.
-        client = NostrClient(relays, private_key=PrivateKey().bech32())
-
-        async def talk(recipient_pubkey: str):
-            response = await client.send_direct_message_and_receive_response(
-                recipient_pubkey,
-                "Hello from AgentStr!",
-            )
-            print(response.message)
-
-        asyncio.run(talk("npub1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"))
-
-    For more runnable demos consult the full scripts on GitHub:
-    `agent_discovery.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/agent_discovery.py>`_
-    `chat_with_agents.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/chat_with_agents.py>`_
     """
-    def __init__(self, relays: list[str], private_key: str | None = None, nwc_str: str | None = None):
+    def __init__(self, relays: list[str] = [], private_key: str | None = None, nwc_str: str | None = None):
         """Initialize the NostrClient.
         
         Args:
             relays: List of Nostr relay URLs to connect to.
             private_key: Nostr private key in 'nsec' format.
-            nwc_str: Nostr Wallet Connect string for payment processing (optional).
+            nwc_str: Nostr Wallet Connect string for payment processing (optional). If not provided, will use environment variable `NWC_CONN_STR`.
             
         Note:
             If no private key is provided, the client will operate in read-only mode.
@@ -76,6 +38,11 @@ class NostrClient:
         logger.info("Initializing NostrClient")
         try:
             self.relays = relays
+            if not relays or len(relays) == 0:
+                if os.getenv("NOSTR_RELAYS"):
+                    self.relays = os.getenv("NOSTR_RELAYS").split(",")
+                else:
+                    raise ValueError("No relays provided. Either pass variable `relays` or set environment variable `NOSTR_RELAYS`")
             logger.debug(f"Using relays: {relays}")
 
             if private_key:
@@ -83,12 +50,17 @@ class NostrClient:
                 self.public_key = self.private_key.public_key
                 logger.info(f"Initialized Nostr client with public key: {self.public_key.bech32()}")
             else:
-                self.private_key = None
-                self.public_key = None
-                logger.warning("No private key provided, Nostr client will be in read-only mode")
+                if os.getenv("NOSTR_NSEC"):
+                    logger.info(f"Using private key from environment variable: NOSTR_NSEC")
+                    self.private_key = PrivateKey.from_nsec(os.getenv("NOSTR_NSEC"))
+                    self.public_key = self.private_key.public_key
+                else:
+                    self.private_key = None
+                    self.public_key = None
+                    logger.warning("No private key provided, Nostr client will be in read-only mode")
 
-            self.nwc_str = nwc_str
-            if nwc_str:
+            self.nwc_str = nwc_str or os.getenv("NWC_CONN_STR")
+            if self.nwc_str:
                 logger.info("Nostr Wallet Connect (NWC) is enabled")
             else:
                 logger.info("Nostr Wallet Connect (NWC) is not configured")
@@ -159,7 +131,8 @@ class NostrClient:
                        nip05: str | None = None, picture: str | None = None,
                        banner: str | None = None, lud16: str | None = None,
                        lud06: str | None = None, username: str | None = None,
-                       display_name: str | None = None, website: str | None = None):
+                       display_name: str | None = None, website: str | None = None,
+                       nostr_metadata: Metadata | None = None):
         """Update the client's metadata on Nostr relays.
 
         Args:
@@ -173,8 +146,11 @@ class NostrClient:
             username: Username.
             display_name: Display name.
             website: Website URL.
+            nostr_metadata: Nostr metadata for the server (will override other fields).
         """
         previous_metadata = await self.get_metadata_for_pubkey(self.public_key)
+        if previous_metadata:
+            logger.info(f"Previous metadata for {self.public_key.bech32()}: {previous_metadata.metadata_to_dict()}")
         metadata = Metadata()
         if previous_metadata:
             metadata.set_metadata(previous_metadata.metadata_to_dict())
@@ -198,10 +174,13 @@ class NostrClient:
             metadata.display_name = display_name
         if website:
             metadata.website = website
+        if nostr_metadata:  # Overrides other fields
+            metadata.set_metadata(nostr_metadata.metadata_to_dict())
+        logger.info(f"Updating metadata for {self.public_key.bech32()}: {metadata.metadata_to_dict()}")
         metadata.created_at = int(time.time())
         metadata.update()
         if previous_metadata and previous_metadata.content == metadata.content:
-            print("No changes in metadata, skipping update.")
+            logger.info("No changes in metadata, skipping update.")
             return
 
         await self.relay_manager.send_event(metadata.to_event())
