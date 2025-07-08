@@ -1,7 +1,7 @@
-Database Base Classes and Models
-================================
+Database Interface
+==================
 
-This module defines the abstract base classes (ABCs) and shared data models for all database backends in Agentstr. It provides a common interface that all database implementations must adhere to.
+This module defines the abstract interface and shared data models for all database backends in Agentstr. It provides a common interface that all database implementations must adhere to.
 
 Overview
 --------

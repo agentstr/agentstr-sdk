@@ -8,28 +8,37 @@ Overview
 
 The ``NostrMCPClient`` is responsible for interacting with MCP servers over Nostr. It can be used to list available tools, get tool schemas, and invoke tools with arguments.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
    import asyncio
-   from agentstr.mcp.nostr_mcp_client import NostrMCPClient
+   import json
+   from agentstr import NostrMCPClient
 
    # Assume we have the public key of an MCP server
    server_pubkey = "..."
 
-   # Create a client instance
-   client = NostrMCPClient(mcp_server_pubkey=server_pubkey)
-
    async def main():
-       await client.connect()
-       # List available tools
-       tools = await client.list_tools()
-       print(f"Available tools: {tools}")
-       # ... invoke tools, etc.
-       await client.disconnect()
+      # Create a client instance
+      client = NostrMCPClient(mcp_pubkey=server_pubkey)
 
-   asyncio.run(main())
+      # List available tools
+      tools = await client.list_tools()
+      print(f"Found tools: {json.dumps(tools, indent=4)}")
+
+      # Call a tool
+      result = await client.call_tool("add", {"a": 69, "b": 420})
+      print(f'The result of 69 + 420 is: {result["content"][-1]["text"]}')
+
+
+   if __name__ == "__main__":
+      asyncio.run(main())
+
+.. note::
+   For a complete, working example, check out the `MCP Client example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/mcp_client.py>`_.
+
 
 Reference
 ---------
