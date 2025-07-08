@@ -491,6 +491,12 @@ def init_cmd(ctx: click.Context, project_name: str, force: bool):
 
     name = project_dir.name
 
+    try:
+        version = importlib.metadata.version("agentstr-sdk")
+        sdk_dep = f"agentstr-sdk[cli]=={version}"
+    except importlib.metadata.PackageNotFoundError:
+        sdk_dep = "agentstr-sdk[cli]"
+
     # Write template files --------------------------------------------------
     (project_dir / "__init__.py").touch(exist_ok=True)
 
@@ -528,7 +534,7 @@ if __name__ == "__main__":
     )
     (project_dir / "main.py").write_text(main_py)
 
-    (project_dir / "requirements.txt").write_text("agentstr-sdk[cli]\n")
+    (project_dir / "requirements.txt").write_text(f"{sdk_dep}\n")
 
     from pynostr.key import PrivateKey
     key = PrivateKey()
@@ -543,7 +549,7 @@ LLM_BASE_URL=
 LLM_API_KEY=
 """)
 
-    (project_dir / ".gitignore").write_text("""# Python-generated files
+    gitignore = """# Python-generated files
 __pycache__/
 *.py[oc]
 build/
@@ -570,7 +576,10 @@ wheels/
 *.sqlite3
 *.sqlite3*
 *.db-*
-""")
+"""
+
+    (project_dir / ".gitignore").write_text(gitignore)
+    (project_dir / ".dockerignore").write_text(gitignore)
 
     (project_dir / "README.md").write_text("""# Agentstr Agent Skeleton
 
@@ -593,8 +602,7 @@ This is a minimal example of an Agentstr agent that greets users.
 `python test_client.py`
 """)
 
-    test_client_py = """
-from dotenv import load_dotenv
+    test_client_py = """from dotenv import load_dotenv
 load_dotenv()
 
 import os
@@ -627,17 +635,12 @@ if __name__ == "__main__":
         "banner": "",
         "website": "https://agentstr.com",
     }
-    (project_dir / "nostr-metadata.yml").write_text(yaml.dump(metadata))
+    (project_dir / "nostr-metadata.yml").write_text(yaml.safe_dump(metadata))
     
     # Create cloud deployment configs
     main_path = os.path.join(project_name, "main.py")
     env_path = os.path.join(project_name, ".env")
-
-    try:
-        version = importlib.metadata.version("agentstr-sdk")
-        sdk_dep = f"agentstr-sdk=={version}"
-    except importlib.metadata.PackageNotFoundError:
-        sdk_dep = "agentstr-sdk"
+    #requirements_path = os.path.join(project_name, "requirements.txt")
 
     deploy_config = f"""name: {name}  # Deployment name
 
