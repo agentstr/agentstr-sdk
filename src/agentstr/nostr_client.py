@@ -23,45 +23,6 @@ class NostrClient:
     This class provides methods to connect to Nostr relays, send and receive direct messages,
     manage metadata, and read posts by tags. It integrates with Nostr Wallet Connect (NWC)
     for payment processing if provided.
-
-    Examples
-    --------
-    Basic read of recent posts that use the ``#agentstr_agents`` tag::
-
-        import asyncio
-        from agentstr import NostrClient
-
-        relays = ["wss://relay.damus.io"]
-        client = NostrClient(relays)
-
-        async def main():
-            events = await client.read_posts_by_tag("agentstr_agents", limit=5)
-            for ev in events:
-                print(ev.content)
-
-        asyncio.run(main())
-
-    Send an end-to-end encrypted direct-message and await the reply::
-
-        import asyncio
-        from agentstr import NostrClient, PrivateKey
-
-        relays = ["wss://relay.damus.io"]
-        # Generate a temporary private key purely for the example.
-        client = NostrClient(relays, private_key=PrivateKey().bech32())
-
-        async def talk(recipient_pubkey: str):
-            response = await client.send_direct_message_and_receive_response(
-                recipient_pubkey,
-                "Hello from AgentStr!",
-            )
-            print(response.message)
-
-        asyncio.run(talk("npub1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"))
-
-    For more runnable demos consult the full scripts on GitHub:
-    `agent_discovery.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/agent_discovery.py>`_
-    `chat_with_agents.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/chat_with_agents.py>`_
     """
     def __init__(self, relays: list[str] = [], private_key: str | None = None, nwc_str: str | None = None):
         """Initialize the NostrClient.
