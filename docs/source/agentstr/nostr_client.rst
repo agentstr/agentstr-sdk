@@ -1,7 +1,7 @@
 Nostr Client
 ============
 
-This document explains the `NostrClient` class from the Agentstr SDK, which is used to interact with the Nostr network.
+This document explains the `NostrClient` class from the Agentstr SDK, which is the high-level client used to interact with the Nostr network.
 
 Overview of NostrClient
 -----------------------
@@ -9,7 +9,7 @@ Overview of NostrClient
 The `NostrClient` class provides the core functionality for connecting to Nostr relays, sending and receiving messages, and managing a Nostr identity. It is a foundational component for building agents and MCP servers in Agentstr.
 
 Key Features
-------------
+~~~~~~~~~~~~
 
 - **Relay Connection**: Connects to specified Nostr relays for network communication.
 - **Identity Management**: Supports both read-only mode and authenticated mode with a private key.
@@ -17,7 +17,7 @@ Key Features
 - **Wallet Integration**: Supports Nostr Wallet Connect (NWC) for payment processing.
 
 Initialization
---------------
+~~~~~~~~~~~~~~
 
 The `NostrClient` can be initialized with default values from environment variables or with explicit parameters to override them.
 
@@ -29,6 +29,7 @@ The `NostrClient` can be initialized with default values from environment variab
    client = NostrClient()
 
    # Or override defaults with explicit parameters
+   # But please do not hardcode your private key in production code
    client = NostrClient(
        relays=["wss://relay.example.com"],
        private_key="nsec1...your-private-key...",
@@ -36,7 +37,7 @@ The `NostrClient` can be initialized with default values from environment variab
    )
 
 Environment Variables
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 `NostrClient` uses the following environment variables by default:
 
@@ -48,30 +49,24 @@ Environment Variables
    You can override these environment variables by passing explicit parameters to the `NostrClient` constructor. For example, passing a `relays` list will ignore `NOSTR_RELAYS`, and passing `private_key` will ignore `NOSTR_NSEC`.
 
 Usage Example
--------------
+~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from agentstr import NostrClient
-   import os
-
-   # Set environment variables (or use .env file)
-   os.environ["NOSTR_RELAYS"] = "wss://relay.damus.io,wss://relay.primal.net"
-   os.environ["NOSTR_NSEC"] = "nsec1...your-private-key..."
-   os.environ["NWC_CONN_STR"] = "nostr+walletconnect://...your-connection-string..."
 
    # Initialize client with defaults from environment variables
    client = NostrClient()
 
-   # Use the client for agent or MCP server operations
-   print(f"Initialized with public key: {client.public_key.bech32()}")
+   # Main function
+   async def main():
+      # Retrieve metadata for a public key
+      metadata = await client.get_metadata_for_pubkey("npub1...your-public-key...")
+      print(metadata)
 
-Next Steps
-----------
+   if __name__ == "__main__":
+      asyncio.run(main())
 
-- **Build an Agent**: Learn how to use `NostrClient` with `NostrAgent` in the :doc:`../getting_started/simple_agent` guide.
-- **Create an MCP Server**: See how to integrate `NostrClient` with `NostrMCPServer` in the :doc:`../getting_started/creating_an_mcp_server` guide.
-- **Explore NWC**: Dive into payment processing with Nostr Wallet Connect in the :doc:`../getting_started/payment_enabled_agent` guide.
 
 Reference
 ---------

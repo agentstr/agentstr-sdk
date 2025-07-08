@@ -39,12 +39,6 @@ Environment Variables
 .. note::
    You can override this environment variable by passing an explicit `nwc_connection_string` parameter to the `NWCRelay` constructor.
 
-Next Steps
-----------
-
-- **Enable Payments in Agents**: Learn how to integrate NWC with agents in the :doc:`../../getting_started/payment_enabled_agent` guide.
-- **Paid Tools with MCP**: See how to use NWC for paid tools in MCP servers in the :doc:`../../getting_started/creating_an_mcp_server` guide.
-
 Reference
 ---------
 
@@ -52,3 +46,10 @@ Reference
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+See Also
+--------
+
+- :doc:`../../getting_started/payment_enabled_agent` — Learn how to integrate NWC with Agentstr agents.
+- :doc:`../../getting_started/creating_an_mcp_server` — See how to use NWC to create MCP servers with paid tools.
