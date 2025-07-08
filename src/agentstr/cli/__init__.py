@@ -502,7 +502,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import asyncio
-from agentstr import AgentstrAgent, ChatInput
+from agentstr import AgentstrAgent, ChatInput, metadata_from_yaml
 
 
 # Define an agent callable
@@ -515,6 +515,7 @@ async def main():
     agent = AgentstrAgent(
         name="HelloWorldAgent",
         description="A minimal example that greets users.",
+        metadata=metadata_from_yaml(),
         agent_callable=hello_world_agent,
     )
     await agent.start()
@@ -616,7 +617,19 @@ if __name__ == "__main__":
 
     (project_dir / "test_client.py").write_text(test_client_py)
 
-        # Create cloud deployment configs
+    # Default nostr-metadata.yml
+    metadata = {
+        "name": name,
+        "display_name": name,
+        "username": name,
+        "about": "A minimal example of an Agentstr agent that greets users.",
+        "picture": "https://agentstr.com/favicon.ico",
+        "banner": "",
+        "website": "https://agentstr.com",
+    }
+    (project_dir / "nostr-metadata.yml").write_text(yaml.dump(metadata))
+    
+    # Create cloud deployment configs
     main_path = os.path.join(project_name, "main.py")
     env_path = os.path.join(project_name, ".env")
 

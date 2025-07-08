@@ -4,14 +4,24 @@ from pydantic import BaseModel
 from agentstr.logger import get_logger
 from pynostr.metadata import Metadata
 from typing import Any
+import os
 
 logger = get_logger(__name__)
 
 
-def to_metadata_yaml(path: str) -> Metadata:
+def metadata_from_yaml(path: str | None) -> Metadata | None:
     """Utility function to convert a metadata file to a Metadata object."""
-    with open(path, 'r') as f:
-        return Metadata.from_dict(yaml.safe_load(f))
+    if path is None:
+        path = os.path.abspath(__file__)
+        path = os.path.dirname(path)
+        path = os.path.join(path, "nostr-metadata.yml")
+    logger.debug(f"Loading metadata from {path}")
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return Metadata.from_dict(yaml.safe_load(f))
+    else:
+        logger.info(f"Metadata file {path} does not exist")
+        return None
 
 
 def stringify_result(result: Any) -> str:
