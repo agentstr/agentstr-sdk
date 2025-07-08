@@ -24,7 +24,7 @@ def metadata_from_yaml(path: str) -> Metadata | None:
             metadata = yaml.safe_load(f)
             # Remove keys of empty values
             metadata = {k: v for k, v in metadata.items() if v}
-            return Metadata.from_dict(metadata)
+            return Metadata(**metadata)
     else:
         logger.info(f"Metadata file {path} does not exist")
         return None
