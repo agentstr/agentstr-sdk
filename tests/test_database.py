@@ -53,7 +53,6 @@ async def test_ensure_user_table_idempotent(db):
 # -----------------------------------------------------------------------------
 # Message history API tests
 # -----------------------------------------------------------------------------
-from agentstr.database import Message  # noqa: E402 - import after top-level for tests
 
 @pytest.mark.asyncio
 async def test_add_and_get_messages(db):
