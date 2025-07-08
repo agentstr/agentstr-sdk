@@ -1,6 +1,7 @@
 import pytest
 import pytest_asyncio
-from agentstr.database import Database, User
+from agentstr.database import Database
+from agentstr.models import User, Message
 
 @pytest_asyncio.fixture
 async def db():
