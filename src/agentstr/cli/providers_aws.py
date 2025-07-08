@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Optional, List
+from agentstr.utils import default_metadata_file
 
 import click
 
@@ -193,12 +194,19 @@ class AWSProvider(Provider):  # noqa: D401
             deps_line = " " + " ".join(dependencies) if dependencies else ""
             if "agentstr-sdk" not in deps_line:
                 deps_line = "agentstr-sdk[all] " + deps_line
+            metadata_file = default_metadata_file(file_path)
+            copy_metadata = ""
+            if metadata_file:
+                tmp_metadata_file = Path(tmp_dir) / "nostr-metadata.yml"
+                tmp_metadata_file.write_text(Path(metadata_file).read_text())
+                copy_metadata = f"COPY nostr-metadata.yml /app/nostr-metadata.yml"
             dockerfile_path.write_text(
                 f"""
 FROM public.ecr.aws/docker/library/python:3.12-slim
 WORKDIR /app
-COPY app.py /app/app.py
 RUN pip install --no-cache-dir {deps_line}
+{copy_metadata}
+COPY app.py /app/app.py
 CMD [\"python\", \"/app/app.py\"]
 """
             )
