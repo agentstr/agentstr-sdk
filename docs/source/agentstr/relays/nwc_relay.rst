@@ -9,13 +9,13 @@ Overview of NWCRelay
 The `NWCRelay` class is used to integrate Nostr Wallet Connect (NWC) functionality into Agentstr agents and MCP servers. It enables payment processing by communicating with wallet services through encrypted messages on the Nostr network.
 
 Key Features
-------------
+~~~~~~~~~~~~
 
 - **Payment Processing**: Facilitates sending and receiving payments via Nostr Wallet Connect.
 - **Encrypted Communication**: Uses encrypted direct messages to securely interact with wallet services.
 
 Initialization
---------------
+~~~~~~~~~~~~~~
 
 The `NWCRelay` can be initialized with a connection string directly or can use a default environment variable.
 
@@ -30,7 +30,7 @@ The `NWCRelay` can be initialized with a connection string directly or can use a
    nwc_relay = NWCRelay(nwc_connection_string="nostr+walletconnect://...your-connection-string...")
 
 Environment Variables
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 `NWCRelay` uses the following environment variable by default:
 

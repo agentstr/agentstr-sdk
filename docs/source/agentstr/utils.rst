@@ -8,7 +8,8 @@ Overview
 
 This module is a collection of tools that support the core functionality of the SDK. You can import and use these utilities in your own code when building on top of Agentstr.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 

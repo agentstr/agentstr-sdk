@@ -8,7 +8,8 @@ Overview
 
 The ``Scheduler`` class is a wrapper around APScheduler that simplifies running async functions on a schedule. It supports interval-based and cron-style jobs.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
