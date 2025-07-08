@@ -515,7 +515,7 @@ async def main():
     agent = AgentstrAgent(
         name="HelloWorldAgent",
         description="A minimal example that greets users.",
-        metadata=metadata_from_yaml(),
+        nostr_metadata=metadata_from_yaml(__file__),
         agent_callable=hello_world_agent,
     )
     await agent.start()

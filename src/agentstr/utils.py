@@ -9,16 +9,22 @@ import os
 logger = get_logger(__name__)
 
 
-def metadata_from_yaml(path: str | None) -> Metadata | None:
-    """Utility function to convert a metadata file to a Metadata object."""
+def metadata_from_yaml(path: str) -> Metadata | None:
+    """Utility function to convert a metadata file to a Metadata object. By default, it will look for a file named 'nostr-metadata.yml' in the same directory as the file calling this function."""
     if path is None:
-        path = os.path.abspath(__file__)
+        return None
+    if not path.endswith('.yml') and not path.endswith('.yaml'):
+        # Checking for default metadata file
+        path = os.path.abspath(path)
         path = os.path.dirname(path)
         path = os.path.join(path, "nostr-metadata.yml")
     logger.debug(f"Loading metadata from {path}")
     if os.path.exists(path):
         with open(path, 'r') as f:
-            return Metadata.from_dict(yaml.safe_load(f))
+            metadata = yaml.safe_load(f)
+            # Remove keys of empty values
+            metadata = {k: v for k, v in metadata.items() if v}
+            return Metadata.from_dict(metadata)
     else:
         logger.info(f"Metadata file {path} does not exist")
         return None
