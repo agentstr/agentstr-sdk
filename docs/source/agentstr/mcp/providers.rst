@@ -1,7 +1,7 @@
 MCP Providers
 =============
 
-The ``agentstr.mcp.providers`` submodule contains provider integrations for MCP (Model Context Protocol). Each provider enables the Agentstr SDK to interact with a different agentic framework or backend.
+The ``agentstr.mcp.providers`` submodule contains provider integrations for MCP (Model Context Protocol). Each provider enables the Agentstr SDK to integrate Nostr MCP Servers with a different agentic framework or backend.
 
 .. toctree::
    :maxdepth: 1
