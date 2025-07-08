@@ -9,11 +9,10 @@ Agentstr Docs
    :target: LICENSE
    :alt: License
 
-Agentstr is a powerful toolkit for building decentralized agentic applications on the Nostr protocol.
 
-For detailed usage examples and tutorials, check out our `Usage Guide <https://agentstr.com/usage>`_.
+**Agentstr** is a powerful toolkit for building intelligent, decentralized agents that leverage the Nostr and Lightning protocols.
 
-Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>`_.
+Dive into our :doc:`Getting Started <getting_started>` guide to begin your journey with Agentstr and deploy your first agent in minutes.
 
 .. admonition:: Featured: AgentstrAgent
    :class: important
@@ -23,7 +22,7 @@ Or take a look at the code on `GitHub <https://github.com/agentstr/agentstr-sdk>
    See the :doc:`agentstr/agents/agentstr` page for more details.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
    :titlesonly:
 
