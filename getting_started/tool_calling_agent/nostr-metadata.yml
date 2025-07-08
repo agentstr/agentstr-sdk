@@ -1,7 +1,4 @@
-about: A minimal example of an Agentstr agent that greets users.
-banner: ''
-display_name: metadata_test
-name: metadata_test
+display_name: tool_calling_agent
 picture: https://agentstr.com/favicon.ico
-username: metadata_test
+username: tool_calling_agent
 website: https://agentstr.com
