@@ -8,15 +8,15 @@ Overview
 
 The primary function in this module is ``to_agno_tools``, which takes a ``NostrMCPClient`` instance and converts the available MCP tools into a format that can be used by an ``agno.agent.Agent``.
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
-   import asyncio
-   from agentstr.mcp.providers.agno import to_agno_tools
-   from agentstr.mcp.nostr_mcp_client import NostrMCPClient
    from agno.agent import Agent
    from agno.models.openai import OpenAIChat
+   from agentstr import NostrMCPClient
+   from agentstr.mcp.providers.agno import to_agno_tools
 
    # Assume nostr_mcp_client is an initialized and connected NostrMCPClient
    async def setup_agno_agent(nostr_mcp_client: NostrMCPClient):
@@ -29,6 +29,10 @@ The primary function in this module is ``to_agno_tools``, which takes a ``NostrM
            tools=agno_tools,
        )
        return agent
+
+.. note::
+   For a complete, working example, check out the `Agno Agent example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/agno_agent.py>`_.
+
 
 Reference
 ---------

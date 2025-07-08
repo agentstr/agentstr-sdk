@@ -16,13 +16,13 @@ Usage
    import asyncio
    from agentstr import NostrMCPServer, tool
 
-   # Define a simple tool
+   # Define a free tool
    @tool
    def say_hello(name: str) -> str:
        """Says hello to someone."""
        return f"Hello, {name}"
 
-   # Weather tool (premium tool)
+   # Define a premium tool (5 satoshis per invocation)
    @tool(satoshis=5)
    async def get_weather(city: str) -> str:
        """Get weather for a given city."""

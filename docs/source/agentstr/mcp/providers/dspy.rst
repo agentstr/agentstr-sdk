@@ -8,11 +8,11 @@ Overview
 
 The primary function in this module is ``to_dspy_tools``, which takes a ``NostrMCPClient`` instance and converts the available MCP tools into a format that can be used by a DSPy agent (like ``dspy.ReAct``).
 
-**Typical usage:**
+Usage
+~~~~~
 
 .. code-block:: python
 
-   import asyncio
    import dspy
    from agentstr.mcp.providers.dspy import to_dspy_tools
    from agentstr.mcp.nostr_mcp_client import NostrMCPClient
@@ -25,6 +25,9 @@ The primary function in this module is ``to_dspy_tools``, which takes a ``NostrM
        # Create a DSPy agent with the converted tools
        agent = dspy.ReAct("question -> answer: str", tools=dspy_tools)
        return agent
+
+.. note::
+   For a complete, working example, check out the `DSPy Agent example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/dspy_agent.py>`_.
 
 Reference
 ---------

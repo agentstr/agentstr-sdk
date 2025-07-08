@@ -15,6 +15,10 @@ class NostrMCPClient:
     """Client for interacting with Model Context Protocol (MCP) servers on Nostr.
 
     Discovers and calls tools from MCP servers, handling payments via NWC when needed.
+    Most arguments are optional as they can be set via environment variables like 
+    `NOSTR_NSEC` for private key, `NOSTR_RELAYS` for relay URLs, and `NWC_CONN_STR` 
+    for Nostr Wallet Connect string. See the documentation for more details on 
+    environment variable usage.
     """
     def __init__(self, mcp_pubkey: str, nostr_client: NostrClient | None = None,
                  relays: list[str] | None = None, private_key: str | None = None, nwc_str: str | None = None):

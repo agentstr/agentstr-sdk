@@ -30,32 +30,13 @@ def tool(**kwargs):
 
 
 class NostrMCPServer:
-    """Model Context Protocol (MCP) server running on the Nostr protocol.
+    """Server for exposing tools over Nostr as a Model Context Protocol (MCP) server.
 
-    Registers and manages tools that can be called by clients via direct messages,
-    with optional payment requirements handled through NWC.
-
-    Examples
-    --------
-    Minimal MCP server exposing a single ``add`` tool::
-
-        import asyncio
-        from agentstr import NostrMCPServer
-
-        relays = ["wss://relay.damus.io"]
-
-        async def add(a: int, b: int) -> int:
-            return a + b
-
-        server = NostrMCPServer(
-            display_name="Demo MCP",
-            relays=relays,
-            tools=[add],
-        )
-
-        asyncio.run(server.start())
-
-    Full runnable script: `mcp_server.py <https://github.com/agentstr/agentstr-sdk/tree/main/examples/mcp_server.py>`_
+    Listens for tool requests, executes them, and returns results, optionally charging 
+    via Nostr Wallet Connect (NWC). Most arguments are optional as they can be set via 
+    environment variables like `NOSTR_NSEC` for private key, `NOSTR_RELAYS` for relay URLs, 
+    and `NWC_CONN_STR` for Nostr Wallet Connect string. See the documentation for more 
+    details on environment variable usage.
     """
     def __init__(self, display_name: str | None = None, nostr_client: NostrClient | None = None,
                  relays: list[str] | None = None, private_key: str | None = None, nwc_str: str | None = None,
