@@ -8,8 +8,8 @@ Overview
 
 The CLI offers commands for the entire lifecycle of an agent deployment, from scaffolding a new project to deploying, monitoring, and destroying it. It supports multiple cloud providers (AWS, GCP, Azure) and manages configurations and secrets.
 
-Commands
---------
+CLI Commands
+~~~~~~~~~~~~
 
 - ``agentstr init <project_name>``: Creates a new agent project skeleton.
 - ``agentstr deploy <file_path>``: Deploys an application to the configured cloud provider.
@@ -18,7 +18,8 @@ Commands
 - ``agentstr destroy <name>``: Removes a deployment and its resources.
 - ``agentstr relay start``: Runs a local Nostr relay for development purposes.
 
-**Typical usage:**
+CLI Usage
+~~~~~~~~~
 
 .. code-block:: bash
 
