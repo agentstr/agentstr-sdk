@@ -11,7 +11,7 @@ resolution-markers = [
 
 [[package]]
 name = "agentstr-sdk"
-version = "0.6.1"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
@@ -21,6 +21,7 @@ dependencies = [
     { name = "dspy" },
     { name = "expiringdict" },
     { name = "langchain-openai" },
+    { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-checkpoint-sqlite" },
     { name = "mcp", extra = ["cli"] },
@@ -47,7 +48,6 @@ all = [
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-openai" },
-    { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-checkpoint-sqlite" },
     { name = "nostr-relay" },
@@ -129,7 +129,7 @@ requires-dist = [
     { name = "langchain-community", marker = "extra == 'rag'", specifier = ">=0.3.24" },
     { name = "langchain-openai", specifier = ">=0.3.18" },
     { name = "langchain-openai", marker = "extra == 'all'", specifier = ">=0.3.18" },
-    { name = "langgraph", marker = "extra == 'all'", specifier = ">=0.4.7" },
+    { name = "langgraph", specifier = ">=0.4.7" },
     { name = "langgraph", marker = "extra == 'langgraph'", specifier = ">=0.4.7" },
     { name = "langgraph-checkpoint-postgres", specifier = ">=2.0.21" },
     { name = "langgraph-checkpoint-postgres", marker = "extra == 'all'", specifier = ">=2.0.21" },

@@ -28,6 +28,9 @@ Usage
    if __name__ == "__main__":
        asyncio.run(main())
 
+.. note::
+   For a complete, working example, check out the `Nostr RAG example <https://github.com/agentstr/agentstr-sdk/blob/main/examples/rag.py>`_.
+
 Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~
 

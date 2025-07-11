@@ -12,6 +12,8 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Optional, List
+from agentstr.utils import default_metadata_file
+import logging
 
 import click
 
@@ -193,12 +195,19 @@ class AWSProvider(Provider):  # noqa: D401
             deps_line = " " + " ".join(dependencies) if dependencies else ""
             if "agentstr-sdk" not in deps_line:
                 deps_line = "agentstr-sdk[all] " + deps_line
+            metadata_file = default_metadata_file(file_path)
+            copy_metadata = ""
+            if metadata_file:
+                tmp_metadata_file = Path(tmp_dir) / "nostr-metadata.yml"
+                tmp_metadata_file.write_text(Path(metadata_file).read_text())
+                copy_metadata = f"COPY nostr-metadata.yml /app/nostr-metadata.yml"
             dockerfile_path.write_text(
                 f"""
 FROM public.ecr.aws/docker/library/python:3.12-slim
 WORKDIR /app
-COPY app.py /app/app.py
 RUN pip install --no-cache-dir {deps_line}
+{copy_metadata}
+COPY app.py /app/app.py
 CMD [\"python\", \"/app/app.py\"]
 """
             )
@@ -379,7 +388,14 @@ CMD [\"python\", \"/app/app.py\"]
         )
         self._ensure_log_group(deployment_name)
         self._create_service(cluster_arn, deployment_name, task_def_arn)
-        click.echo("Deployment successful. Service is starting (may take ~1-2 min).")
+        click.echo("Waiting for deployment to complete...")
+        waiter = self.ecs.get_waiter("services_stable")
+        try:
+            waiter.wait(cluster=self.CLUSTER_NAME, services=[deployment_name], WaiterConfig={"Delay": 15, "MaxAttempts": 40})
+            click.echo("Deployment completed.")
+        except Exception as e:
+            click.echo(f"Deployment timed out or failed after 10 minutes: {str(e)}")
+            logging.error(f"Deployment timeout or failure for {deployment_name}: {str(e)}")
 
     @_catch_exceptions
     def list(self, *, name_filter: Optional[str] = None):  # noqa: D401
@@ -399,7 +415,7 @@ CMD [\"python\", \"/app/app.py\"]
             name = svc["serviceName"]
             if name_filter and name_filter not in name:
                 continue
-            status = svc["status"]
+            status = svc.get("status")
             desired = svc["desiredCount"]
             running = svc["runningCount"]
             click.echo(f"{name} – status: {status}, desired: {desired}, running: {running}")

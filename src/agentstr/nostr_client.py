@@ -154,6 +154,8 @@ class NostrClient:
         metadata = Metadata()
         if previous_metadata:
             metadata.set_metadata(previous_metadata.metadata_to_dict())
+        if nostr_metadata:  # populate initial metadata (can be overriden by other arguments)
+            metadata.set_metadata(nostr_metadata.metadata_to_dict())
         if name:
             metadata.name = name
         if about:
@@ -174,8 +176,6 @@ class NostrClient:
             metadata.display_name = display_name
         if website:
             metadata.website = website
-        if nostr_metadata:  # Overrides other fields
-            metadata.set_metadata(nostr_metadata.metadata_to_dict())
         logger.info(f"Updating metadata for {self.public_key.bech32()}: {metadata.metadata_to_dict()}")
         metadata.created_at = int(time.time())
         metadata.update()

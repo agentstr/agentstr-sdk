@@ -1,5 +1,5 @@
-Custom Agentic Frameworks
-=========================
+Custom Agent Frameworks
+=======================
 
 Agent providers are the foundation for advanced customization in the Agentstr SDK, allowing you to choose and integrate your preferred agentic framework for agent logic. Unlike the high-level `AgentstrAgent` class, which offers a pre-built solution for quick setup, agent providers give you the flexibility to tailor your agent's capabilities to specific needs. This guide explores the various agent providers available, helping you select the right framework for your project.
 

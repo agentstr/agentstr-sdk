@@ -89,6 +89,39 @@ Example with NostrMCPServer
        tools=[add, multiply]
    )
 
+Defining Metadata from YAML
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another convenient way to define Nostr metadata is by using a YAML file. The :func:`agentstr.utils.metadata_from_yaml` function allows you to load metadata configurations from a YAML file, which can be useful for managing multiple profiles or maintaining metadata outside of code.
+
+Here's an example of how to use it:
+
+.. code-block:: python
+
+    from agentstr import metadata_from_yaml
+
+    # Load metadata from a specific YAML file
+    metadata = metadata_from_yaml("path/to/nostr-metadata.yml")
+
+    # Load metadata from the default (`nostr-metadata.yml`) file
+    # (if it exists in the same directory as the file calling this function)
+    metadata = metadata_from_yaml(__file__)
+
+    # Use the metadata with NostrAgent
+    agent = NostrAgent(nostr_metadata=metadata, ...)
+
+The YAML file (e.g., ``nostr-metadata.yml``) might look like this:
+
+.. code-block:: yaml
+
+    name: "AgentstrAgent"
+    about: "A brief description about me."
+    picture: "https://example.com/my-picture.jpg"
+    nip05: "myname@example.com"
+
+This approach makes it easy to update metadata without changing code and supports a more declarative way of defining profile information.
+
+
 Benefits
 --------
 

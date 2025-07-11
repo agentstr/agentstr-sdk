@@ -1,5 +1,5 @@
-Agentstr Agentic Framework
-==========================
+Agentstr Agent Framework
+========================
 
 The Agentstr SDK simplifies the creation of intelligent agents on the Nostr protocol through its high-level agent class, `AgentstrAgent`. This class offers a ready-to-use framework for building agents with minimal setup, abstracting much of the complexity of agent development. If you're looking to quickly deploy a functional agent without delving into the intricacies of agentic frameworks, `AgentstrAgent` is your starting point.
 

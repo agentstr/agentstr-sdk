@@ -118,6 +118,13 @@ To tear down a deployment and delete all associated resources, use the ``destroy
 .. note::
    For more information on the CLI commands, see the :doc:`agentstr/cli` module.
 
+Nostr Metadata
+--------------
+
+When deploying your Agentstr application to the cloud, if you have a ``nostr-metadata.yml`` file in the same directory as your main application file, it will be automatically deployed along with your application. This file contains metadata for your application's Nostr profile, which will be used by the Agentstr SDK to update and broadcast your profile information on the Nostr network.
+
+For more information on Nostr metadata and how to configure it, refer to :doc:`key_concepts/nostr_metadata`.
+
 CI/CD with GitHub Actions
 -------------------------
 
