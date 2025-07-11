@@ -3,7 +3,7 @@
 The Agentstr CLI provides a command-line interface for deploying and managing agent applications on various cloud providers.
 
 Usage:
-    agentstr deploy <path_to_file> [--provider aws|gcp|azure] [--name NAME]
+    agentstr deploy <path_to_file> [--provider aws|gcp|azure|docker] [--name NAME]
     agentstr list [--provider ...]
     agentstr logs <name> [--provider ...]
     agentstr destroy <name> [--provider ...]
@@ -59,7 +59,7 @@ def _get_provider(ctx: click.Context, cfg: Dict[str, Any] | None = None) -> Prov
 
 DEFAULT_PROVIDER_ENV = "AGENTSTR_PROVIDER"
 DEFAULT_CONFIG_ENV = "AGENTSTR_CONFIG"
-PROVIDER_CHOICES = ["aws", "gcp", "azure"]
+PROVIDER_CHOICES = ["aws", "gcp", "azure", "docker"]
 
 
 def _resolve_provider(ctx: click.Context, param: click.Parameter, value: Optional[str]):
