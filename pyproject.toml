@@ -22,7 +22,7 @@ dependencies = [
     "dspy>=2.6.27",
     "asyncpg>=0.30.0",
     "apscheduler>=3.11.0",
-    "langgraph>=0.4.7",
+    "langgraph==0.4.7",
     "langgraph-checkpoint-postgres>=2.0.21",
     "langgraph-checkpoint-sqlite>=2.0.10",
     "psycopg[binary]>=3.2.9",
@@ -94,7 +94,7 @@ rag = [
     "langchain-community>=0.3.24",
 ]
 langgraph = [
-    "langgraph>=0.4.7",
+    "langgraph==0.4.7",
 ]
 dspy = [
     "dspy>=2.6.27",

@@ -356,7 +356,40 @@ CMD [\"python\", \"/app/app.py\"]
         ] + env_cli_args + secure_cli_args + log_args
 
         self._run_cmd(create_cmd)
-        click.echo("Deployment submitted. Use `agentstr logs` to view logs.")
+        click.echo("Waiting for deployment to complete...")
+        
+        import time
+        start_time = time.time()
+        timeout_seconds = 600  # 10 minutes timeout
+        poll_interval = 15  # Check every 15 seconds
+        
+        while time.time() - start_time < timeout_seconds:
+            show_cmd = [
+                "az",
+                "container",
+                "show",
+                "--resource-group",
+                resource_group,
+                "--name",
+                deployment_name,
+                "-o",
+                "json",
+            ]
+            out = subprocess.check_output(show_cmd, text=True)
+            data = json.loads(out)
+            provisioning_state = data["provisioningState"]
+            container_state = data["containers"][0]["instanceView"]["currentState"]["state"] if data["containers"][0]["instanceView"] else None
+            
+            if provisioning_state == "Succeeded" and container_state == "Running":
+                click.echo("Deployment completed.")
+                return
+            elif provisioning_state == "Failed":
+                click.echo(f"Deployment failed: {data['containers'][0]['instanceView']['currentState']['detailStatus'] if data['containers'][0]['instanceView'] else 'Unknown error'}")
+                return
+            
+            time.sleep(poll_interval)
+        
+        click.echo("Deployment timed out after 10 minutes.")
 
     @_catch_exceptions
     def list(self, *, name_filter: Optional[str] = None):  # noqa: D401
