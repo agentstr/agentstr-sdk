@@ -510,12 +510,12 @@ CMD [\"python\", \"/app/app.py\"]
                 click.echo("Deployment completed.")
                 return
             elif status.lower().startswith("false"):
-                click.echo("Deployment failed.")
-                raise click.ClickException("Deployment failed.")
+                click.echo("Deployment not ready yet. Waiting 15 seconds...")
 
             time.sleep(poll_interval)
 
         click.echo("Deployment timed out after 10 minutes.")
+        raise click.ClickException("Deployment failed.")
 
     @_catch_exceptions
     def list(self, *, name_filter: Optional[str] = None):  # noqa: D401
