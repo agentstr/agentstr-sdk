@@ -5,7 +5,7 @@ file_path: getting_started/tool_calling_agent/main.py  # Path to main.py file
 database: true  # Provision postgres database (if not already provisioned)
 
 extra_pip_deps:  # Additional Python deps installed in image
-  - agentstr-sdk==0.6.1
+  - agentstr-sdk==0.6.4
 
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
