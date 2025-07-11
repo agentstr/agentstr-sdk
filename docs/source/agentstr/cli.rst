@@ -6,7 +6,7 @@ The ``agentstr.cli`` module provides a command-line interface (CLI) for managing
 Overview
 --------
 
-The CLI offers commands for the entire lifecycle of an agent deployment, from scaffolding a new project to deploying, monitoring, and destroying it. It supports multiple cloud providers (AWS, GCP, Azure) and manages configurations and secrets.
+The CLI offers commands for the entire lifecycle of an agent deployment, from scaffolding a new project to deploying, monitoring, and destroying it. It supports multiple cloud providers (AWS, GCP, Azure, Docker) and manages configurations and secrets.
 
 CLI Commands
 ~~~~~~~~~~~~
@@ -27,7 +27,7 @@ CLI Usage
    agentstr --help
 
    # Choose Cloud provider
-   export AGENTSTR_PROVIDER=aws # or gcp, azure
+   export AGENTSTR_PROVIDER=aws # or gcp, azure, docker
 
    # Create a new agent project
    agentstr init my-new-agent

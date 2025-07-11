@@ -118,6 +118,67 @@ To tear down a deployment and delete all associated resources, use the ``destroy
 .. note::
    For more information on the CLI commands, see the :doc:`agentstr/cli` module.
 
+Local Docker Deployment
+-----------------------
+
+Docker deployments are ideal for local development and testing. They allow you to run Agentstr applications in isolated containers on your machine without needing cloud credentials or internet access.
+
+**Prerequisites**:
+
+- Docker and Docker Compose must be installed on your system.
+- Ensure the Agentstr CLI is installed (``pip install agentstr-sdk[cli]``).
+
+**Steps**:
+
+1. **Set the provider**:
+
+   .. code-block:: bash
+
+      export AGENTSTR_PROVIDER=docker
+
+2. **Deploy your application**:
+
+   .. code-block:: bash
+
+      agentstr deploy -f path/to/deploy.yml
+
+   This will create a Docker container for your application and, if needed, a Postgres database container. Both are networked together automatically.
+
+3. **List deployments**:
+
+   .. code-block:: bash
+
+      agentstr list
+
+   You'll see only Agentstr-related containers prefixed with ``agentstr-``.
+
+4. **View logs**:
+
+   .. code-block:: bash
+
+      agentstr logs -f path/to/deploy.yml
+
+5. **Destroy the deployment** when done:
+
+   .. code-block:: bash
+
+      agentstr destroy -f path/to/deploy.yml
+
+**Benefits of Docker Deployment**:
+
+- **Isolation**: Each deployment runs in its own container, preventing dependency conflicts.
+- **Consistency**: Mimics production environment setup with containers.
+- **Speed**: No cloud latency or credential setup needed.
+- **Cost**: Free for local development.
+
+**Limitations**:
+
+- Not suitable for production due to lack of scalability and persistence compared to cloud providers.
+- Requires local Docker setup and resources.
+
+.. note::
+   If you encounter connection issues between your application and database, ensure both containers are running and on the same network. The Agentstr CLI handles this automatically, but manual Docker inspection can confirm (``docker ps``, ``docker network ls``).
+
 Nostr Metadata
 --------------
 
