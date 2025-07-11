@@ -52,6 +52,20 @@ class DockerProvider(Provider):
             f"[Docker] Deploying {file_path} as '{deployment_name}' (deps={dependencies}) ..."
         )
         
+        # Remove existing container if it exists to avoid conflicts
+        click.echo(f"[Docker] Removing any existing container named '{deployment_name}' ...")
+        try:
+            self._run_cmd(["docker", "rm", "-f", deployment_name])
+            click.echo(f"[Docker] Existing container '{deployment_name}' removed.")
+        except subprocess.CalledProcessError:
+            click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
+        
+        # Log secrets for debugging (masking sensitive values)
+        click.echo("[Docker] Secrets being passed to container:")
+        for key, value in secrets.items():
+            status = "[empty or None]" if not value else "[value masked]"
+            click.echo(f"[Docker] - {key}: {status}")
+        
         # Create a temporary directory for the build context
         import tempfile
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -64,7 +78,7 @@ class DockerProvider(Provider):
             metadata_file = default_metadata_file(file_path)
             copy_metadata = ""
             if metadata_file:
-                tmp_metadata_file = Path(tmp_dir) / "nostr-metadata.yml"
+                tmp_metadata_file = Path(temp_dir) / "nostr-metadata.yml"
                 tmp_metadata_file.write_text(Path(metadata_file).read_text())
                 copy_metadata = f"COPY nostr-metadata.yml /app/nostr-metadata.yml"
 
@@ -91,14 +105,13 @@ CMD ["python", "/app/{file_path.name}"]
                         "environment": [
                             f"{k}={v}" for k, v in env.items()
                         ] + [
-                            f"{k}={v}" for k, v in secrets.items()
+                            f"{k}={v}" for k, v in secrets.items() if v is not None
                         ]
                     }
                 }
             }
             import yaml
             (Path(temp_dir) / self.compose_file).write_text(yaml.dump(compose_content, default_flow_style=False))
-            
             # Build and start the service
             self._run_cmd(["docker-compose", "up", "-d", "--build"], cwd=temp_dir)
             click.echo("Waiting for deployment to complete...")
@@ -162,7 +175,7 @@ CMD ["python", "/app/{file_path.name}"]
         click.echo(f"[Docker] Storing secret '{name}' locally.")
         # For local Docker deployments, we don't need to store secrets in a secret manager.
         # They will be passed directly as environment variables.
-        return name
+        return value
 
     @_catch_exceptions
     def provision_database(self, deployment_name: str) -> tuple[str, str]:
