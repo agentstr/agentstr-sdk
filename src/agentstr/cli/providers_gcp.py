@@ -504,7 +504,8 @@ CMD [\"python\", \"/app/app.py\"]
             service = subprocess.run([
                 "kubectl", "get", "deployment", deployment_name, "--output=jsonpath='{.status.conditions[?(@.type==\"Available\")].status}'"
             ], capture_output=True, text=True)
-            status = service.stdout.strip()
+            status = service.stdout.strip().strip("'")
+            click.echo(f"Deployment status: {status}")
             if status.lower().startswith("true"):
                 click.echo("Deployment completed.")
                 return
