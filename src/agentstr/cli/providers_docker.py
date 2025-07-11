@@ -60,6 +60,15 @@ class DockerProvider(Provider):
         except subprocess.CalledProcessError:
             click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
         
+        # Remove existing database container if it exists to avoid conflicts
+        db_container_name = f"{deployment_name}-db"
+        click.echo(f"[Docker] Removing any existing database container named '{db_container_name}' ...")
+        try:
+            self._run_cmd(["docker", "rm", "-f", db_container_name])
+            click.echo(f"[Docker] Existing database container '{db_container_name}' removed.")
+        except subprocess.CalledProcessError:
+            click.echo(f"[Docker] No existing database container named '{db_container_name}' found.")
+        
         # Log secrets for debugging (masking sensitive values)
         click.echo("[Docker] Secrets being passed to container:")
         for key, value in secrets.items():
@@ -93,7 +102,8 @@ CMD ["python", "/app/{file_path.name}"]
 """
             (Path(temp_dir) / "Dockerfile").write_text(dockerfile_content)
             
-            # Create docker-compose.yml
+            # Create docker-compose.yml with a shared network
+            network_name = "agentstr-network"
             compose_content = {
                 "version": "3.8",
                 "services": {
@@ -106,10 +116,43 @@ CMD ["python", "/app/{file_path.name}"]
                             f"{k}={v}" for k, v in env.items()
                         ] + [
                             f"{k}={v}" for k, v in secrets.items() if v is not None
-                        ]
+                        ],
+                        "networks": [network_name]
+                    }
+                },
+                "networks": {
+                    network_name: {
+                        "driver": "bridge"
                     }
                 }
             }
+            # Add database service for this deployment
+            compose_content["services"][db_container_name] = {
+                "image": "postgres:13",
+                "container_name": db_container_name,
+                "restart": "always",
+                "environment": [
+                    "POSTGRES_USER=postgres",
+                    "POSTGRES_PASSWORD=postgres",
+                    "POSTGRES_DB=agentstr"
+                ],
+                "volumes": [
+                    f"{db_container_name}-data:/var/lib/postgresql/data"
+                ],
+                "ports": ["5432:5432"],
+                "networks": [network_name]
+            }
+            compose_content["volumes"] = {
+                f"{db_container_name}-data": {}
+            }
+            # Update the DATABASE_URL to use the container name instead of localhost
+            for i, env_var in enumerate(compose_content["services"][deployment_name]["environment"]):
+                if env_var.startswith("DATABASE_URL="):
+                    compose_content["services"][deployment_name]["environment"][i] = f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr"
+                    break
+            else:
+                compose_content["services"][deployment_name]["environment"].append(f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr")
+            
             import yaml
             (Path(temp_dir) / self.compose_file).write_text(yaml.dump(compose_content, default_flow_style=False))
             # Build and start the service
@@ -179,27 +222,35 @@ CMD ["python", "/app/{file_path.name}"]
 
     @_catch_exceptions
     def provision_database(self, deployment_name: str) -> tuple[str, str]:
-        """Provision a managed database for the deployment."""
         deployment_name = f"agentstr-{deployment_name}"
         click.echo(f"[Docker] Provisioning local database for '{deployment_name}' ...")
-        db_container_name = f"{deployment_name}-db"
-        
-        # Check if container already exists
-        check_cmd = self._run_cmd(["docker", "ps", "-a", "--filter", f"name={db_container_name}", "--format", "{{.Names}}"])
-        if check_cmd.stdout.strip():
-            click.echo(f"Database container '{db_container_name}' already exists – reusing.")
-        else:
-            self._run_cmd([
-                "docker", "run", "-d",
-                "--name", db_container_name,
-                "-e", "POSTGRES_PASSWORD=postgres",
-                "-e", "POSTGRES_USER=postgres",
-                "-e", "POSTGRES_DB=agentstr",
-                "-p", "5432:5432",
-                "postgres:15"
-            ])
-        
-        # Connection string for localhost
-        conn_str = "postgresql://postgres:postgres@localhost:5432/agentstr"
-        click.echo("Local Postgres database ready.")
-        return "DATABASE_URL", conn_str
+        container_name = f"{deployment_name}-db"
+        network_name = "agentstr-network"
+        import subprocess
+        try:
+            # Check if container already exists
+            result = self._run_cmd(["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"])
+            if container_name in result.stdout:
+                click.echo(f"Database container '{container_name}' already exists – reusing.")
+            else:
+                # Create a new database container
+                self._run_cmd([
+                    "docker", "run", "-d",
+                    "--name", container_name,
+                    "--restart", "always",
+                    "-e", "POSTGRES_USER=postgres",
+                    "-e", "POSTGRES_PASSWORD=postgres",
+                    "-e", "POSTGRES_DB=agentstr",
+                    "-v", f"{container_name}-data:/var/lib/postgresql/data",
+                    "-p", "5432:5432",
+                    "--network", network_name,
+                    "postgres:15"
+                ])
+            return (
+                f"postgresql://postgres:postgres@localhost:5432/agentstr",
+                "postgres"
+            )
+        except subprocess.CalledProcessError as e:
+            import logging
+            logging.error(f"Error provisioning database: {e}")
+            raise
