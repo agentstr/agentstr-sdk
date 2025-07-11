@@ -9,7 +9,7 @@ on:
     branches:
       - main
     paths:
-      - "configs/aws.yml"
+      - "getting_started/hello_world/deploy.yml"
       - ".github/workflows/deploy-aws.yml"
 
 env: 
