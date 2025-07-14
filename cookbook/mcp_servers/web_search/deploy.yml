@@ -1,0 +1,19 @@
+name: web_search_tool  # Deployment name
+    
+file_path: cookbook/mcp_servers/web_search/server.py  # Path to entrypoint
+
+database: false  # Provision postgres database (if not already provisioned)
+
+extra_pip_deps:  # Additional Python deps installed in image
+  - agentstr-sdk==0.6.4
+  - tavily-python
+
+env:  # Environment Variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+secrets:  # Secrets
+  MCP_SERVER_PRIVATE_KEY: arn:aws:secretsmanager:us-west-2:529710252048:secret:AGENTSTR-websearchtool-MCP_SERVER_PRIVATE_KEY-Qelew8
+  MCP_SERVER_NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:529710252048:secret:AGENTSTR-websearchtool-MCP_SERVER_NWC_CONN_STR-kN4l5T
+  TAVILY_API_KEY: arn:aws:secretsmanager:us-west-2:529710252048:secret:AGENTSTR-websearchtool-TAVILY_API_KEY-MsfIHc
+  
+#env_file: cookbook/mcp_servers/web_search/.env  # Path to .env file
