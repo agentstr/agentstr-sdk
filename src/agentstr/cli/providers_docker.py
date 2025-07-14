@@ -60,15 +60,6 @@ class DockerProvider(Provider):
         except subprocess.CalledProcessError:
             click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
         
-        # Remove existing database container if it exists to avoid conflicts
-        db_container_name = f"{deployment_name}-db"
-        click.echo(f"[Docker] Removing any existing database container named '{db_container_name}' ...")
-        try:
-            self._run_cmd(["docker", "rm", "-f", db_container_name])
-            click.echo(f"[Docker] Existing database container '{db_container_name}' removed.")
-        except subprocess.CalledProcessError:
-            click.echo(f"[Docker] No existing database container named '{db_container_name}' found.")
-        
         # Log secrets for debugging (masking sensitive values)
         click.echo("[Docker] Secrets being passed to container:")
         for key, value in secrets.items():
@@ -126,33 +117,7 @@ CMD ["python", "/app/{file_path.name}"]
                     }
                 }
             }
-            # Add database service for this deployment
-            compose_content["services"][db_container_name] = {
-                "image": "postgres:13",
-                "container_name": db_container_name,
-                "restart": "always",
-                "environment": [
-                    "POSTGRES_USER=postgres",
-                    "POSTGRES_PASSWORD=postgres",
-                    "POSTGRES_DB=agentstr"
-                ],
-                "volumes": [
-                    f"{db_container_name}-data:/var/lib/postgresql/data"
-                ],
-                "ports": ["5432:5432"],
-                "networks": [network_name]
-            }
-            compose_content["volumes"] = {
-                f"{db_container_name}-data": {}
-            }
-            # Update the DATABASE_URL to use the container name instead of localhost
-            for i, env_var in enumerate(compose_content["services"][deployment_name]["environment"]):
-                if env_var.startswith("DATABASE_URL="):
-                    compose_content["services"][deployment_name]["environment"][i] = f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr"
-                    break
-            else:
-                compose_content["services"][deployment_name]["environment"].append(f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr")
-            
+
             import yaml
             (Path(temp_dir) / self.compose_file).write_text(yaml.dump(compose_content, default_flow_style=False))
             # Build and start the service
@@ -224,7 +189,7 @@ CMD ["python", "/app/{file_path.name}"]
     def provision_database(self, deployment_name: str) -> tuple[str, str]:
         deployment_name = f"agentstr-{deployment_name}"
         click.echo(f"[Docker] Provisioning local database for '{deployment_name}' ...")
-        container_name = f"{deployment_name}-db"
+        container_name = "agentstr-db"
         network_name = "agentstr-network"
         import subprocess
         try:
@@ -233,6 +198,9 @@ CMD ["python", "/app/{file_path.name}"]
             if container_name in result.stdout:
                 click.echo(f"Database container '{container_name}' already exists – reusing.")
             else:
+                # Make sure network exists
+                self._run_cmd(["docker", "network", "create", network_name], check=False)
+
                 # Create a new database container
                 self._run_cmd([
                     "docker", "run", "-d",
@@ -247,8 +215,7 @@ CMD ["python", "/app/{file_path.name}"]
                     "postgres:15"
                 ])
             return (
-                f"postgresql://postgres:postgres@localhost:5432/agentstr",
-                "postgres"
+                "DATABASE_URL", f"postgresql://postgres:postgres@{container_name}:5432/agentstr"
             )
         except subprocess.CalledProcessError as e:
             import logging
