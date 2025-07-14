@@ -209,8 +209,31 @@ CMD ["python", "/app/{file_path.name}"]
         """Delete a deployment."""
         deployment_name = f"agentstr-{deployment_name}"
         click.echo(f"[Docker] Deleting deployment '{deployment_name}' ...")
-        self._run_cmd(["docker", "rm", "-f", deployment_name])
-        click.echo(f"Deployment '{deployment_name}' deleted.")
+        # Remove the main application container
+        try:
+            self._run_cmd(["docker", "rm", "-f", deployment_name])
+            click.echo(f"[Docker] Deployment container '{deployment_name}' deleted.")
+        except subprocess.CalledProcessError:
+            click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
+
+        # Remove the associated database container
+        db_container_name = f"{deployment_name}-db"
+        try:
+            self._run_cmd(["docker", "rm", "-f", db_container_name])
+            click.echo(f"[Docker] Database container '{db_container_name}' deleted.")
+        except subprocess.CalledProcessError:
+            click.echo(f"[Docker] No existing database container named '{db_container_name}' found.")
+
+        # Remove the associated network
+        network_name = f"{deployment_name}-network"
+        try:
+            self._run_cmd(["docker", "network", "rm", network_name])
+            click.echo(f"[Docker] Network '{network_name}' deleted.")
+        except subprocess.CalledProcessError:
+            click.echo(f"[Docker] No existing network named '{network_name}' found.")
+
+        click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
+        click.echo(f"[Docker] Deployment '{deployment_name}' and associated resources deleted.")
 
     @_catch_exceptions
     def put_secret(self, name: str, value: str) -> str:
