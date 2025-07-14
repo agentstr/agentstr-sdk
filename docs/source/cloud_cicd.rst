@@ -30,21 +30,21 @@ Here is an example of a complete configuration file:
 .. code-block:: yaml
    :caption: config.yaml
 
-   # Cloud provider: aws, gcp, or azure
-   provider: aws
+   # Cloud provider: aws, gcp, azure, or docker (for local deployments)
+   provider: aws  # Can also be set by AGENTSTR_PROVIDER environment variable
 
    # Path to your agent's main Python file
-   file_path: app/agent.py
+   file_path: my-agent/agent.py
 
    # Name for your deployment/service (optional)
-   name: my-awesome-agent
+   name: my-agent
 
-   # Database (optional but recommended for production)
+   # Database (optional but recommended for production agents)
    database: true
 
    # Resource allocation (optional)
-   cpu: 256          # CPU units (AWS/Azure) or cores (GCP)
-   memory: 512       # Memory in MiB
+   cpu: 256     # CPU units (AWS/Azure) or cores (GCP)
+   memory: 512  # Memory in MiB
 
    # Extra PyPI packages to install (optional)
    extra_pip_deps:
@@ -53,14 +53,15 @@ Here is an example of a complete configuration file:
 
    # Environment variables for your agent (optional)
    env:
-     MY_API_KEY: "some_value"
+     NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
    # References to secrets managed by your cloud provider (optional)
    secrets:
-     MY_SECRET: arn:aws:secretsmanager:us-west-2:123456789012:secret:my-secret-AbCdEf
+     NOSTR_NSEC: arn:aws:secretsmanager:us-west-2:123456789012:secret:NOSTR_NSEC-AbCdEf
+     NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:123456789012:secret:NWC_CONN_STR-AbCdEf
 
    # Path to a .env file for loading secrets (optional)
-   env_file: .env
+   env_file: my-agent/.env
 
 .. tip::
    You can pass the configuration file to any command using the ``-f`` or ``--config`` flag. Alternatively, set the ``AGENTSTR_CONFIG`` environment variable.
