@@ -10,4 +10,5 @@ extra_pip_deps:  # Additional Python deps installed in image
 env:  # Environment Variables
   NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
-env_file: cookbook/mcp_servers/bitcoin/.env  # Path to .env file
+secrets:  # Secrets
+  MCP_SERVER_PRIVATE_KEY: arn:aws:secretsmanager:us-west-2:529710252048:secret:AGENTSTR-bitcoindatatool-MCP_SERVER_PRIVATE_KEY-juogiN
