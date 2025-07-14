@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
 
-from agentstr.utils import metadata_from_yaml
 
 load_dotenv()
 
 import os
 import httpx
 from agentstr import NostrMCPServer
+from agentstr.utils import metadata_from_yaml
 
 
 BASE_URL = 'https://blockchain.info/q'

@@ -1,10 +1,12 @@
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 import httpx
 from agentstr import NostrMCPServer, tool
+from agentstr.utils import metadata_from_yaml
 
 # Get the environment variables
 relays = os.getenv('NOSTR_RELAYS').split(',')
@@ -57,7 +59,8 @@ async def run():
         relays=relays, 
         private_key=private_key, 
         nwc_str=nwc_str,
-        tools=[get_exchange_rate]
+        tools=[get_exchange_rate],
+        nostr_metadata=metadata_from_yaml(__file__)
     )
     
     await server.start()

@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-from agentstr import NostrMCPServer, tool
 from tavily import AsyncTavilyClient
+from agentstr import NostrMCPServer, tool
+from agentstr.utils import metadata_from_yaml
 
 
 @tool(satoshis=10)
@@ -66,13 +67,13 @@ nwc_str = os.getenv('MCP_SERVER_NWC_CONN_STR')
 
 
 async def run():
-        # Create the MCP server
+    # Create the MCP server
     server = NostrMCPServer(
-        "Web Search Tool",
         relays=relays,
         private_key=private_key,
         nwc_str=nwc_str,
-        tools=[web_search]
+        tools=[web_search],
+        nostr_metadata=metadata_from_yaml(__file__)
     )
 
     # Start the server
