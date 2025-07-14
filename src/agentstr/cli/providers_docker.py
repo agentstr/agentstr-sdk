@@ -245,7 +245,7 @@ CMD ["python", "/app/{file_path.name}"]
                 # Use --volumes flag if you want to remove volumes, but we're preserving data
                 self._run_cmd(["docker-compose", "down"], cwd=temp_dir)
                 click.echo(f"[Docker] Deployment '{deployment_name}' and associated resources deleted via docker-compose down.")
-            except subprocess.CalledProcessError as e:
+            except Exception as e:
                 click.echo(f"[Docker] Error occurred while running docker-compose down: {str(e)}")
                 raise click.ClickException(f"Failed to delete deployment '{deployment_name}' via docker-compose down.")
             click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
