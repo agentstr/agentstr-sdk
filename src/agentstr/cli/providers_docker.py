@@ -42,13 +42,16 @@ class DockerProvider(Provider):
             raise click.ClickException(f"Command failed: {err.stderr}") from err
 
     def _create_compose_config(self, deployment_name: str, file_path: Path, env: Dict[str, str], secrets: Dict[str, str], network_name: str) -> Dict:
-        """Helper method to create the Docker Compose configuration dictionary."""
         db_container_name = f"{deployment_name}-db"
+        # Base compose configuration
         compose_content = {
             "version": "3.8",
             "services": {
                 deployment_name: {
-                    "build": ".",
+                    "build": {
+                        "context": ".",
+                        "dockerfile": "Dockerfile"
+                    },
                     "image": f"agentstr/{deployment_name}:latest",
                     "container_name": deployment_name,
                     "restart": "always",
@@ -62,7 +65,8 @@ class DockerProvider(Provider):
             },
             "networks": {
                 network_name: {
-                    "driver": "bridge"
+                    "driver": "bridge",
+                    "external": True
                 }
             }
         }
@@ -83,7 +87,9 @@ class DockerProvider(Provider):
             "networks": [network_name]
         }
         compose_content["volumes"] = {
-            f"{db_container_name}-data": {}
+            f"{db_container_name}-data": {
+                "external": True
+            }
         }
         # Update the DATABASE_URL to use the container name instead of localhost
         for i, env_var in enumerate(compose_content["services"][deployment_name]["environment"]):
@@ -92,26 +98,19 @@ class DockerProvider(Provider):
                 break
         else:
             compose_content["services"][deployment_name]["environment"].append(f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr")
-        
         return compose_content
 
     @_catch_exceptions
     def deploy(self, file_path: Path, deployment_name: str, *, secrets: Dict[str, str], **kwargs):  # noqa: D401
         deployment_name = f"agentstr-{deployment_name}"
-        env = kwargs.get("env", {})
-        dependencies = kwargs.get("dependencies", [])
-        cpu = kwargs.get("cpu", 256)  # Not directly used in Docker Compose, for compatibility
-        memory = kwargs.get("memory", 512)  # Not directly used in Docker Compose, for compatibility
-        click.echo(
-            f"[Docker] Deploying {file_path} as '{deployment_name}' (deps={dependencies}) ..."
-        )
+        click.echo(f"[Docker] Deploying {file_path} as '{deployment_name}' (deps={kwargs.get('dependencies', [])}) ...")
         
         # Remove existing container if it exists to avoid conflicts
         click.echo(f"[Docker] Removing any existing container named '{deployment_name}' ...")
         try:
             self._run_cmd(["docker", "rm", "-f", deployment_name])
             click.echo(f"[Docker] Existing container '{deployment_name}' removed.")
-        except subprocess.CalledProcessError:
+        except Exception:
             click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
         
         # Remove existing database container if it exists to avoid conflicts
@@ -120,7 +119,7 @@ class DockerProvider(Provider):
         try:
             self._run_cmd(["docker", "rm", "-f", db_container_name])
             click.echo(f"[Docker] Existing database container '{db_container_name}' removed.")
-        except subprocess.CalledProcessError:
+        except Exception:
             click.echo(f"[Docker] No existing database container named '{db_container_name}' found.")
         
         # Log secrets for debugging (masking sensitive values)
@@ -135,7 +134,7 @@ class DockerProvider(Provider):
             # Copy the file to the temp directory
             temp_file_path = Path(temp_dir) / file_path.name
             temp_file_path.write_text(file_path.read_text())
-            deps_line = " " + " ".join(dependencies) if dependencies else ""
+            deps_line = " " + " ".join(kwargs.get("dependencies", [])) if kwargs.get("dependencies", []) else ""
             if "agentstr-sdk" not in deps_line:
                 deps_line = "agentstr-sdk[all] " + deps_line
             metadata_file = default_metadata_file(file_path)
@@ -158,6 +157,24 @@ CMD ["python", "/app/{file_path.name}"]
             
             # Create docker-compose.yml with a unique network for this deployment
             network_name = f"{deployment_name}-network"
+            # Check if network already exists
+            try:
+                self._run_cmd(["docker", "network", "inspect", network_name])
+                click.echo(f"[Docker] Using existing network '{network_name}'.")
+            except Exception:
+                self._run_cmd(["docker", "network", "create", network_name])
+                click.echo(f"[Docker] Created network '{network_name}'.")
+            
+            # Check if volume already exists
+            volume_name = f"{db_container_name}-data"
+            try:
+                self._run_cmd(["docker", "volume", "inspect", volume_name])
+                click.echo(f"[Docker] Using existing volume '{volume_name}' for database.")
+            except Exception:
+                self._run_cmd(["docker", "volume", "create", volume_name])
+                click.echo(f"[Docker] Created volume '{volume_name}' for database.")
+            
+            env = kwargs.get("env", {})
             compose_content = self._create_compose_config(deployment_name, file_path, env, secrets, network_name)
             
             import yaml
