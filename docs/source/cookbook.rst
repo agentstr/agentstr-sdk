@@ -22,8 +22,9 @@ MCP Server Examples
 
 Learn how to create Model Context Protocol (MCP) servers that provide specialized tools for agents. These examples are located in `cookbook/mcp_servers/ <https://github.com/agentstr/agentstr-sdk/tree/main/cookbook/mcp_servers>`_:
 
-*   **Web Search Server**: An MCP server that enables web search capabilities for agents. See the `Web Search example <https://github.com/agentstr/agentstr-sdk/tree/main/cookbook/mcp_servers/web_search>`_ to understand how to integrate search functionality.
 *   **Bitcoin Data Server**: An MCP server for fetching Bitcoin-related data. Review the `Bitcoin example <https://github.com/agentstr/agentstr-sdk/tree/main/cookbook/mcp_servers/bitcoin>`_ to learn about blockchain data integration.
+*   **Exchange Rate Server**: An MCP server for fetching exchange rate data. Review the `Exchange Rate example <https://github.com/agentstr/agentstr-sdk/tree/main/cookbook/mcp_servers/exchange_rate>`_ to learn about exchange rate data integration.
+*   **Web Search Server**: An MCP server that enables web search capabilities for agents. See the `Web Search example <https://github.com/agentstr/agentstr-sdk/tree/main/cookbook/mcp_servers/web_search>`_ to understand how to integrate search functionality.
 
 Getting Started with Examples
 -----------------------------
