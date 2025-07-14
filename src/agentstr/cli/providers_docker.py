@@ -213,9 +213,12 @@ CMD ["python", "/app/{file_path.name}"]
             # Filter for containers related to Agentstr deployments (including database containers)
             cmd.extend(["--filter", "name=agentstr-*"])
         result = self._run_cmd(cmd)
+        prev = None
         for line in result.stdout.splitlines():
             name, status = line.split(" ", 1)
-            click.echo(f"{name} – status: {status}")
+            if prev is None or f'{prev}-db' != name:
+                click.echo(f"{name} – status: {status}")
+            prev = name
 
     @_catch_exceptions
     def logs(self, deployment_name: str, *, follow: bool = False):  # noqa: D401
