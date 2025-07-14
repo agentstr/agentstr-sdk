@@ -1,6 +1,6 @@
 # GitHub Actions workflow: Deploy to AWS with agentstr-cli
 
-name: deploy-cookbook-mcp-exchange-rate-aws
+name: deploy-cookbook-mcp-web-search-aws
 
 # Trigger manually
 on:
@@ -8,7 +8,7 @@ on:
 
 env: 
   AGENTSTR_PROVIDER: aws
-  AGENTSTR_CONFIG: cookbook/mcp_servers/exchange_rate/deploy.yml
+  AGENTSTR_CONFIG: cookbook/mcp_servers/web_search/deploy.yml
 
 jobs:
   deploy:
