@@ -41,6 +41,60 @@ class DockerProvider(Provider):
         except subprocess.CalledProcessError as err:
             raise click.ClickException(f"Command failed: {err.stderr}") from err
 
+    def _create_compose_config(self, deployment_name: str, file_path: Path, env: Dict[str, str], secrets: Dict[str, str], network_name: str) -> Dict:
+        """Helper method to create the Docker Compose configuration dictionary."""
+        db_container_name = f"{deployment_name}-db"
+        compose_content = {
+            "version": "3.8",
+            "services": {
+                deployment_name: {
+                    "build": ".",
+                    "image": f"agentstr/{deployment_name}:latest",
+                    "container_name": deployment_name,
+                    "restart": "always",
+                    "environment": [
+                        f"{k}={v}" for k, v in env.items()
+                    ] + [
+                        f"{k}={v}" for k, v in secrets.items() if v is not None
+                    ],
+                    "networks": [network_name]
+                }
+            },
+            "networks": {
+                network_name: {
+                    "driver": "bridge"
+                }
+            }
+        }
+
+        # Add database service for this deployment
+        compose_content["services"][db_container_name] = {
+            "image": "postgres:15",
+            "container_name": db_container_name,
+            "restart": "always",
+            "environment": [
+                "POSTGRES_USER=postgres",
+                "POSTGRES_PASSWORD=postgres",
+                "POSTGRES_DB=agentstr"
+            ],
+            "volumes": [
+                f"{db_container_name}-data:/var/lib/postgresql/data"
+            ],
+            "networks": [network_name]
+        }
+        compose_content["volumes"] = {
+            f"{db_container_name}-data": {}
+        }
+        # Update the DATABASE_URL to use the container name instead of localhost
+        for i, env_var in enumerate(compose_content["services"][deployment_name]["environment"]):
+            if env_var.startswith("DATABASE_URL="):
+                compose_content["services"][deployment_name]["environment"][i] = f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr"
+                break
+        else:
+            compose_content["services"][deployment_name]["environment"].append(f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr")
+        
+        return compose_content
+
     @_catch_exceptions
     def deploy(self, file_path: Path, deployment_name: str, *, secrets: Dict[str, str], **kwargs):  # noqa: D401
         deployment_name = f"agentstr-{deployment_name}"
@@ -104,57 +158,11 @@ CMD ["python", "/app/{file_path.name}"]
             
             # Create docker-compose.yml with a unique network for this deployment
             network_name = f"{deployment_name}-network"
-            compose_content = {
-                "version": "3.8",
-                "services": {
-                    deployment_name: {
-                        "build": ".",
-                        "image": f"agentstr/{deployment_name}:latest",
-                        "container_name": deployment_name,
-                        "restart": "always",
-                        "environment": [
-                            f"{k}={v}" for k, v in env.items()
-                        ] + [
-                            f"{k}={v}" for k, v in secrets.items() if v is not None
-                        ],
-                        "networks": [network_name]
-                    }
-                },
-                "networks": {
-                    network_name: {
-                        "driver": "bridge"
-                    }
-                }
-            }
-
-            # Add database service for this deployment
-            compose_content["services"][db_container_name] = {
-                "image": "postgres:15",
-                "container_name": db_container_name,
-                "restart": "always",
-                "environment": [
-                    "POSTGRES_USER=postgres",
-                    "POSTGRES_PASSWORD=postgres",
-                    "POSTGRES_DB=agentstr"
-                ],
-                "volumes": [
-                    f"{db_container_name}-data:/var/lib/postgresql/data"
-                ],
-                "networks": [network_name]
-            }
-            compose_content["volumes"] = {
-                f"{db_container_name}-data": {}
-            }
-            # Update the DATABASE_URL to use the container name instead of localhost
-            for i, env_var in enumerate(compose_content["services"][deployment_name]["environment"]):
-                if env_var.startswith("DATABASE_URL="):
-                    compose_content["services"][deployment_name]["environment"][i] = f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr"
-                    break
-            else:
-                compose_content["services"][deployment_name]["environment"].append(f"DATABASE_URL=postgresql://postgres:postgres@{db_container_name}:5432/agentstr")
+            compose_content = self._create_compose_config(deployment_name, file_path, env, secrets, network_name)
             
             import yaml
-            (Path(temp_dir) / self.compose_file).write_text(yaml.dump(compose_content, default_flow_style=False))
+            compose_file_path = Path(temp_dir) / self.compose_file
+            compose_file_path.write_text(yaml.dump(compose_content, default_flow_style=False))
             # Build and start the service
             self._run_cmd(["docker-compose", "up", "-d", "--build"], cwd=temp_dir)
             click.echo("Waiting for deployment to complete...")
@@ -163,23 +171,20 @@ CMD ["python", "/app/{file_path.name}"]
             start_time = time.time()
             timeout_seconds = 600  # 10 minutes timeout
             poll_interval = 15  # Check every 15 seconds
-            
+            container_name = deployment_name
             while time.time() - start_time < timeout_seconds:
-                status_cmd = self._run_cmd(["docker", "ps", "--filter", f"name={deployment_name}", "--format", "{{.Status}}"], cwd=temp_dir)
-                status = status_cmd.stdout.strip()
-                if "Up" in status:
-                    click.echo("Deployment completed.")
-                    return
-                elif "Exited" in status:
-                    click.echo("Deployment failed: Container exited unexpectedly.")
-                    import logging
-                    logging.error(f"Deployment failed for {deployment_name}: Container exited unexpectedly")
-                    return
+                try:
+                    status_cmd = ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name]
+                    result = self._run_cmd(status_cmd, check=False)
+                    if result.returncode == 0 and "healthy" in result.stdout.lower():
+                        click.echo("Deployment completed.")
+                        return
+                    else:
+                        click.echo(".", nl=False)
+                except subprocess.CalledProcessError:
+                    click.echo(".", nl=False)
                 time.sleep(poll_interval)
-            
-            click.echo("Deployment timed out after 10 minutes.")
-            import logging
-            logging.error(f"Deployment timeout for {deployment_name} after 10 minutes")
+            click.echo(f"Deployment timed out after {timeout_seconds} seconds. Check logs for details.")
 
     @_catch_exceptions
     def list(self, *, name_filter: Optional[str] = None):  # noqa: D401
@@ -209,31 +214,24 @@ CMD ["python", "/app/{file_path.name}"]
         """Delete a deployment."""
         deployment_name = f"agentstr-{deployment_name}"
         click.echo(f"[Docker] Deleting deployment '{deployment_name}' ...")
-        # Remove the main application container
-        try:
-            self._run_cmd(["docker", "rm", "-f", deployment_name])
-            click.echo(f"[Docker] Deployment container '{deployment_name}' deleted.")
-        except subprocess.CalledProcessError:
-            click.echo(f"[Docker] No existing container named '{deployment_name}' found.")
-
-        # Remove the associated database container
-        db_container_name = f"{deployment_name}-db"
-        try:
-            self._run_cmd(["docker", "rm", "-f", db_container_name])
-            click.echo(f"[Docker] Database container '{db_container_name}' deleted.")
-        except subprocess.CalledProcessError:
-            click.echo(f"[Docker] No existing database container named '{db_container_name}' found.")
-
-        # Remove the associated network
-        network_name = f"{deployment_name}-network"
-        try:
-            self._run_cmd(["docker", "network", "rm", network_name])
-            click.echo(f"[Docker] Network '{network_name}' deleted.")
-        except subprocess.CalledProcessError:
-            click.echo(f"[Docker] No existing network named '{network_name}' found.")
-
-        click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
-        click.echo(f"[Docker] Deployment '{deployment_name}' and associated resources deleted.")
+        # Use docker-compose down to remove all associated resources (except volumes)
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # We need a docker-compose.yml to run docker-compose down
+            network_name = f"{deployment_name}-network"
+            # Use the same helper method as deploy to ensure consistency
+            compose_content = self._create_compose_config(deployment_name, Path("dummy.py"), {}, {}, network_name)
+            import yaml
+            compose_file_path = Path(temp_dir) / self.compose_file
+            compose_file_path.write_text(yaml.dump(compose_content, default_flow_style=False))
+            try:
+                # Use --volumes flag if you want to remove volumes, but we're preserving data
+                self._run_cmd(["docker-compose", "down"], cwd=temp_dir)
+                click.echo(f"[Docker] Deployment '{deployment_name}' and associated resources deleted via docker-compose down.")
+            except subprocess.CalledProcessError as e:
+                click.echo(f"[Docker] Error occurred while running docker-compose down: {str(e)}")
+                raise click.ClickException(f"Failed to delete deployment '{deployment_name}' via docker-compose down.")
+            click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
 
     @_catch_exceptions
     def put_secret(self, name: str, value: str) -> str:
