@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 
+from agentstr.utils import metadata_from_yaml
+
 load_dotenv()
 
 import os
@@ -69,7 +71,8 @@ async def run():
     server = NostrMCPServer("Bitcoin Data Tool", 
                             relays=relays, 
                             private_key=private_key,
-                            tools=[get_bitcoin_data])
+                            tools=[get_bitcoin_data],
+                            nostr_metadata=metadata_from_yaml(__file__))
 
     await server.start()
 

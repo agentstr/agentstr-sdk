@@ -1,0 +1,13 @@
+name: bitcoin_data_tool  # Deployment name
+    
+file_path: cookbook/mcp_servers/bitcoin/server.py  # Path to entrypoint
+
+database: false  # Provision postgres database (if not already provisioned)
+
+extra_pip_deps:  # Additional Python deps installed in image
+  - agentstr-sdk==0.6.4
+
+env:  # Environment Variables
+  NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
+
+env_file: cookbook/mcp_servers/bitcoin/.env  # Path to .env file
