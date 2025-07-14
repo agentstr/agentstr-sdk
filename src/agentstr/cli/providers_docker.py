@@ -174,9 +174,9 @@ CMD ["python", "/app/{file_path.name}"]
             container_name = deployment_name
             while time.time() - start_time < timeout_seconds:
                 try:
-                    status_cmd = ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name]
-                    result = self._run_cmd(status_cmd, check=False)
-                    if result.returncode == 0 and "healthy" in result.stdout.lower():
+                    status_cmd = ["docker", "inspect", "--format", "{{.State.Running}}", container_name]
+                    result = self._run_cmd(status_cmd)
+                    if result.returncode == 0 and "true" in result.stdout.lower():
                         click.echo("Deployment completed.")
                         return
                     else:
