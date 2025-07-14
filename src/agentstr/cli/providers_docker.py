@@ -102,8 +102,8 @@ CMD ["python", "/app/{file_path.name}"]
 """
             (Path(temp_dir) / "Dockerfile").write_text(dockerfile_content)
             
-            # Create docker-compose.yml with a shared network
-            network_name = "agentstr-network"
+            # Create docker-compose.yml with a unique network for this deployment
+            network_name = f"{deployment_name}-network"
             compose_content = {
                 "version": "3.8",
                 "services": {
@@ -140,7 +140,6 @@ CMD ["python", "/app/{file_path.name}"]
                 "volumes": [
                     f"{db_container_name}-data:/var/lib/postgresql/data"
                 ],
-                "ports": ["5432:5432"],
                 "networks": [network_name]
             }
             compose_content["volumes"] = {
