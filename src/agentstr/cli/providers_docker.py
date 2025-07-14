@@ -231,24 +231,27 @@ CMD ["python", "/app/{file_path.name}"]
         """Delete a deployment."""
         deployment_name = f"agentstr-{deployment_name}"
         click.echo(f"[Docker] Deleting deployment '{deployment_name}' ...")
-        # Use docker-compose down to remove all associated resources (except volumes)
-        import tempfile
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # We need a docker-compose.yml to run docker-compose down
-            network_name = f"{deployment_name}-network"
-            # Use the same helper method as deploy to ensure consistency
-            compose_content = self._create_compose_config(deployment_name, Path("dummy.py"), {}, {}, network_name)
-            import yaml
-            compose_file_path = Path(temp_dir) / self.compose_file
-            compose_file_path.write_text(yaml.dump(compose_content, default_flow_style=False))
-            try:
-                # Use --volumes flag if you want to remove volumes, but we're preserving data
-                self._run_cmd(["docker-compose", "down"], cwd=temp_dir)
-                click.echo(f"[Docker] Deployment '{deployment_name}' and associated resources deleted via docker-compose down.")
-            except Exception as e:
-                click.echo(f"[Docker] Error occurred while running docker-compose down: {str(e)}")
-                raise click.ClickException(f"Failed to delete deployment '{deployment_name}' via docker-compose down.")
-            click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
+        try:
+            self._run_cmd(["docker", "stop", deployment_name])
+            self._run_cmd(["docker", "rm", "-f", deployment_name])
+            click.echo(f"[Docker] Manually removed container '{deployment_name}'.")
+        except Exception:
+            click.echo(f"[Docker] No existing container named '{deployment_name}' found during manual cleanup.")
+        
+        db_container_name = f"{deployment_name}-db"
+        try:
+            self._run_cmd(["docker", "stop", db_container_name])
+            self._run_cmd(["docker", "rm", "-f", db_container_name])
+            click.echo(f"[Docker] Manually removed database container '{db_container_name}'.")
+        except Exception:
+            click.echo(f"[Docker] No existing database container named '{db_container_name}' found during manual cleanup.")
+        network_name = f"{deployment_name}-network"
+        try:
+            self._run_cmd(["docker", "network", "rm", network_name])
+            click.echo(f"[Docker] Manually removed network '{network_name}'.")
+        except Exception:
+            click.echo(f"[Docker] No existing network named '{network_name}' found during manual cleanup.")
+        click.echo(f"[Docker] Data volumes preserved to prevent data loss.")
 
     @_catch_exceptions
     def put_secret(self, name: str, value: str) -> str:
