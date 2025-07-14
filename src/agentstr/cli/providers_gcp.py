@@ -495,7 +495,27 @@ CMD [\"python\", \"/app/app.py\"]
         proc.wait()
         if proc.returncode != 0:
             raise click.ClickException("kubectl apply failed")
-        click.echo("Deployment submitted. It may take a few minutes for deployment to start up.")
+        click.echo("Waiting for deployment to complete...")
+        start_time = time.time()
+        timeout_seconds = 600  # 10 minutes timeout
+        poll_interval = 15  # Check every 15 seconds
+
+        while time.time() - start_time < timeout_seconds:
+            service = subprocess.run([
+                "kubectl", "get", "deployment", deployment_name, "--output=jsonpath='{.status.conditions[?(@.type==\"Available\")].status}'"
+            ], capture_output=True, text=True)
+            status = service.stdout.strip().strip("'")
+            click.echo(f"Deployment status: {status}")
+            if status.lower().startswith("true"):
+                click.echo("Deployment completed.")
+                return
+            elif status.lower().startswith("false"):
+                click.echo("Deployment not ready yet. Waiting 15 seconds...")
+
+            time.sleep(poll_interval)
+
+        click.echo("Deployment timed out after 10 minutes.")
+        raise click.ClickException("Deployment failed.")
 
     @_catch_exceptions
     def list(self, *, name_filter: Optional[str] = None):  # noqa: D401
@@ -615,7 +635,6 @@ CMD [\"python\", \"/app/app.py\"]
             ])
         # Wait until instance is RUNNABLE
         click.echo("Waiting for Cloud SQL instance to become RUNNABLE (this may take a few minutes) ...")
-        import time
         while True:
             state_out = subprocess.check_output([
                 "gcloud",

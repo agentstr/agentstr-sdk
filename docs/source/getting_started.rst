@@ -3,7 +3,7 @@ Getting Started
 
 Welcome to the Agentstr SDK! This guide will walk you through setting up your first agent project with various examples to get you started. Whether you're new to agent development or looking to integrate advanced functionalities, we've got you covered with the following step-by-step guides.
 
-You can find the source code for the examples in the `getting_started <https://github.com/agentstr/agentstr-sdk/tree/main/getting_started>`_ directory of the SDK.
+You can find the source code for the examples in the `getting_started/ <https://github.com/agentstr/agentstr-sdk/tree/main/getting_started>`_ directory of the SDK.
 
 .. tip::
    Before you begin, make sure you have installed the SDK. If not, please see the :doc:`installation` guide.

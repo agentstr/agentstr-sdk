@@ -508,7 +508,7 @@ CMD [\"python\", \"/app/app.py\"]
         # If Key Vault secret already exists, assume DB is provisioned. Reuse.
         # ------------------------------------------------------------------
         vault_name = os.getenv("AZURE_KEY_VAULT", "agentstr-kv")
-        secret_name = f"agentstr-DATABASE_URL"
+        secret_name = f"agentstr-DATABASE-URL"
         pre_chk = subprocess.run([
             "az",
             "keyvault",

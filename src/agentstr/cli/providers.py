@@ -99,6 +99,7 @@ class Provider(abc.ABC):  # noqa: D401
 from . import providers_aws  # noqa: F401  pylint: disable=unused-import
 from . import providers_gcp  # noqa: F401  pylint: disable=unused-import
 from . import providers_azure  # noqa: F401  pylint: disable=unused-import
+from . import providers_docker  # noqa: F401  pylint: disable=unused-import
 
 # (Legacy code below removed)
 

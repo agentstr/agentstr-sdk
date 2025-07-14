@@ -30,21 +30,21 @@ Here is an example of a complete configuration file:
 .. code-block:: yaml
    :caption: config.yaml
 
-   # Cloud provider: aws, gcp, or azure
-   provider: aws
+   # Cloud provider: aws, gcp, azure, or docker (for local deployments)
+   provider: aws  # Can also be set by AGENTSTR_PROVIDER environment variable
 
    # Path to your agent's main Python file
-   file_path: app/agent.py
+   file_path: my-agent/agent.py
 
    # Name for your deployment/service (optional)
-   name: my-awesome-agent
+   name: my-agent
 
-   # Database (optional but recommended for production)
+   # Database (optional but recommended for production agents)
    database: true
 
    # Resource allocation (optional)
-   cpu: 256          # CPU units (AWS/Azure) or cores (GCP)
-   memory: 512       # Memory in MiB
+   cpu: 256     # CPU units (AWS/Azure) or cores (GCP)
+   memory: 512  # Memory in MiB
 
    # Extra PyPI packages to install (optional)
    extra_pip_deps:
@@ -53,14 +53,15 @@ Here is an example of a complete configuration file:
 
    # Environment variables for your agent (optional)
    env:
-     MY_API_KEY: "some_value"
+     NOSTR_RELAYS: wss://relay.primal.net,wss://relay.damus.io,wss://nostr.mom
 
    # References to secrets managed by your cloud provider (optional)
    secrets:
-     MY_SECRET: arn:aws:secretsmanager:us-west-2:123456789012:secret:my-secret-AbCdEf
+     NOSTR_NSEC: arn:aws:secretsmanager:us-west-2:123456789012:secret:NOSTR_NSEC-AbCdEf
+     NWC_CONN_STR: arn:aws:secretsmanager:us-west-2:123456789012:secret:NWC_CONN_STR-AbCdEf
 
    # Path to a .env file for loading secrets (optional)
-   env_file: .env
+   env_file: my-agent/.env
 
 .. tip::
    You can pass the configuration file to any command using the ``-f`` or ``--config`` flag. Alternatively, set the ``AGENTSTR_CONFIG`` environment variable.
@@ -117,6 +118,67 @@ To tear down a deployment and delete all associated resources, use the ``destroy
 
 .. note::
    For more information on the CLI commands, see the :doc:`agentstr/cli` module.
+
+Local Docker Deployment
+-----------------------
+
+Docker deployments are ideal for local development and testing. They allow you to run Agentstr applications in isolated containers on your machine without needing cloud credentials or internet access.
+
+**Prerequisites**:
+
+- Docker and Docker Compose must be installed on your system.
+- Ensure the Agentstr CLI is installed (``pip install agentstr-sdk[cli]``).
+
+**Steps**:
+
+1. **Set the provider**:
+
+   .. code-block:: bash
+
+      export AGENTSTR_PROVIDER=docker
+
+2. **Deploy your application**:
+
+   .. code-block:: bash
+
+      agentstr deploy -f path/to/deploy.yml
+
+   This will create a Docker container for your application and, if needed, a Postgres database container. Both are networked together automatically.
+
+3. **List deployments**:
+
+   .. code-block:: bash
+
+      agentstr list
+
+   You'll see only Agentstr-related containers prefixed with ``agentstr-``.
+
+4. **View logs**:
+
+   .. code-block:: bash
+
+      agentstr logs -f path/to/deploy.yml
+
+5. **Destroy the deployment** when done:
+
+   .. code-block:: bash
+
+      agentstr destroy -f path/to/deploy.yml
+
+**Benefits of Docker Deployment**:
+
+- **Isolation**: Each deployment runs in its own container, preventing dependency conflicts.
+- **Consistency**: Mimics production environment setup with containers.
+- **Speed**: No cloud latency or credential setup needed.
+- **Cost**: Free for local development.
+
+**Limitations**:
+
+- Not suitable for production due to lack of scalability and persistence compared to cloud providers.
+- Requires local Docker setup and resources.
+
+.. note::
+   If you encounter connection issues between your application and database, ensure both containers are running and on the same network. The Agentstr CLI handles this automatically, but manual Docker inspection can confirm (``docker ps``, ``docker network ls``).
 
 Nostr Metadata
 --------------
