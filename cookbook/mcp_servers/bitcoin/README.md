@@ -17,10 +17,10 @@ To run the Bitcoin MCP Server locally for development or testing purposes, follo
 4. **Connect with Agentstr**: Update your Agentstr application configuration to interact with this MCP server via the Nostr network using the appropriate relays and keys.
 
 ## File Structure
-- **`server.py`**: The main entry point for the Bitcoin MCP Server. It sets up the connection to the Nostr decentralized network using Agentstr, defines endpoints for Bitcoin blockchain data (e.g., price, market cap, hash rate), and handles MCP protocol communication over Nostr.
+- **`server.py`**: The main entry point for the Bitcoin MCP Server. It sets up the connection to the Nostr decentralized network using Agentstr, defines tools for fetching Bitcoin blockchain data (e.g., price, market cap, hash rate), and handles MCP communication over Nostr.
 - **`requirements.txt`**: Lists the Python dependencies required to run the server.
-- **`deploy.yml`**: Configuration file for deployment, detailing how the server is containerized or deployed to cloud services.
-- **Other potential files**: Depending on the implementation, there may be additional modules for Bitcoin API interactions, utility functions, or configuration files.
+- **`deploy.yml`**: Configuration file for deployment, detailing how the server is containerized and deployed to cloud services.
+- **`nostr-metadata.yml`**: Contains metadata for the MCP server, including its name, display name, username, website, picture, and banner.
 
 ## Deployment
 The Bitcoin MCP Server is deployed using GitHub Actions for continuous integration and deployment (CI/CD). The workflow configuration can be found in `.github/workflows/` within the Agentstr SDK repository.
