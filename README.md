@@ -1,3 +1,5 @@
+[![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/agentstr-agentstr-sdk-badge.png)](https://mseep.ai/app/agentstr-agentstr-sdk)
+
 # ✨ Agentstr SDK
 
 [![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://docs.agentstr.com)
