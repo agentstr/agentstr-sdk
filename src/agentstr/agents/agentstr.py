@@ -106,7 +106,24 @@ class AgentstrAgent:
             return self._checkpointer
         checkpointer = None
         if self.database.conn_str.startswith("postgres"):
-            checkpointer = AsyncPostgresSaver.from_conn_string(self.database.conn_str)
+            key_manager = os.getenv("AGENT_VAULT_KEY_MANAGER")
+            key_manager_prefix = os.getenv("AGENT_VAULT_KEY_MANAGER_PREFIX")
+            if key_manager:
+                try:
+                    from agent_vault.langgraph import async_insecure_postgres_saver, async_secure_postgres_saver
+                    from agent_vault.utils.key_manager import AWSSecretsManagerKeyManager, AzureKeyVaultKeyManager
+                except ImportError:
+                    raise ValueError("agent_vault is not installed")
+                if key_manager == "none":
+                    checkpointer = async_insecure_postgres_saver(self.database.conn_str)
+                elif key_manager == "aws":
+                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AWSSecretsManagerKeyManager(prefix=key_manager_prefix))
+                elif key_manager == "azure":
+                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AzureKeyVaultKeyManager(prefix=key_manager_prefix))
+                else:
+                    raise ValueError(f"Unsupported key manager: {key_manager}")
+            else:
+                checkpointer = AsyncPostgresSaver.from_conn_string(self.database.conn_str)
         elif self.database.conn_str.startswith("sqlite"):
             conn_str = self.database.conn_str.replace("sqlite://", "", 1)
             checkpointer = AsyncSqliteSaver.from_conn_string(conn_str)
