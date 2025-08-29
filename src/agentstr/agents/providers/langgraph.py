@@ -1,7 +1,7 @@
 
 
 
-from langgraph.graph.graph import CompiledGraph
+from langgraph.graph.state import CompiledStateGraph
 from typing import Callable, AsyncGenerator
 from agentstr.models import ChatInput, ChatOutput
 from agentstr.mcp.nostr_mcp_client import NostrMCPClient
@@ -10,7 +10,7 @@ from agentstr.logger import get_logger
 logger = get_logger(__name__)
 
 
-def langgraph_agent_callable(agent: CompiledGraph) -> Callable[[ChatInput], ChatOutput | str]:
+def langgraph_agent_callable(agent: CompiledStateGraph) -> Callable[[ChatInput], ChatOutput | str]:
     async def agent_callable(input: ChatInput) -> ChatOutput | str:
         result = await agent.ainvoke(
             input={"messages": [{"role": "user", "content": input.message}]},
@@ -27,7 +27,7 @@ def langgraph_agent_callable(agent: CompiledGraph) -> Callable[[ChatInput], Chat
     return agent_callable
 
 
-def langgraph_chat_generator(agent: CompiledGraph, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
+def langgraph_chat_generator(agent: CompiledStateGraph, mcp_clients: list[NostrMCPClient] | None = None) -> Callable[[ChatInput], AsyncGenerator[ChatOutput, None]]:
     """Create a chat generator from a LangGraph graph. Supports human-in-the-loop and streaming payments.
     
     Args:
