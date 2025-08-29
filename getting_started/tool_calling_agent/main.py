@@ -18,8 +18,8 @@ if os.getenv("MCP_SERVER_PUBKEY") is None:
 # Define the Nostr Agent Server
 async def main():
     agent = AgentstrAgent(
-        name="PaymentEnabledAgent",
-        description="A simple Agentstr Agent with payment processing",
+        name="ToolCallingAgent",
+        description="A simple Agentstr Agent with tool calling",
         satoshis=0,  # 0 sats per message
         nostr_mcp_pubkeys=[os.getenv("MCP_SERVER_PUBKEY")],
     )
