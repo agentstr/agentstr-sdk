@@ -327,6 +327,28 @@ def deploy(
             secret_ref = provider.put_secret(f'AGENTSTR-{deployment_name_safe}-{key.strip()}', val.strip())
             secrets_dict[key.strip()] = secret_ref
 
+    # Try to resolve agent vault
+    if config.get("agent_vault_key_manager"):
+        click.echo("Handling agent vault ...")
+        key_manager = config.get("agent_vault_key_manager")
+        if key_manager.lower() == 'aws':
+            val = 'aws'
+        elif key_manager.lower() == 'azure':
+            val = 'azure'
+        elif key_manager.lower() == 'none':
+            val = 'none'
+        else:
+            raise click.ClickException(f"Invalid agent_vault_key_manager: {key_manager}. Must be 'aws', 'azure', or 'none'.")
+        secret_ref = provider.put_secret(f'AGENTSTR-{deployment_name_safe}-AGENT_VAULT_KEY_MANAGER', val.strip())
+        secrets_dict['AGENT_VAULT_KEY_MANAGER'] = secret_ref
+        if val in {'aws', 'azure'}:
+            # Need to grant permission to the agent vault
+            secret_prefix = f'AGENTSTR-{deployment_name_safe}-AGENT_VAULT_KEYS-' 
+            secret_ref = provider.put_secret(f'AGENTSTR-{deployment_name_safe}-AGENT_VAULT_KEY_MANAGER_PREFIX', secret_prefix.strip())
+            secrets_dict['AGENT_VAULT_KEY_MANAGER_PREFIX'] = secret_ref          
+            # TODO: Grant permission to the agent vault
+            #provider.grant_secret_rw_access(secret_prefix)
+
     # 2. Load from config 'secrets', overwriting env_file
     config_secrets = cfg.get("secrets", {})
     if config_secrets:
