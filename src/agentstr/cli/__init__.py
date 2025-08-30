@@ -347,7 +347,7 @@ def deploy(
             secret_ref = provider.put_secret(f'AGENTSTR-{deployment_name_safe}-AGENT_VAULT_KEY_MANAGER_PREFIX', secret_prefix.strip())
             secrets_dict['AGENT_VAULT_KEY_MANAGER_PREFIX'] = secret_ref          
             # TODO: Grant permission to the agent vault
-            provider.grant_secret_rw_access(secret_prefix)
+            #provider.grant_secret_rw_access(secret_prefix)
 
     # 2. Load from config 'secrets', overwriting env_file
     config_secrets = cfg.get("secrets", {})
