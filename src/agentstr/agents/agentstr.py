@@ -14,6 +14,9 @@ from agentstr.commands.commands import DefaultCommands
 from agentstr.commands.base import Commands
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from agentstr.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class AgentstrAgent:
@@ -108,6 +111,8 @@ class AgentstrAgent:
         if self.database.conn_str.startswith("postgres"):
             key_manager = os.getenv("AGENT_VAULT_KEY_MANAGER")
             key_manager_prefix = os.getenv("AGENT_VAULT_KEY_MANAGER_PREFIX", f"AGENTSTR-{self.name}-".upper().replace(' ', '-').replace('_', '-'))
+            logger.info(f"Using key manager: {key_manager}")
+            logger.info(f"Using key manager prefix: {key_manager_prefix}")
             if key_manager:
                 try:
                     from agent_vault.langgraph import async_insecure_postgres_saver, async_secure_postgres_saver
