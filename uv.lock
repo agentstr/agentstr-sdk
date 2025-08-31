@@ -39,6 +39,7 @@ agno = [
 all = [
     { name = "agno" },
     { name = "azure-identity" },
+    { name = "azure-keyvault-secrets" },
     { name = "azure-mgmt-containerinstance" },
     { name = "boto3" },
     { name = "click" },
@@ -110,6 +111,7 @@ requires-dist = [
     { name = "azure-identity", marker = "extra == 'all'", specifier = ">=1.23.0" },
     { name = "azure-identity", marker = "extra == 'cli'", specifier = ">=1.23.0" },
     { name = "azure-identity", marker = "extra == 'cli'", specifier = ">=1.24.0" },
+    { name = "azure-keyvault-secrets", marker = "extra == 'all'", specifier = ">=4.10.0" },
     { name = "azure-keyvault-secrets", marker = "extra == 'cli'", specifier = ">=4.10.0" },
     { name = "azure-mgmt-containerinstance", marker = "extra == 'all'", specifier = ">=10.1.0" },
     { name = "azure-mgmt-containerinstance", marker = "extra == 'cli'", specifier = ">=10.1.0" },
