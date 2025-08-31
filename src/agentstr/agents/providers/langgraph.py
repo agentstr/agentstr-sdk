@@ -43,6 +43,7 @@ def langgraph_chat_generator(agent: CompiledStateGraph, mcp_clients: list[NostrM
         for mcp_client in mcp_clients:
             tool_to_sats_map.update(mcp_client.tool_to_sats_map)
     async def chat_generator(input: ChatInput) -> AsyncGenerator[ChatOutput, None]:
+        logger.info(f'Langgraph chat generator input: {input}')
         async for chunk in agent.astream(
             input={"messages": [{"role": "user", "content": input.message}]},
             config={

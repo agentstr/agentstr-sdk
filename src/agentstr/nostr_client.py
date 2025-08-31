@@ -218,11 +218,11 @@ class NostrClient:
             logger.error(f"Failed to send direct message: {e!s}", exc_info=True)
             raise
 
-    async def receive_direct_message(self, recipient_pubkey: str, timestamp: int | None = None, timeout: int = 60) -> DecryptedMessage | None:
+    async def receive_direct_message(self, recipient_pubkey: str, timestamp: int | None = None, timeout: int = 120) -> DecryptedMessage | None:
         """Wait for and return the next direct message from a recipient."""
         return await self.relay_manager.receive_message(recipient_pubkey, timestamp=timestamp, timeout=timeout)
 
-    async def send_direct_message_and_receive_response(self, recipient_pubkey: str, message: str, timeout: int = 60, tags: dict[str, str] | None = None) -> DecryptedMessage:
+    async def send_direct_message_and_receive_response(self, recipient_pubkey: str, message: str, timeout: int = 120, tags: dict[str, str] | None = None) -> DecryptedMessage:
         """Send an encrypted direct message to a recipient and wait for a response.
 
         Args:

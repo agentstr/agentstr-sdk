@@ -55,7 +55,7 @@ class NostrMCPClient:
         """
         return [Skill(name=tool["name"], description=tool["description"]) for tool in (await self.list_tools())["tools"]]
 
-    async def call_tool(self, name: str, arguments: dict[str, Any], timeout: int = 60) -> dict[str, Any] | None:
+    async def call_tool(self, name: str, arguments: dict[str, Any], timeout: int = 120) -> dict[str, Any] | None:
         """Call a tool on the MCP server with provided arguments.
 
         Args:

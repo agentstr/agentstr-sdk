@@ -77,7 +77,7 @@ class RelayManager:
             result = list(event_id_map.values())
         return result
 
-    async def get_event(self, filters: Filters, timeout: int = 30, close_on_eose: bool = True) -> Event:
+    async def get_event(self, filters: Filters, timeout: int = 120, close_on_eose: bool = True) -> Event:
         """Get a single event matching the filters or None if not found."""
         result = await self.get_events(filters, limit=1, timeout=timeout, close_on_eose=close_on_eose)
         if result and len(result) > 0:

@@ -105,7 +105,7 @@ class EventRelay:
                 pass
         return events
 
-    async def get_event(self, filters: Filters, timeout: int = 30, close_on_eose: bool = True) -> Event | None:
+    async def get_event(self, filters: Filters, timeout: int = 120, close_on_eose: bool = True) -> Event | None:
         """Get a single event matching the filters or None if not found."""
         events = await self.get_events(filters, limit=1, timeout=timeout, close_on_eose=close_on_eose)
         if len(events) > 0:
