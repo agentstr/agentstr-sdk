@@ -130,7 +130,7 @@ class NostrMCPServer:
         tasks = []
         try:
             if not message.startswith('{'):
-                logger.warning(f"Invalid request: {message}. SKipping...")
+                logger.warning(f"Invalid request: {message}. Skipping...")
                 return
             request = json.loads(message)
             if request["action"] == "list_tools":
