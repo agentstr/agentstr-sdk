@@ -91,7 +91,10 @@ class PostgresDatabase(BaseDatabase):
             self.agent_name,
             thread_id,
         )
-        created_at = datetime.now(timezone.utc)
+        # Use a naive UTC datetime for TIMESTAMP (without time zone) columns
+        # to avoid asyncpg errors mixing aware/naive datetimes. We still return
+        # an aware UTC datetime to callers.
+        created_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await self.conn.execute(
             f"INSERT INTO {self.MESSAGE_TABLE_NAME} (agent_name, thread_id, idx, user_id, role, message, content, kind, satoshis, extra_inputs, extra_outputs, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
             self.agent_name,
@@ -119,7 +122,7 @@ class PostgresDatabase(BaseDatabase):
             satoshis=satoshis,
             extra_inputs=extra_inputs,
             extra_outputs=extra_outputs,
-            created_at=created_at.astimezone(timezone.utc),
+            created_at=created_at.replace(tzinfo=timezone.utc),
         )
 
     async def get_messages(

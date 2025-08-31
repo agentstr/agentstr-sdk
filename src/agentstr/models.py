@@ -93,6 +93,13 @@ class Message(BaseModel):
                 created_at = datetime.fromisoformat(created_at)
             except Exception:
                 created_at = datetime.now(timezone.utc)
+        # Normalize to aware UTC datetime
+        if isinstance(created_at, datetime):
+            if created_at.tzinfo is None:
+                # Treat DB naive timestamp as UTC
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            else:
+                created_at = created_at.astimezone(timezone.utc)
         return cls(
             agent_name=row["agent_name"],
             thread_id=row["thread_id"],
@@ -105,7 +112,7 @@ class Message(BaseModel):
             satoshis=row.get("satoshis"),
             extra_inputs=parse_json_field(row.get("extra_inputs")),
             extra_outputs=parse_json_field(row.get("extra_outputs")),
-            created_at=created_at.astimezone(timezone.utc) if hasattr(created_at, "astimezone") else created_at,
+            created_at=created_at,
         )
 
 
