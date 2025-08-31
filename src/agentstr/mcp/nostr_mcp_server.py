@@ -129,6 +129,9 @@ class NostrMCPServer:
         logger.debug(f"Request: {message}")
         tasks = []
         try:
+            if not message.startswith('{'):
+                logger.warning(f"Invalid request: {message}. SKipping...")
+                return
             request = json.loads(message)
             if request["action"] == "list_tools":
                 response = await self.list_tools()
