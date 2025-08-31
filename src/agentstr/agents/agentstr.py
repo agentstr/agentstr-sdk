@@ -111,15 +111,18 @@ class AgentstrAgent:
             if key_manager:
                 try:
                     from agent_vault.langgraph import async_insecure_postgres_saver, async_secure_postgres_saver
-                    from agent_vault.utils.key_manager import AWSSecretsManagerKeyManager, AzureKeyVaultKeyManager
+                    from agent_vault.utils.key_manager import AWSParameterStoreKeyManager, AWSSecretsManagerKeyManager, AzureKeyVaultKeyManager
                 except ImportError:
                     raise ValueError("agent_vault is not installed")
                 if key_manager == "none":
                     checkpointer = async_insecure_postgres_saver(self.database.conn_str)
                 elif key_manager == "aws":
-                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AWSSecretsManagerKeyManager(prefix=key_manager_prefix))
+                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AWSParameterStoreKeyManager(prefix=key_manager_prefix))
                 elif key_manager == "azure":
-                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AzureKeyVaultKeyManager(prefix=key_manager_prefix))
+                    key_vault_url = os.getenv("AZURE_KEY_VAULT_URL")
+                    if not key_vault_url:
+                        raise ValueError("Agent Vault Azure Key Manager requested by AZURE_KEY_VAULT_URL environment variable is not set")
+                    checkpointer = async_secure_postgres_saver(self.database.conn_str, AzureKeyVaultKeyManager(vault_url=key_vault_url, prefix=key_manager_prefix))
                 else:
                     raise ValueError(f"Unsupported key manager: {key_manager}")
             else:
