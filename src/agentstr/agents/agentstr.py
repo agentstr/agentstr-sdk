@@ -107,7 +107,7 @@ class AgentstrAgent:
         checkpointer = None
         if self.database.conn_str.startswith("postgres"):
             key_manager = os.getenv("AGENT_VAULT_KEY_MANAGER")
-            key_manager_prefix = os.getenv("AGENT_VAULT_KEY_MANAGER_PREFIX", f"AGENTSTR-{self.name}-".upper().replace(' ', '-'))
+            key_manager_prefix = os.getenv("AGENT_VAULT_KEY_MANAGER_PREFIX", f"AGENTSTR-{self.name}-".upper().replace(' ', '-').replace('_', '-'))
             if key_manager:
                 try:
                     from agent_vault.langgraph import async_insecure_postgres_saver, async_secure_postgres_saver
