@@ -14,6 +14,7 @@ from agentstr.commands.commands import DefaultCommands
 from agentstr.commands.base import Commands
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from langchain_core.tools import BaseTool
 from agentstr.logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,7 +51,9 @@ class AgentstrAgent:
                  llm_model_name: str | None = None,
                  llm_base_url: str | None = None,
                  llm_api_key: str | None = None,
-                 agent_callable: Callable[[ChatInput], ChatOutput | str] | None = None):
+                 agent_callable: Callable[[ChatInput], ChatOutput | str] | None = None,
+                 tools: list[BaseTool] | None = None,
+                 recipient_pubkey: str | None = None):
         """Initializes the AgentstrAgent.
 
         Args:
@@ -70,6 +73,8 @@ class AgentstrAgent:
             llm_base_url: The base URL for the language model (or use environment variable LLM_BASE_URL).
             llm_api_key: The API key for the language model (or use environment variable LLM_API_KEY).
             agent_callable: A callable for non-streaming responses (overrides default LLM response).
+            tools: A list of Langgraph tools for the agent.
+            recipient_pubkey: The public key to listen for direct messages from.
         """
         self.nostr_client = nostr_client or NostrClient()
         self.nostr_mcp_clients = nostr_mcp_clients.copy() if nostr_mcp_clients else []
@@ -89,6 +94,9 @@ class AgentstrAgent:
         self.llm_base_url = llm_base_url or os.getenv("LLM_BASE_URL")
         self.llm_api_key = llm_api_key or os.getenv("LLM_API_KEY")
         self.agent_callable = agent_callable
+        self.tools = tools or []
+        self.recipient_pubkey = recipient_pubkey or os.getenv('RECIPIENT_PUBKEY')
+
         if self.agent_callable is None:
             # Require LLM
             self._check_llm_vars()
@@ -145,6 +153,7 @@ class AgentstrAgent:
         all_tools = []
         for nostr_mcp_client in self.nostr_mcp_clients:
             all_tools.extend(await to_langgraph_tools(nostr_mcp_client))
+        all_tools.extend(self.tools)
 
         all_skills = [skill for skills in [await nostr_mcp_client.get_skills() for nostr_mcp_client in self.nostr_mcp_clients] for skill in skills]
 
@@ -182,7 +191,8 @@ class AgentstrAgent:
         server = NostrAgentServer(nostr_client=self.nostr_client,
                                   nostr_agent=nostr_agent,
                                   db=self.database,
-                                  commands=self.commands)
+                                  commands=self.commands,
+                                  recipient_pubkey=self.recipient_pubkey)
 
         return server
 

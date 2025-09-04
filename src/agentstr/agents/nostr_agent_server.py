@@ -42,7 +42,8 @@ class NostrAgentServer:
                  nwc_str: str | None = None,
                  db: BaseDatabase | None = None,
                  note_filters: NoteFilters | None = None,
-                 commands: Commands | None = None):
+                 commands: Commands | None = None,
+                 recipient_pubkey: str | None = None):
         """
         Initialize a NostrAgentServer.
 
@@ -56,6 +57,7 @@ class NostrAgentServer:
             db (BaseDatabase, optional): Database for persisting messages and user state.
             note_filters (NoteFilters, optional): Filters for subscribing to specific Nostr notes/events.
             commands (Commands, optional): Custom command handler. If not provided, uses DefaultCommands.
+            recipient_pubkey (str, optional): The public key to listen for direct messages from.
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.nostr_agent = nostr_agent
@@ -67,6 +69,7 @@ class NostrAgentServer:
         if self.nostr_agent.agent_card.nostr_relays is None:
             self.nostr_agent.agent_card.nostr_relays = self.client.relays
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
+        self.recipient_pubkey = recipient_pubkey
 
     async def _save_input(self, chat_input: ChatInput):
         """
@@ -385,5 +388,5 @@ class NostrAgentServer:
         # Start direct message listener
         tasks = []
         logger.info(f"Starting message listener for {self.client.public_key.bech32()}")
-        tasks.append(self.client.direct_message_listener(callback=self._direct_message_callback))
+        tasks.append(self.client.direct_message_listener(callback=self._direct_message_callback, recipient_pubkey=self.recipient_pubkey))
         await asyncio.gather(*tasks)
