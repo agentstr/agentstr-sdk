@@ -1,15 +1,14 @@
 import asyncio
-from collections.abc import Callable
-from typing import Any, Literal
 import uuid
-import json
+import os
 import time
 
 from pynostr.event import Event
+from datetime import datetime, timezone, timedelta
 
 from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.database import Database, BaseDatabase
-from agentstr.models import AgentCard, ChatInput, ChatOutput, Message, User, NoteFilters
+from agentstr.models import ChatInput, ChatOutput, Message, User, NoteFilters
 from agentstr.commands.base import Commands
 from agentstr.commands.commands import DefaultCommands
 from agentstr.logger import get_logger
@@ -347,6 +346,16 @@ class NostrAgentServer:
         # Get message history
         history = await self.db.get_messages(thread_id=thread_id, user_id=user_id)
         logger.debug(f"Message history: {history}")
+
+        # Check for latest thread_id
+        if len(history) > 0:
+            latest_thread_id = history[-1].thread_id
+            latest_created_at = history[-1].created_at
+            new_thread_refresh_seconds = os.getenv("NEW_THREAD_REFRESH_SECONDS", 3600)  # default 1 hour
+            if latest_created_at < datetime.now(timezone.utc) - timedelta(seconds=new_thread_refresh_seconds):
+                logger.info(f"New thread detected: {latest_thread_id} != {thread_id} or {latest_created_at} < {datetime.now(timezone.utc) - timedelta(seconds=new_thread_refresh_seconds)}")
+                thread_id = uuid.uuid4().hex
+                await self.db.set_current_thread_id(user_id=user_id, thread_id=thread_id)
 
         # Create chat input
         chat_input = ChatInput(
