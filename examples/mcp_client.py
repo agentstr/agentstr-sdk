@@ -32,7 +32,7 @@ async def run()   :
     # Call a tool
     result = await mcp_client.call_tool("add", {"a": 69, "b": 420})
     print(f'The result of 69 + 420 is: {result["content"][-1]["text"]}')
-
+    
     # Call a premium tool
     result = await mcp_client.call_tool("multiply", {"a": 69, "b": 420})
     print(f'The result of 69 * 420 is: {result["content"][-1]["text"]}')

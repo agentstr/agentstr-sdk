@@ -1,15 +1,14 @@
 import asyncio
-from collections.abc import Callable
-from typing import Any, Literal
 import uuid
-import json
+import os
 import time
 
 from pynostr.event import Event
+from datetime import datetime, timezone, timedelta
 
 from agentstr.agents.nostr_agent import NostrAgent
 from agentstr.database import Database, BaseDatabase
-from agentstr.models import AgentCard, ChatInput, ChatOutput, Message, User, NoteFilters
+from agentstr.models import ChatInput, ChatOutput, Message, User, NoteFilters
 from agentstr.commands.base import Commands
 from agentstr.commands.commands import DefaultCommands
 from agentstr.logger import get_logger
@@ -42,7 +41,8 @@ class NostrAgentServer:
                  nwc_str: str | None = None,
                  db: BaseDatabase | None = None,
                  note_filters: NoteFilters | None = None,
-                 commands: Commands | None = None):
+                 commands: Commands | None = None,
+                 recipient_pubkey: str | None = None):
         """
         Initialize a NostrAgentServer.
 
@@ -56,6 +56,7 @@ class NostrAgentServer:
             db (BaseDatabase, optional): Database for persisting messages and user state.
             note_filters (NoteFilters, optional): Filters for subscribing to specific Nostr notes/events.
             commands (Commands, optional): Custom command handler. If not provided, uses DefaultCommands.
+            recipient_pubkey (str, optional): The public key to listen for direct messages from.
         """
         self.client = nostr_client or (nostr_mcp_client.client if nostr_mcp_client else NostrClient(relays=relays, private_key=private_key, nwc_str=nwc_str))
         self.nostr_agent = nostr_agent
@@ -67,6 +68,7 @@ class NostrAgentServer:
         if self.nostr_agent.agent_card.nostr_relays is None:
             self.nostr_agent.agent_card.nostr_relays = self.client.relays
         self.commands = commands or DefaultCommands(db=self.db, nostr_client=self.client, agent_card=nostr_agent.agent_card)
+        self.recipient_pubkey = recipient_pubkey
 
     async def _save_input(self, chat_input: ChatInput):
         """
@@ -345,6 +347,16 @@ class NostrAgentServer:
         history = await self.db.get_messages(thread_id=thread_id, user_id=user_id)
         logger.debug(f"Message history: {history}")
 
+        # Check for latest thread_id
+        if len(history) > 0:
+            latest_thread_id = history[-1].thread_id
+            latest_created_at = history[-1].created_at
+            new_thread_refresh_seconds = os.getenv("NEW_THREAD_REFRESH_SECONDS", 3600)  # default 1 hour
+            if latest_created_at < datetime.now(timezone.utc) - timedelta(seconds=new_thread_refresh_seconds):
+                logger.info(f"New thread detected: {latest_thread_id} != {thread_id} or {latest_created_at} < {datetime.now(timezone.utc) - timedelta(seconds=new_thread_refresh_seconds)}")
+                thread_id = uuid.uuid4().hex
+                await self.db.set_current_thread_id(user_id=user_id, thread_id=thread_id)
+
         # Create chat input
         chat_input = ChatInput(
             message=message, 
@@ -385,5 +397,5 @@ class NostrAgentServer:
         # Start direct message listener
         tasks = []
         logger.info(f"Starting message listener for {self.client.public_key.bech32()}")
-        tasks.append(self.client.direct_message_listener(callback=self._direct_message_callback))
+        tasks.append(self.client.direct_message_listener(callback=self._direct_message_callback, recipient_pubkey=self.recipient_pubkey))
         await asyncio.gather(*tasks)

@@ -58,26 +58,39 @@ class RelayManager:
         result = None
         t0 = time.time()
         tasks = []
+        failures = 0
+        last_exc: Exception | None = None
         for relay in self.relays:
             tasks.append(asyncio.create_task(relay.get_events(filters, limit, timeout, close_on_eose)))
         for done in asyncio.as_completed(tasks):
-            result = await done
+            try:
+                result = await done
+            except Exception as e:
+                logger.warning(f"get_events: relay task failed: {e!s}")
+                failures += 1
+                last_exc = e
+                continue
             if result and len(result) >= limit:
+                # Enough results from this relay; we can stop early
                 break
-            for event in result:
-                if event.id in event_id_map:
-                    continue
-                event_id_map[event.id] = event
-                if len(event_id_map) >= limit:
-                    result = list(event_id_map.values())
-                    break
+            if result:
+                for event in result:
+                    if event.id in event_id_map:
+                        continue
+                    event_id_map[event.id] = event
+                    if len(event_id_map) >= limit:
+                        result = list(event_id_map.values())
+                        break
             if timeout < time.time() - t0:
                 break
         if not result:
             result = list(event_id_map.values())
+        # If every relay task failed and we collected no events, raise an error
+        if len(result) == 0 and failures == len(tasks) and last_exc is not None:
+            raise RuntimeError(f"All relays failed in get_events: {last_exc!s}")
         return result
 
-    async def get_event(self, filters: Filters, timeout: int = 120, close_on_eose: bool = True) -> Event:
+    async def get_event(self, filters: Filters, timeout: int = 120, close_on_eose: bool = True) -> Event | None:
         """Get a single event matching the filters or None if not found."""
         result = await self.get_events(filters, limit=1, timeout=timeout, close_on_eose=close_on_eose)
         if result and len(result) > 0:
@@ -85,14 +98,23 @@ class RelayManager:
         return None
 
     async def send_event(self, event: Event) -> Event:
-        """Send an event to all connected relays."""
+        """Send an event to all connected relays.
+
+        Ensures a failure on one relay does not fail the whole operation.
+        """
         tasks = []
         event.created_at = int(time.time())
         event.compute_id()
         event.sign(self.private_key.hex())
         for relay in self.relays:
             tasks.append(asyncio.create_task(relay.send_event(event)))
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        exceptions = [r for r in results if isinstance(r, Exception)]
+        for r in exceptions:
+            logger.warning(f"send_event: relay task failed: {r!s}")
+        if len(exceptions) == len(results) and len(results) > 0:
+            raise RuntimeError(f"All relays failed to send event {event.id[:10]}: {exceptions[-1]!s}")
+        return event
 
     def encrypt_message(self, message: str | dict, recipient_pubkey: str, tags: dict[str, str] | None = None) -> Event:
         """Encrypt a message for the recipient and prepare it as a Nostr event."""
@@ -126,7 +148,12 @@ class RelayManager:
                 tasks.append(asyncio.create_task(relay.send_event(event)))
 
             logger.debug(f"Dispatching message to {len(tasks)} relays")
-            await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            exceptions = [r for r in results if isinstance(r, Exception)]
+            for r in exceptions:
+                logger.warning(f"send_message: relay task failed: {r!s}")
+            if len(exceptions) == len(results) and len(results) > 0:
+                raise RuntimeError(f"All relays failed to send message event {event.id[:10]}: {exceptions[-1]!s}")
             logger.info(f"Successfully sent message to {recipient_pubkey[:10]} with event id: {event.id[:10]}")
 
             return event
@@ -142,7 +169,8 @@ class RelayManager:
 
         t0 = time.time()
         tasks = []
-
+        failures = 0
+        last_exc: Exception | None = None
         try:
             # Start receive tasks for all relays
             await asyncio.sleep(0.5)
@@ -155,25 +183,42 @@ class RelayManager:
             for task in asyncio.as_completed(tasks):
                 try:
                     result = await task
-                    if result:
-                        logger.info(f"Received message from {author_pubkey[:10]} with id {result.event.id[:10]}: {result.message}")
-                        return result
-
-                    # Check timeout
-                    if time.time() - t0 > timeout:
-                        logger.warning(f"Receive operation timed out after {timeout} seconds")
-                        break
-
                 except Exception as e:
                     logger.warning(f"Error in receive task: {e!s}")
-                    continue
+                    # count failure and continue waiting for other relays
+                    failures += 1
+                    last_exc = e
+                    result = None
 
+                if result:
+                    logger.info(f"Received message from {author_pubkey[:10]} with id {result.event.id[:10]}: {result.message}")
+                    # Cancel all other pending tasks
+                    for t in tasks:
+                        if not t.done():
+                            t.cancel()
+                    return result
+
+                # Check timeout
+                if time.time() - t0 > timeout:
+                    logger.warning(f"Receive operation timed out after {timeout} seconds")
+                    break
+
+            # If every relay task failed, raise; otherwise it's a timeout/no message
+            if failures == len(tasks) and last_exc is not None:
+                raise RuntimeError(f"All relays failed to receive message: {last_exc!s}")
             logger.warning("No messages received before timeout")
             return None
 
         except Exception as e:
             logger.error(f"Error in receive_message: {e!s}", exc_info=True)
-            raise
+            return None
+        finally:
+            # Ensure cleanup of any remaining tasks
+            pending = [t for t in tasks if not t.done()]
+            for t in pending:
+                t.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
 
     async def send_receive_message(self, message: str | dict, recipient_pubkey: str, timeout: int = 3, tags: dict[str, str] | None = None) -> DecryptedMessage | None:
         """Send a message and wait for a response from the recipient.
@@ -196,7 +241,10 @@ class RelayManager:
         tasks = []
         for relay in self.relays:
             tasks.append(asyncio.create_task(relay.event_listener(filters, callback, event_cache, lock)))
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if isinstance(r, Exception):
+                logger.warning(f"event_listener: relay task failed: {r!s}")
 
     async def direct_message_listener(self, filters: Filters, callback: Callable[[Event, str], None]):
         """Start listening for direct messages.
@@ -208,7 +256,10 @@ class RelayManager:
         tasks = []
         for relay in self.relays:
             tasks.append(asyncio.create_task(relay.direct_message_listener(filters, callback, event_cache, lock)))
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if isinstance(r, Exception):
+                logger.warning(f"direct_message_listener: relay task failed: {r!s}")
 
     async def get_following(self, pubkey: str | None = None) -> list[str]:
         """Get the list of public keys that the specified user follows."""

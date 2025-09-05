@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 import uuid
+import random
 from collections.abc import Callable
 import traceback
 
@@ -202,9 +203,15 @@ class EventRelay:
         subscription = create_subscription(filters)
         logger.debug(f"Sending DM subscription: {json.dumps(subscription)}")
         latest_timestamp = filters.since or get_timestamp()
+        # Exponential backoff settings for reconnect attempts
+        initial_backoff = 0.5
+        max_backoff = 30.0
+        backoff = initial_backoff
         while True:
             try:
                 async with connect(self.relay) as ws:
+                    # Reset backoff on successful (re)connection
+                    backoff = initial_backoff
                     await ws.send(json.dumps(subscription))
                     while True:
                         response = await ws.recv()
@@ -225,11 +232,19 @@ class EventRelay:
                                     await callback(dm.event, dm.message)
                                 except Exception as e:
                                     logger.error(f"Error in direct_message_listener callback: {e}")
-                                    logger.error(traceback.format_exc())
                         await asyncio.sleep(0)
+            except asyncio.CancelledError:
+                # Allow cooperative cancellation
+                logger.debug("direct_message_listener task cancelled")
+                raise
             except Exception as e:
                 logger.warning(f"Connection closed in direct_message_listener at {int(time.time())} trying again: {e}")
+                # Move the window forward to avoid re-processing
                 filters.since = latest_timestamp + 1
                 subscription = create_subscription(filters)
                 logger.debug(f"Sending DM subscription: {json.dumps(subscription)}")
-                await asyncio.sleep(0)
+                # Exponential backoff with jitter
+                jitter = random.uniform(0, backoff * 0.1)
+                sleep_for = min(max_backoff, backoff) + jitter
+                await asyncio.sleep(sleep_for)
+                backoff = min(max_backoff, backoff * 2)
